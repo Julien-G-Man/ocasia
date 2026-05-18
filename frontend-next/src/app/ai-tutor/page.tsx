@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import AppLayout from "@/components/AppLayout";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -1489,22 +1489,19 @@ export default function AITutorPage() {
 
   if (!sessionReady) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <main className="flex-1 grid place-items-center">
+      <AppLayout title="AI Tutor">
+        <div className="grid place-items-center h-full min-h-[60vh]">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 size={18} className="animate-spin" />
             Loading your sessions...
           </div>
-        </main>
-      </div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="relative flex-1 overflow-hidden">
+    <AppLayout title="AI Tutor" mainClassName="overflow-hidden relative pb-0">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-grid opacity-[0.2] dark:opacity-[0.1]" />
           <div
@@ -1538,7 +1535,7 @@ export default function AITutorPage() {
           />
         </div>
 
-        <div className="relative h-[calc(100vh-4rem)] max-w-6xl mx-auto w-full px-3 py-3 sm:px-4 sm:py-4">
+        <div className="relative h-full max-w-6xl mx-auto w-full px-3 py-3 sm:px-4 sm:py-4">
           <AnimatePresence initial={false}>
             {showDesktopSessionSidebar && (
               <motion.aside
@@ -2179,7 +2176,6 @@ export default function AITutorPage() {
             </AnimatePresence>
           </div>
         </div>
-      </main>
-    </div>
+    </AppLayout>
   );
 }

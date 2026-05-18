@@ -9,6 +9,7 @@ CLAUDE.md
 .claude/**
 __pycache__/
 context.txt
+.omc/
 
 # Graphify generated artifacts (local analysis output)
 graphify-out/

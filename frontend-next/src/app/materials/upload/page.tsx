@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
+import AppLayout from '@/components/AppLayout';
 import { materialsService } from '@/services/materials';
 import { Upload, FileText, X } from 'lucide-react';
 import Link from 'next/link';
@@ -48,9 +48,8 @@ export default function MaterialUploadPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-1 container mx-auto max-w-xl px-4 py-8 flex flex-col gap-6">
+    <AppLayout title="Upload Material">
+      <div className="container mx-auto max-w-xl px-4 py-8 flex flex-col gap-6">
         <div className="flex items-center gap-3">
           <Link href="/materials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             &larr; Materials
@@ -129,7 +128,7 @@ export default function MaterialUploadPage() {
             {uploading ? `Uploading (${progress}%)...` : 'Upload Material'}
           </button>
         </form>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

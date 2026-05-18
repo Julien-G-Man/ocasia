@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
+import AppLayout from '@/components/AppLayout';
 import { materialsService } from '@/services/materials';
 import { Search, Upload, Download, Trash2, FileText } from 'lucide-react';
 import Link from 'next/link';
@@ -71,9 +71,8 @@ export default function MaterialsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-1 container mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+    <AppLayout title="Study Materials">
+      <div className="container mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Study Materials</h1>
@@ -167,7 +166,7 @@ export default function MaterialsPage() {
             Load More
           </button>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

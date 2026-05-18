@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MathRenderer from '@/components/MathRenderer';
-import Navbar from '@/components/Navbar';
+import AppLayout from '@/components/AppLayout';
 import djangoApi from '@/services/api';
 import { dashboardService } from '@/services/dashboard';
 import {
@@ -139,9 +139,8 @@ export default function QuizResultsPage() {
   const dashOffset = circumference - (pct / 100) * circumference;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+    <AppLayout title="Quiz Results">
+      <div className="max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
 
         {/* Score card */}
         <div className="glass rounded-2xl p-8 flex flex-col items-center text-center gap-4">
@@ -345,7 +344,7 @@ export default function QuizResultsPage() {
         >
           ← Back to Dashboard
         </Link>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/Navbar';
+import AppLayout from '@/components/AppLayout';
 import djangoApi from '@/services/api';
 import { Upload, Keyboard, ListOrdered, Pen, Clock, BarChart2, Loader2, AlertCircle, FileText, Sparkles, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -209,8 +209,7 @@ export default function CreateQuizPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <AppLayout title="Create Quiz">
       {/* Generating overlay */}
       {isGenerating && (
         <div className="fixed inset-0 z-50 bg-black/45 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -490,6 +489,6 @@ export default function CreateQuizPage() {
         </form>
       </div>
 
-    </div>
+    </AppLayout>
   );
 }

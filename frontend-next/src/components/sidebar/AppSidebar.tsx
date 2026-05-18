@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,14 @@ const AppSidebar = () => {
 
         {/* Nav */}
         <nav className="flex flex-col gap-1 px-3 py-4 flex-1">
+          <Link
+            href="/"
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-surface-hover border-l-2 border-transparent pl-[10px]"
+          >
+            <Home size={16} className="shrink-0" />
+            Home
+          </Link>
+          <div className="my-1 border-t border-border/50" />
           {navItems.map(({ href, icon: Icon, label }) => {
             const active = isActive(href);
             return (
