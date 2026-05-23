@@ -164,7 +164,7 @@ const Signup = () => {
 
           {/* Guest upsell banner */}
           {fromGuest && !error && (
-            <div className="auth-error-banner" role="status" style={{ background: 'rgba(255,214,0,0.1)', borderColor: '#FFD600', color: 'inherit' }}>
+            <div className="auth-error-banner" role="status" style={{ background: 'rgba(37,99,235,0.08)', borderColor: '#2563eb', color: 'inherit' }}>
               <span>🎓</span>
               <span>You've used your free quiz — create an account to keep going!</span>
             </div>

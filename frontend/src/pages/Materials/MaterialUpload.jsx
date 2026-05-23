@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
+import AppShell from '../../components/AppShell/AppShell';
 import { useAuth } from '../../context/AuthContext';
 import { materialsService } from '../../services/materials';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -100,8 +100,7 @@ const MaterialUpload = () => {
     // ── Success screen ────────────────────────────────────────────
     if (success) {
         return (
-            <>
-                <Navbar />
+            <AppShell>
                 <div className="mup-page-wrapper">
                     <div className="mup-success">
                         <div className="mup-success-icon">
@@ -111,7 +110,7 @@ const MaterialUpload = () => {
                         <p>Your PDF is now public — anyone can download or use it for quizzes.</p>
                         <div className="mup-success-actions">
                             <button className="mup-submit-btn" style={{ flex: 'none', padding: '14px 28px' }}
-                                onClick={() => navigate('/materials')}
+                                onClick={() => navigate('/materials/community')}
                             >
                                 Browse Materials
                             </button>
@@ -128,17 +127,16 @@ const MaterialUpload = () => {
                         </div>
                     </div>
                 </div>
-            </>
+            </AppShell>
         );
     }
 
     return (
-        <>
-            <Navbar />
+        <AppShell>
             <div className="mup-page-wrapper">
                 <div className="mup-card">
 
-                    <button className="mup-back" onClick={() => navigate('/materials')}>
+                    <button className="mup-back" onClick={() => navigate('/materials/community')}>
                         <FontAwesomeIcon icon={faArrowLeft} /> Back to Materials
                     </button>
 
@@ -284,7 +282,7 @@ const MaterialUpload = () => {
                             <button
                                 type="button"
                                 className="mup-cancel-btn"
-                                onClick={() => navigate('/materials')}
+                                onClick={() => navigate('/materials/community')}
                             >
                                 Cancel
                             </button>
@@ -293,7 +291,7 @@ const MaterialUpload = () => {
                     </form>
                 </div>
             </div>
-        </>
+        </AppShell>
     );
 };
 

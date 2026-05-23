@@ -168,7 +168,7 @@ const ForgotPassword = () => {
                 Didn't get it? Check your spam folder or{' '}
                 <button
                   onClick={() => setSubmitted(false)}
-                  style={{ background: 'none', border: 'none', color: '#FFD600', cursor: 'pointer', fontWeight: 600, fontSize: 'inherit', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 600, fontSize: 'inherit', padding: 0 }}
                 >
                   try again
                 </button>

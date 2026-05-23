@@ -13,6 +13,8 @@
   
   /* Corner radius */
   --radius-2xl: 14px;
+  --radius-md: 10px;
+  --primary-color: var(--primary, #1E3A8A);
 }
 
 /* Profile page uses the full dashboard shell.
@@ -34,13 +36,13 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color, #FFD600), var(--primary-dark, #e6c000));
+  background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
   font-weight: 700;
-  color: #121212;
+  color: #ffffff;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -87,7 +89,7 @@
 }
 
 .db-file-input-wrap input[type="file"] {
-  background: var(--background-gray, #1e1e1e);
+  background: var(--background-gray);
   border: 1px dashed var(--border);
   color: var(--text-secondary);
   padding: var(--spacing-md) var(--spacing-lg);
@@ -100,13 +102,62 @@
 }
 
 .db-file-input-wrap input[type="file"]:hover {
-  border-color: var(--primary-color, #FFD600);
+  border-color: var(--primary-color);
 }
 
 .db-file-meta {
   margin-top: var(--spacing-xs);
   font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+/* Actions container (replaces inline flex styles) */
+.db-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+/* Avatar preview */
+.db-avatar-preview {
+  margin-top: var(--spacing-md);
+}
+.db-avatar-preview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+/* Toast / status area */
+.db-toast {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+/* Grid layout for profile */
+.db-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+.profile-right {
+  position: relative;
+}
+.profile-left {
+  min-width: 0;
+}
+
+.db-theme-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* ── Theme toggle ────────────────────────────────────────────── */
@@ -154,5 +205,55 @@
   .db-main {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
+}
+
+/* Mobile-first adjustments: stack the grid and surface the hero first */
+@media (max-width: 900px) {
+  .db-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* show hero (profile-right) before forms on mobile */
+  .profile-right {
+    order: -1;
+  }
+
+  .profile-left {
+    order: 0;
+  }
+
+  .db-profile-hero {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--spacing-2xl);
+    text-align: left;
+  }
+
+  .db-profile-avatar-xl {
+    width: 72px;
+    height: 72px;
+    font-size: 1.6rem;
+    margin-right: var(--spacing-lg);
+    margin-bottom: 0;
+  }
+
+  .db-avatar-preview img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .db-card {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .db-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .db-profile-avatar-xl { width: 64px; height: 64px; font-size: 1.4rem; }
+  .db-avatar-preview img { width: 72px; height: 72px; }
+  .db-profile-hero-info h2 { font-size: 1rem; }
+  .db-profile-hero-info p { font-size: 0.8rem; }
 }
 

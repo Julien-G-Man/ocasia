@@ -129,19 +129,28 @@ const Materials = () => {
                     {/* ── Hero ── */}
                     <div className="mat-hero">
                         <div className="mat-hero-text">
-                            <h1>📚 Study Materials</h1>
+                            <h1>📚 Community Materials</h1>
                             <p>
                                 Community-shared PDFs — download raw files or push any PDF
                                 straight into Quiz Mode with one click.
                             </p>
                         </div>
                         {isAuthenticated && (
-                            <button
-                                className="mat-upload-hero-btn"
-                                onClick={() => navigate('/materials/upload')}
-                            >
-                                <FontAwesomeIcon icon={faUpload} /> Upload Material
-                            </button>
+                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                <button
+                                    className="mat-upload-hero-btn"
+                                    onClick={() => navigate('/materials/upload')}
+                                >
+                                    <FontAwesomeIcon icon={faUpload} /> Upload Material
+                                </button>
+                                <button
+                                    className="mat-upload-hero-btn"
+                                    onClick={() => navigate('/materials/mine')}
+                                    style={{ background: 'var(--surface)', color: 'var(--primary-color)', border: '1px solid var(--border)' }}
+                                >
+                                    My Uploads
+                                </button>
+                            </div>
                         )}
                     </div>
 

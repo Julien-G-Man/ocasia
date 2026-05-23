@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
+import AppShell from '../../components/AppShell/AppShell';
 import { useAuth } from '../../context/AuthContext';
 import djangoApi from '../../services/api';
 import './CreateQuiz.css';
@@ -213,8 +213,7 @@ const CreateQuiz = () => {
     };
 
     return (
-        <>
-            <Navbar />
+        <AppShell>
             {showGuestWall && (
                 <div className="cq-processing-overlay" role="dialog" aria-modal="true">
                     <div className="cq-processing-card" style={{ textAlign: 'center', gap: 16 }}>
@@ -249,12 +248,14 @@ const CreateQuiz = () => {
                 </div>
             )}
             <div className="page-wrapper">
-                <div className="quiz-card-container">
+                <header className="quiz-create-header">
                     <h1 className="main-page-title">Quiz Mode</h1>
                     <p className="main-page-description">
                         Upload your study material, enter a YouTube video link, or paste text content to create customised quiz questions with AI.
                     </p>
+                </header>
 
+                <div className="quiz-card-container">
                     {/* Banner when pre-filled from a material */}
                     {prefill.sourceTitle && (
                         <div className="file-name-display success" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -336,8 +337,8 @@ const CreateQuiz = () => {
                             <div className="tab-content active slide-in">
                                 <div
                                     className="upload-zone"
-                                    onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#FFD600'; }}
-                                    onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#E6C200'; }}
+                                    onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; }}
+                                    onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#1d4ed8'; }}
                                     onDrop={e => {
                                         e.preventDefault();
                                         handleFileChange({ target: { files: e.dataTransfer.files } });
@@ -477,7 +478,7 @@ const CreateQuiz = () => {
                     {toast.message}
                 </div>
             )}
-        </>
+        </AppShell>
     );
 };
 

@@ -10,6 +10,8 @@
 
 # production
 /build
+/dist
+dist/
 
 # misc
 .env
@@ -26,3 +28,4 @@ yarn-error.log*
 
 structure.md
 db.sqlite3
+UI_FIX.md

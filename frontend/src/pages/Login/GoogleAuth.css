@@ -15,7 +15,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #1e1e1e;
+  background: var(--border);
 }
 
 .auth-divider span {
@@ -35,12 +35,3 @@
   justify-content: center !important;
 }
 
-/* Light theme adjustments */
-[data-theme="light"] .auth-divider::before,
-[data-theme="light"] .auth-divider::after {
-  background: #e5e7eb;
-}
-
-[data-theme="light"] .auth-divider {
-  color: #4b5563;
-}

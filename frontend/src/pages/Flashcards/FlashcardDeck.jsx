@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Navbar from "../../components/Navbar";
+import AppShell from "../../components/AppShell/AppShell";
 import { useAuth } from "../../context/AuthContext";
 import djangoApi, { getApiErrorMessage } from "../../services/api";
 import RichTextRenderer from "../../utils/richTextRenderer";
@@ -147,10 +147,9 @@ export default function FlashcardDeck() {
   };
 
   return (
-    <>
-      <Navbar />
+    <AppShell>
       <main className="fc-page">
-        <section className="fc-hero compact">
+        <section className="fc-hero fc-hero--flat compact">
           <div>
             <h1>Deck Details: {title}</h1>
             <p>{cards.length} cards in this deck</p>
@@ -239,6 +238,6 @@ export default function FlashcardDeck() {
           ))}
         </section>
       </main>
-    </>
+    </AppShell>
   );
 }

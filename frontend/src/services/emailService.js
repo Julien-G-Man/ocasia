@@ -1,10 +1,10 @@
 import emailjs from "@emailjs/browser";
 
-const PUBLIC_KEY        = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-const SERVICE_ID        = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const TEMPLATE_VERIFY   = process.env.REACT_APP_EMAILJS_TEMPLATE_VERIFY;
-const TEMPLATE_RESET    = process.env.REACT_APP_EMAILJS_TEMPLATE_RESET;
-const TEMPLATE_WELCOME  = process.env.REACT_APP_EMAILJS_TEMPLATE_WELCOME;
+const PUBLIC_KEY        = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const SERVICE_ID        = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const TEMPLATE_VERIFY   = import.meta.env.VITE_EMAILJS_TEMPLATE_VERIFY;
+const TEMPLATE_RESET    = import.meta.env.VITE_EMAILJS_TEMPLATE_RESET;
+const TEMPLATE_WELCOME  = import.meta.env.VITE_EMAILJS_TEMPLATE_WELCOME;
 
 /**
  * Send an email verification link to a newly-registered (or re-requesting) user.

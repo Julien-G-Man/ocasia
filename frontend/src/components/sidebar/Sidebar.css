@@ -7,10 +7,9 @@
   --spacing-xl: 20px;
   --spacing-2xl: 24px;
   --spacing-3xl: 28px;
-
-  --radius-lg: 10px;
-  --radius-xl: 11px;
-  --radius-2xl: 14px;
+  /* Note: --radius-lg and --radius-xl intentionally omitted to avoid overriding global tokens */
+  --db-radius-item: 10px;
+  --db-radius-2xl: 14px;
 }
 
 /* - Sidebar shell ---------------------------------------------------- */
@@ -46,8 +45,8 @@
   justify-content: center;
   font-size: 1.6rem;
   font-weight: 700;
-  color: #121212;
-  background: linear-gradient(135deg, var(--primary-color, #FFD600), var(--primary-dark, #e6c000));
+  color: #ffffff;
+  background: var(--primary-color);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -85,8 +84,8 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  background: rgba(255, 214, 0, 0.12);
-  color: var(--primary-color, #FFD600);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
 }
 
 .db-role-badge.admin {
@@ -108,7 +107,7 @@
   padding: 10px 12px;
   text-align: left;
   cursor: pointer;
-  border-radius: var(--radius-lg);
+  border-radius: var(--db-radius-item);
   transition: background 0.15s, color 0.15s;
   font-weight: 500;
   display: flex;
@@ -128,7 +127,7 @@
 
 .db-nav-item:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--background-gray);
 }
 
 .db-nav-item:hover svg {
@@ -136,8 +135,8 @@
 }
 
 .db-sidebar--user .db-nav-item.active {
-  color: var(--primary-color, #FFD600);
-  background: rgba(255, 214, 0, 0.1);
+  color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.08);
   font-weight: 600;
 }
 .db-sidebar--user .db-nav-item.active svg { opacity: 1; }
@@ -159,7 +158,7 @@
   border: 1px solid var(--border);
   color: var(--text-secondary);
   padding: 10px 14px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--db-radius-item);
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 600;
@@ -201,8 +200,7 @@
     gap: 4px;
     padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
-    background: rgba(18, 18, 18, 0.95);
-    backdrop-filter: blur(6px);
+    background: var(--surface);
   }
 
   .db-mobile-nav-item {
@@ -227,8 +225,8 @@
   }
 
   .db-mobile-nav--user .db-mobile-nav-item.active {
-    color: var(--primary-color, #FFD600);
-    background: rgba(255, 214, 0, 0.12);
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.08);
   }
 
   .db-mobile-nav--admin .db-mobile-nav-item.active {

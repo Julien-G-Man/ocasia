@@ -5,8 +5,7 @@ import Navbar from "../../components/Navbar";
 const NotFound = () => {
   return (
     <div className="not-found-page" style={{
-      // Layering a black gradient over the image to darken it
-      backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/assets/not-found.webp')", 
+      backgroundImage: "linear-gradient(rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.9)), url('/assets/not-found.webp')", 
       backgroundSize: "cover",
       backgroundPosition: "center",
       minHeight: "100vh",
@@ -21,11 +20,10 @@ const NotFound = () => {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        color: "white",
+        color: "#0f172a",
         textAlign: "center",
         padding: "0 20px"
       }}>
-        {/* <h1 style={{ fontSize: "clamp(4rem, 10vw, 8rem)", margin: 0, color: "#FFD600", fontWeight: "800" }}>404</h1> */}
         <h2 style={{ fontSize: "1.8rem", marginBottom: "15px" }}>Oops! You've strayed off the path.</h2>
         <p style={{ marginBottom: "30px", maxWidth: "600px", fontSize: "1.1rem", opacity: 0.9 }}>
           The page you are looking for might have been removed, or is temporarily unavailable.
@@ -37,22 +35,22 @@ const NotFound = () => {
             padding: "14px 32px", 
             marginTop: "100px",
             marginBottom: "20px",
-            backgroundColor: "#ffd600", // Bright yellow button
-            color: "#000",              // Black text for contrast
+            backgroundColor: "#2563eb",
+            color: "#fff",
             fontWeight: "bold",
             borderRadius: "8px",
             textDecoration: "none",
             fontSize: "1rem",
             transition: "all 0.3s ease",
             backdropFilter: "blur(5px)",
-            boxShadow: "0 4px 15px rgba(43, 37, 11, 0.3)"
+            boxShadow: "0 4px 15px rgba(37, 99, 235, 0.25)"
           }}
           onMouseOver={(e) => {
-            e.target.style.backgroundColor = "white";
-            e.target.style.color = "black";
+            e.target.style.backgroundColor = "#1d4ed8";
+            e.target.style.color = "white";
           }}
           onMouseOut={(e) => {
-            e.target.style.backgroundColor = "transparent";
+            e.target.style.backgroundColor = "#2563eb";
             e.target.style.color = "white";
           }}
         >

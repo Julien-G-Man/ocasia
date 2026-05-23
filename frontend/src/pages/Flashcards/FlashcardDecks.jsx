@@ -1,32 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/Navbar";
-import Sidebar from "../../components/sidebar/Sidebar";
+import AppShell from "../../components/AppShell/AppShell";
 import { useAuth } from "../../context/AuthContext";
 import djangoApi from "../../services/api";
 import "./Flashcards.css";
 import "../Dashboards/Dashboard.css";
-import { faHome, faHistory, faCloudUploadAlt, faUser } from "@fortawesome/free-solid-svg-icons";
-
-const NAV_ITEMS = [
-  { id: "overview", icon: faHome,          label: "Dashboard"    },
-  { id: "history",  icon: faHistory,        label: "Past Quizzes" },
-  { id: "uploads",  icon: faCloudUploadAlt, label: "Materials"    },
-  { id: "profile",  icon: faUser,           label: "Profile"      },
-];
 
 export default function FlashcardDecks() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [decks, setDecks] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const handleLogout = async () => { await logout(); navigate("/"); };
-  const handleSidebarNavigate = (id) => {
-    if (id === "history") { navigate("/quiz"); return; }
-    if (id === "profile") { navigate("/profile"); return; }
-    navigate("/dashboard", { state: { tab: id } });
-  };
 
   const loadDecks = useCallback(async () => {
     setLoading(true);
@@ -61,19 +45,9 @@ export default function FlashcardDecks() {
   const totalDue = decks.reduce((sum, d) => sum + (d.due_today || 0), 0);
 
   return (
-    <div className="db-container">
-      <Navbar />
-      <div className="db-wrapper">
-        <Sidebar
-          user={user}
-          navItems={NAV_ITEMS}
-          activeId=""
-          onNavigate={handleSidebarNavigate}
-          onLogout={handleLogout}
-          variant="user"
-        />
-        <main className="db-main">
-          <section className="fc-hero">
+    <AppShell>
+      <main className="db-main">
+          <section className="fc-hero fc-hero--flat">
             <div>
               <h1>Flashcard Decks</h1>
               <p>Build and review decks with a daily due-card loop.</p>
@@ -110,8 +84,7 @@ export default function FlashcardDecks() {
               </article>
             ))}
           </section>
-        </main>
-      </div>
-    </div>
+      </main>
+    </AppShell>
   );
 }

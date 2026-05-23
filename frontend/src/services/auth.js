@@ -1,12 +1,10 @@
 // src/services/auth.js
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_DJANGO_API_URL || process.env.VITE_DJANGO_API_URL;
+const API_URL = import.meta.env.VITE_DJANGO_API_URL;
 
 if (!API_URL) {
-  throw new Error(
-    "Missing API URL: set REACT_APP_DJANGO_API_URL or VITE_DJANGO_API_URL"
-  );
+  throw new Error("Missing VITE_DJANGO_API_URL in environment");
 }
 
 const authApi = axios.create({

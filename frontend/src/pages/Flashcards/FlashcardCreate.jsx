@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/Navbar";
+import AppShell from "../../components/AppShell/AppShell";
 import { useAuth } from "../../context/AuthContext";
 import djangoApi, { getApiErrorMessage } from "../../services/api";
 import "./Flashcards.css";
@@ -152,7 +152,6 @@ export default function FlashcardCreate() {
       console.error("Flashcard generation failed", err);
       const message = getApiErrorMessage(err, "Flashcard generation failed.");
       setCards([]);
-      setError(message);
     } finally {
       setIsGenerating(false);
     }
@@ -179,8 +178,7 @@ export default function FlashcardCreate() {
   };
 
   return (
-    <>
-      <Navbar />
+    <AppShell>
       {isProcessing && (
         <div className="fc-processing-overlay" role="status" aria-live="polite">
           <div className="fc-processing-card">
@@ -190,13 +188,16 @@ export default function FlashcardCreate() {
         </div>
       )}
       <main className="fc-page">
+        <header className="fc-create-header">
+          <div>
+            <h1>Create Flashcards</h1>
+            <p>Turn your notes into a reusable deck.</p>
+          </div>
+          <button className="fc-secondary" onClick={() => navigate("/flashcards")}>Back to Decks</button>
+        </header>
+
         <section className="fc-create-layout">
           <article className="fc-panel fc-create-form">
-            <div className="fc-header-row">
-              <h1>Create Flashcards</h1>
-              <button className="fc-secondary" onClick={() => navigate("/flashcards")}>Back to Decks</button>
-            </div>
-
             <form className="fc-form" onSubmit={generate}>
               <p className="fc-step-label">Step 1: Choose your subject</p>
               <label>Subject / Topic</label>
@@ -335,6 +336,6 @@ export default function FlashcardCreate() {
           </aside>
         </section>
       </main>
-    </>
+    </AppShell>
   );
 }

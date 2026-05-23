@@ -1,25 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';
-import Sidebar from '../../components/sidebar/Sidebar';
+import AppShell from '../../components/AppShell/AppShell';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faHome, faBook, faCloudUploadAlt, faUser, faPlus,
-} from '@fortawesome/free-solid-svg-icons';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { dashboardService } from '../../services/dashboard';
 import '../Dashboards/Dashboard.css';
 
-const NAV_ITEMS = [
-  { id: 'overview', icon: faHome,          label: 'Dashboard'    },
-  { id: 'history',  icon: faBook,        label: 'Quizzes' },
-  { id: 'uploads',  icon: faCloudUploadAlt, label: 'Materials'    },
-  { id: 'profile',  icon: faUser,           label: 'Profile'      },
-];
-
 const QuizHistory = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [quizHistory, setQuizHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,26 +25,9 @@ const QuizHistory = () => {
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
-  const handleLogout = async () => { await logout(); navigate('/'); };
-  const handleNavigate = (id) => {
-    if (id === 'history') return;
-    if (id === 'profile') { navigate('/profile'); return; }
-    navigate('/dashboard', { state: { tab: id } });
-  };
-
   return (
-    <div className="db-container">
-      <Navbar />
-      <div className="db-wrapper">
-        <Sidebar
-          user={user}
-          navItems={NAV_ITEMS}
-          activeId="history"
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-          variant="user"
-        />
-        <main className="db-main">
+    <AppShell>
+      <main className="db-main">
           <div className="db-tab">
             <div className="db-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div>
@@ -91,9 +64,8 @@ const QuizHistory = () => {
               )}
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+      </main>
+    </AppShell>
   );
 };
 

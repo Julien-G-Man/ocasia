@@ -26,7 +26,8 @@ import FlashcardDeck from "./pages/Flashcards/FlashcardDeck";
 import FlashcardStudy from "./pages/Flashcards/FlashcardStudy";
 import Chatbot from "./pages/Chatbot/Chatbot";
 import Profile from "./pages/UserProfile/Profile";
-import Materials from "./pages/Materials/Materials";
+import Materials from "./pages/Materials/CommunityMaterials";
+import MaterialsMine from "./pages/Materials/MyMaterials";
 import MaterialUpload from "./pages/Materials/MaterialUpload";
 import NotFound from "./pages/NotFound/NotFound";
 import Donate from "./pages/Donate/Donate";
@@ -34,7 +35,7 @@ import DonateThankyou from "./pages/Donate/DonateThankyou";
 
 const WAKE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function App() {
   useEffect(() => {
@@ -90,7 +91,9 @@ function App() {
             <Route path="/donate" element={<Donate />} />
             <Route path="/donate/thank-you" element={<DonateThankyou />} />
 
-            <Route path="/materials" element={<Materials />} />
+            <Route path="/materials" element={<Navigate to="/materials/community" replace />} />
+            <Route path="/materials/community" element={<Materials />} />
+            <Route path="/materials/mine" element={<MaterialsMine />} />
             <Route path="/materials/upload" element={<MaterialUpload />} />
 
             <Route path="/ai-tutor" element={<Chatbot />} />

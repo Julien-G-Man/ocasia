@@ -30,14 +30,6 @@ const Navbar = ({ user, brandOnly = false }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHome]);
 
-  useEffect(() => {
-    if (brandOnly) return;
-    document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, brandOnly]);
-
   const closeMenu = () => setIsOpen(false);
 
   const handleHomeClick = (e) => {
@@ -68,21 +60,27 @@ const Navbar = ({ user, brandOnly = false }) => {
               <div className="nav-right-group">
                 <nav className="main-nav">
                   <ul className="nav-links nav-links--desktop">
-                    <li>
-                      <Link to="/" onClick={handleHomeClick}>Home</Link>
-                    </li>
-                    <li><Link to="/ai-tutor">AI Tutor</Link></li>
-                    <li><Link to={isAuthenticated ? "/quiz" : "/quiz/create"}>Quiz</Link></li>
-                    <li><Link to="/flashcards">Flashcards</Link></li>
-                    <li><Link to="/dashboard">Dashboard</Link></li>
                     {isAuthenticated || user ? (
-                      <li className="nav-item-cta">
-                        <button type="button" className="btn btn-nav-secondary" onClick={handleLogout}>Logout</button>
-                      </li>
+                      <>
+                        <li><Link to="/dashboard">Dashboard</Link></li>
+                        <li><Link to="/quiz">Quiz</Link></li>
+                        <li><Link to="/flashcards">Flashcards</Link></li>
+                        <li><Link to="/materials/community">Materials</Link></li>
+                        <li><Link to="/ai-tutor">AI Tutor</Link></li>
+                        <li className="nav-item-cta">
+                          <button type="button" className="btn btn-nav-secondary" onClick={handleLogout}>Logout</button>
+                        </li>
+                      </>
                     ) : (
-                      <li className="nav-item-cta">
-                        <Link to="/auth/login" className="btn btn-nav-secondary">Login</Link>
-                      </li>
+                      <>
+                        <li><Link to="/" onClick={handleHomeClick}>Home</Link></li>
+                        <li><Link to="/ai-tutor">AI Tutor</Link></li>
+                        <li><Link to="/quiz/create">Quiz</Link></li>
+                        <li><Link to="/flashcards">Flashcards</Link></li>
+                        <li className="nav-item-cta">
+                          <Link to="/auth/login" className="btn btn-nav-secondary">Login</Link>
+                        </li>
+                      </>
                     )}
                   </ul>
                 </nav>
@@ -118,21 +116,23 @@ const Navbar = ({ user, brandOnly = false }) => {
           <div className={`nav-overlay ${isOpen ? "open" : ""}`} onClick={closeMenu} aria-hidden="true" />
 
           <ul className={`nav-links nav-links--mobile ${isOpen ? "open" : ""}`}>
-            <li>
-              <Link to="/" onClick={handleHomeClick}>Home</Link>
-            </li>
-            <li><Link to="/ai-tutor" onClick={closeMenu}>AI Tutor</Link></li>
-            <li><Link to={isAuthenticated ? "/quiz" : "/quiz/create"} onClick={closeMenu}>Quiz</Link></li>
-            <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
             {isAuthenticated || user ? (
               <>
                 <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
+                <li><Link to="/quiz" onClick={closeMenu}>Quiz</Link></li>
+                <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
+                <li><Link to="/materials/community" onClick={closeMenu}>Materials</Link></li>
+                <li><Link to="/ai-tutor" onClick={closeMenu}>AI Tutor</Link></li>
                 <li className="nav-item-cta">
                   <button type="button" className="btn btn-nav-secondary" onClick={handleLogout}>Logout</button>
                 </li>
               </>
             ) : (
               <>
+                <li><Link to="/" onClick={handleHomeClick}>Home</Link></li>
+                <li><Link to="/ai-tutor" onClick={closeMenu}>AI Tutor</Link></li>
+                <li><Link to="/quiz/create" onClick={closeMenu}>Quiz</Link></li>
+                <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
                 <li><Link to="/auth/login" onClick={closeMenu}>Login</Link></li>
                 <li className="nav-item-cta">
                   <Link to="/auth/signup" className="btn btn-nav-secondary" onClick={closeMenu}>Sign Up</Link>

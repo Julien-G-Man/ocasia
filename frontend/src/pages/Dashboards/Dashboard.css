@@ -11,7 +11,7 @@
 }
 
 .db-quiz-row:last-child { border-bottom: none; }
-.db-quiz-row:hover      { background: rgba(255,255,255,0.02); }
+.db-quiz-row:hover      { background: rgba(37, 99, 235, 0.04); }
 
 .db-quiz-info     { flex: 1; }
 .db-quiz-info h3  { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
@@ -20,7 +20,7 @@
 .db-quiz-score {
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--primary-color, #FFD600);
+  color: var(--primary-color);
   min-width: 60px;
   text-align: right;
 }
@@ -42,7 +42,7 @@
   padding: 16px 20px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface);
 }
 
 .db-material-info {
@@ -80,10 +80,10 @@
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 214, 0, 0.35);
-  color: var(--primary-color, #FFD600);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  color: var(--primary-color);
   font-weight: 700;
-  background: rgba(255, 214, 0, 0.08);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 @media (max-width: 760px) {

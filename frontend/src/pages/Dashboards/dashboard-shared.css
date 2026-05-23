@@ -34,7 +34,7 @@
 /* ── Layout ─────────────────────────────────────────────────── */
 .db-container {
   min-height: 100vh;
-  background: var(--background-dark);
+  background: var(--background-gray);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -48,10 +48,8 @@
 /* ── Main ────────────────────────────────────────────────────── */
 .db-main {
   padding: 36px 40px;
-  min-height: calc(100vh - var(--navbar-height));
+  min-height: 100vh;
   overflow-y: auto;
-  /* Desktop: offset for fixed sidebar */
-  margin-left: 260px;
 }
 
 /* Tablet: remove sidebar offset */
@@ -90,44 +88,46 @@
 /* ── Stats grid ──────────────────────────────────────────────── */
 .db-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-4xl);
+  /* reduce minimum card width so more cards fit in tighter layouts */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-3xl);
 }
 
 .db-stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-2xl);
-  padding: var(--spacing-xl);
+  /* reduce internal padding to make cards smaller */
+  padding: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   cursor: default;
 }
 
 .db-stat-card:hover {
   transform: translateY(-3px);
-  border-color: var(--primary-color, #FFD600);
-  box-shadow: 0 6px 20px rgba(255, 214, 0, 0.07);
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
 }
 
 .db-stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-xl);
-  background: rgba(255, 214, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: calc(var(--radius-xl) - 2px);
+  background: rgba(37, 99, 235, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color, #FFD600);
-  font-size: 1rem;
+  color: var(--primary-color);
+  font-size: 0.95rem;
   flex-shrink: 0;
 }
 
-.db-stat-body p  { font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 var(--spacing-xs); font-weight: 500; }
-.db-stat-body h3 { font-size: 1.55rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1; }
+.db-stat-body p  { font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 var(--spacing-xs); font-weight: 500; }
+.db-stat-body h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1; }
 
 /* ── Card ────────────────────────────────────────────────────── */
 .db-card {
@@ -177,7 +177,7 @@
 }
 
 .db-table thead {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--background-gray);
 }
 
 .db-table th {
@@ -202,7 +202,7 @@
 }
 
 .db-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--background-gray);
 }
 
 /* User table specific styles */
@@ -267,8 +267,8 @@
 .db-field select:focus,
 .db-field textarea:focus {
   outline: none;
-  border-color: var(--primary-color, #FFD600);
-  box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.09);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -293,12 +293,12 @@
 }
 
 .db-btn-primary {
-  background: var(--primary-color, #FFD600);
-  color: #121212;
+  background: var(--primary-color);
+  color: #ffffff;
 }
 
 .db-btn-primary:hover:not(:disabled) {
-  background: var(--primary-dark, #e6c000);
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
@@ -309,7 +309,7 @@
 }
 
 .db-btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--background-gray);
 }
 
 .db-btn-danger {
@@ -348,8 +348,8 @@
 }
 
 .db-badge-yellow {
-  background: rgba(255, 214, 0, 0.12);
-  color: #FFD600;
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--color-warning);
 }
 
 .db-badge-gray {
@@ -385,7 +385,7 @@
 
 .db-alert-success { background: rgba(34,197,94,0.09);  border: 1px solid rgba(34,197,94,0.2);  color: #22c55e; }
 .db-alert-error   { background: rgba(239,68,68,0.09);   border: 1px solid rgba(239,68,68,0.2);   color: #ef4444; }
-.db-alert-info    { background: rgba(255,214,0,0.07);   border: 1px solid rgba(255,214,0,0.18);  color: var(--primary-color, #FFD600); }
+.db-alert-info    { background: var(--color-info-bg); border: 1px solid rgba(30,58,138,0.2); color: var(--primary-color); }
 
 /* ── Empty state ─────────────────────────────────────────────── */
 .db-empty { text-align: center; padding: 56px 24px; color: var(--text-secondary); }
@@ -416,19 +416,19 @@
 
 .db-action-card:hover {
   transform: translateY(-3px);
-  border-color: var(--primary-color, #FFD600);
-  box-shadow: 0 6px 18px rgba(255, 214, 0, 0.08);
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
 }
 
 .db-action-card .db-action-icon {
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  background: rgba(255, 214, 0, 0.1);
+  background: rgba(37, 99, 235, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color, #FFD600);
+  color: var(--primary-color);
   font-size: 1.1rem;
 }
 
@@ -457,26 +457,26 @@
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   transition: background 0.15s;
 }
 
 .db-activity-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--background-gray);
 }
 
 .db-activity-dot {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: rgba(255, 214, 0, 0.1);
+  background: rgba(37, 99, 235, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color, #FFD600);
-  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-size: 0.85rem;
   flex-shrink: 0;
 }
 
@@ -497,13 +497,45 @@
 }
 
 .db-activity-score {
-  background: rgba(255, 214, 0, 0.12);
-  color: var(--primary-color, #FFD600);
-  padding: 4px 10px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary-color);
+  padding: 3px 10px;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   white-space: nowrap;
+}
+
+/* ── Internal tab nav (replaces sidebar tab switching) ──────── */
+.db-tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--spacing-4xl);
+  padding-bottom: 0;
+}
+
+.db-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.db-tab-btn:hover {
+  background: var(--background-gray);
+  color: var(--text-primary);
+}
+
+.db-tab-btn.active {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -530,9 +562,41 @@
 @media (max-width: 480px) {
   .db-page-header h1 { font-size: 1.35rem; }
   .db-page-header { margin-bottom: var(--spacing-2xl); }
-  .db-stats-grid     { grid-template-columns: 1fr; gap: 10px; }
+  /* On narrow mobile, show stats in a 2x2 square grid and quick actions 2x2 */
+  .db-stats-grid     { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .db-card           { padding: 16px 12px; margin-bottom: var(--spacing-lg); }
-  .db-actions-grid   { grid-template-columns: 1fr; }
+  .db-actions-grid   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .db-card h2        { font-size: 0.95rem; }
+
+  /* Make stat cards wider than tall so they appear flatter, but keep quick actions unchanged */
+  .db-stat-card {
+    aspect-ratio: 3 / 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  /* Keep action cards compact and square-like on mobile */
+  .db-action-card {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 12px;
+    gap: var(--spacing-md);
+  }
+
+  /* Smaller icons and tighter text spacing for stat cards */
+  .db-stat-card .db-stat-icon { width: 30px; height: 30px; margin: 0; }
+  .db-action-card .db-action-icon { width: 46px; height: 46px; margin-bottom: 8px; }
+  .db-stat-card .db-stat-body { display: flex; flex-direction: column; gap: 2px; }
+  .db-stat-card .db-stat-body p { margin: 0; font-size: 0.68rem; }
+  .db-stat-card .db-stat-body h3 { font-size: 0.98rem; }
 }
 

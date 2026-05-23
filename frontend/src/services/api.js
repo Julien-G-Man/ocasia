@@ -1,20 +1,14 @@
 import axios from "axios";
 
-const DJANGO_API_URL =
-  process.env.REACT_APP_DJANGO_API_URL || process.env.VITE_DJANGO_API_URL;
-const FASTAPI_URL =
-  process.env.REACT_APP_FASTAPI_URL || process.env.VITE_FASTAPI_URL;
+const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
+const FASTAPI_URL = import.meta.env.VITE_FASTAPI_URL;
 
 if (!DJANGO_API_URL) {
-  throw new Error(
-    "Missing API URL: set REACT_APP_DJANGO_API_URL (or VITE_DJANGO_API_URL)"
-  );
+  throw new Error("Missing VITE_DJANGO_API_URL in environment");
 }
 
 if (!FASTAPI_URL) {
-  throw new Error(
-    "Missing API URL: set REACT_APP_FASTAPI_URL (or VITE_FASTAPI_URL)"
-  );
+  throw new Error("Missing VITE_FASTAPI_URL in environment");
 }
 
 const DJANGO_ROOT_URL = DJANGO_API_URL.replace(/\/api\/?$/, ""); // strip /api 

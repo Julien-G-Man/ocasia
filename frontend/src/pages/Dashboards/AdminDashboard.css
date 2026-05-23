@@ -49,12 +49,12 @@
   padding: 16px;
   border-radius: 11px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
+  background: var(--surface);
   margin-bottom: 10px;
   transition: background 0.15s;
 }
 
-.db-content-item:hover { background: rgba(255,255,255,0.04); }
+.db-content-item:hover { background: var(--background-gray); }
 .db-content-item h4    { font-weight: 700; color: var(--text-primary); margin: 0 0 4px; font-size: 0.9rem; }
 .db-content-item p     { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
 .db-content-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
@@ -96,7 +96,7 @@
   height: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(15,23,42,0.28) 0%, rgba(15,23,42,0.1) 100%);
+  background: var(--surface);
 }
 
 .usage-chart-scroll {
@@ -225,13 +225,13 @@
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .db-rating-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: #4b5563;
+  background: var(--background-gray);
+  border-color: var(--border);
 }
 
 .db-rating-actor {
