@@ -2,70 +2,120 @@
 
 Source of truth: `frontend/src/App.jsx`.
 
+---
+
 ## Public
 
-- `/` -> Home
-- `/about` -> About
-- `/auth/login` -> Login
-- `/auth/signup` -> Signup
-- `/auth/verify-email` -> VerifyEmail
-- `/auth/forgot-password` -> ForgotPassword  *(to build — see `authentication/PASSWORD_RESET.md`)*
-- `/auth/reset-password` -> ResetPassword  *(to build — see `authentication/PASSWORD_RESET.md`)*
+| Route | Component | Notes |
+|---|---|---|
+| `/` | Home | Landing page |
+| `/auth/login` | Login | |
+| `/auth/signup` | Signup | |
+| `/auth/verify-email` | VerifyEmail | Handles `?uid=&token=` params from email link |
+| `/auth/forgot-password` | ForgotPassword | Request password reset email |
+| `/auth/reset-password` | ResetPassword | Confirm reset via `?uid=&token=` params |
 
-Legacy redirects:
+### Legacy redirects
+| From | To |
+|---|--|
+| `/auth` | `/auth/login` |
+| `/login` | `/auth/login` |
+| `/signup` | `/auth/signup` |
+| `/verify-email` | `/auth/verify-email` |
 
-- `/auth` -> `/auth/login`
-- `/login` -> `/auth/login`
-- `/signup` -> `/auth/signup`
-- `/verify-email` -> `/auth/verify-email`
+---
 
-## App Pages
+## Authenticated App Pages
 
-- `/dashboard` -> Dashboard
-- `/admin-dashboard` -> AdminDashboard
-- `/admin-dashboard/user/:id` -> AdminUserDetails
-- `/admin-dashboard/activity` -> AdminActivity
-- `/profile` -> Profile
+| Route | Component | Notes |
+|---|---|---|
+| `/dashboard` | Dashboard | User stats, quiz history, weak areas |
+| `/profile` | Profile | Edit account info, avatar, password |
+
+---
+
+## Admin (staff/superuser only)
+
+| Route | Component |
+|---|---|
+| `/admin-dashboard` | AdminDashboard |
+| `/admin-dashboard/user/:id` | AdminUserDetails |
+| `/admin-dashboard/activity` | AdminActivity |
+| `/admin-dashboard/ratings` | AdminRatings |
+
+---
 
 ## Quiz
 
-- `/quiz` -> QuizHistory *(authenticated only — redirects to `/auth/login` if not signed in)*
-- `/quiz/create` -> CreateQuiz *(public; guests limited to one quiz via `lamla_guest_quiz_used` localStorage flag; accepts `?subject=` query param to pre-fill subject — used by Dashboard weak areas "Practice" button)*
-- `/quiz/play` -> Quiz
-- `/quiz/results` -> QuizResults
+| Route | Component | Access |
+|---|---|---|
+| `/quiz` | QuizHistory | Authenticated — redirects to `/auth/login` if not signed in |
+| `/quiz/create` | CreateQuiz | Public; guests limited to one quiz via `lamla_guest_quiz_used` localStorage flag. Accepts `?subject=` to pre-fill subject (used by Dashboard weak-areas "Practice" button) |
+| `/quiz/play` | Quiz | Authenticated |
+| `/quiz/results` | QuizResults | Authenticated |
+
+---
 
 ## Flashcards
 
-- `/flashcards` -> FlashcardDecks
-- `/flashcards/create` -> FlashcardCreate
-- `/flashcards/deck/:id` -> FlashcardDeck
-- `/flashcards/study/:id` -> FlashcardStudy
-- `/flashcard` -> redirect `/flashcards`
+| Route | Component |
+|---|---|
+| `/flashcards` | FlashcardDecks |
+| `/flashcards/create` | FlashcardCreate |
+| `/flashcards/deck/:id` | FlashcardDeck |
+| `/flashcards/study/:id` | FlashcardStudy |
 
-## Donations
+Alias: `/flashcard` → redirect `/flashcards`
 
-- `/donate` -> Donate (full-height split layout — image left, form right; open to all)
-- `/donate/thank-you` -> DonateThankyou (verifies payment on load via `?reference=` query param)
+---
 
 ## Materials
 
-- `/materials` -> Materials
-- `/materials/upload` -> MaterialUpload
+| Route | Component | Notes |
+|---|---|---|
+| `/materials` | — | Redirects to `/materials/community` |
+| `/materials/community` | Materials | Community-uploaded materials library |
+| `/materials/mine` | MyMaterials | User's own uploads |
+| `/materials/upload` | MaterialUpload | Upload form |
+
+---
 
 ## AI Tutor
 
-- `/ai-tutor` -> Chatbot
+| Route | Component |
+|---|---|
+| `/ai-tutor` | Chatbot |
 
-Aliases:
+Aliases: `/ai`, `/chat`, `/chatbot` → all redirect to `/ai-tutor`
 
-- `/ai` -> redirect `/ai-tutor`
-- `/chat` -> redirect `/ai-tutor`
-- `/chatbot` -> redirect `/ai-tutor`
+---
+
+## Donations
+
+| Route | Component | Notes |
+|---|---|---|
+| `/donate` | Donate | Full-height split layout — open to all |
+| `/donate/thank-you` | DonateThankyou | Verifies Paystack payment on load via `?reference=` |
+
+---
 
 ## Fallback
 
-- `*` -> NotFound
+| Route | Component |
+|---|---|
+| `*` | NotFound |
 
-## Global Warmup Behavior
+---
 
-`App.jsx` pings Django warmup and FastAPI health on mount and every 10 minutes.
+## Global Warmup Behaviour
+
+`App.jsx` pings the Django warmup endpoint and FastAPI health check on mount and every 10 minutes to prevent cold starts on Render's free tier.
+
+---
+
+## Unrouted Pages (exist, not wired)
+
+| Page | File | Status |
+|---|---|---|
+| About | `pages/About/About.jsx` | Built, not added to App.jsx |
+| LeaderBoard | `pages/LeaderBoard/` | WIP, not started |

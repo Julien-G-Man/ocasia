@@ -9,6 +9,7 @@ from .prompts import (
     SOCRATIC_MODE_INSTRUCTIONS,
     STATIC_PLATFORM_FACTS,
     TUTOR_BEHAVIOR_GUIDE,
+    TUTOR_PERSONA_INTRO,
     TOOL_USE_GUIDANCE,
     wrap_document_context,
 )
@@ -302,10 +303,7 @@ def _build_system_prompt(
     tool_section = TOOL_USE_GUIDANCE if include_tool_guidance else ""
 
     return (
-        "You are Lamla — the AI Tutor on the Lamla AI platform. "
-        "The student chatting with you right now is using the AI Tutor feature directly. "
-        "You are not a bot that knows about the AI Tutor. You are the AI Tutor. "
-        "Always speak in first person about your own capabilities and awareness.\n\n"
+        f"{TUTOR_PERSONA_INTRO}\n\n"
         f"{STATIC_PLATFORM_FACTS}\n"
         f"{user_line}"
         f"{perf_section}"
@@ -333,11 +331,14 @@ async def _build_chatbot_prompt(
     if user:
         user_performance = await sync_to_async(_fetch_user_performance_sync, thread_sensitive=True)(user)
 
+    # Never embed the document inside the system block — it gets "lost in the middle"
+    # of a long prompt and LLMs stop attending to it. Instead we inject it right
+    # before the question so it sits at the end of the context where attention is highest.
     system_prompt = _build_system_prompt(
         platform_context=platform_context,
         user=user,
         user_performance=user_performance,
-        context_document=context_document,
+        context_document="",          # document injected below, not here
         tutor_mode=tutor_mode,
         include_tool_guidance=False,
     )
@@ -348,9 +349,13 @@ async def _build_chatbot_prompt(
             role = "User" if msg["message_type"] == "user" else "AI"
             history_text += f"{role}: {msg['content']}\n"
 
+    # Place document immediately before the question for maximum LLM attention
+    doc_block = wrap_document_context(context_document) if context_document else ""
+
     return (
         f"{system_prompt}\n\n"
         f"Previous Conversation:\n{history_text}\n"
+        f"{doc_block}"
         f"Student Question: {user_message}\n\n"
         f"AI Tutor Response:"
     )

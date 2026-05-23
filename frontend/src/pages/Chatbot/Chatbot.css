@@ -655,6 +655,80 @@
 .file-clear-btn:hover { color: #c82333; }
 .file-clear-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── File size error ──────────────────────────────────────────── */
+
+.file-size-error {
+    margin: 0 20px 4px;
+    padding: 8px 14px;
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 8px;
+    color: var(--color-danger);
+    font-size: 0.825rem;
+    flex-shrink: 0;
+}
+
+/* ── Auth gate banner ─────────────────────────────────────────── */
+
+.auth-gate-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 16px 6px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 10px;
+    flex-shrink: 0;
+    animation: bubbleIn 0.2s ease-out both;
+}
+
+.auth-gate-text {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 0;
+}
+
+.auth-gate-text strong {
+    color: var(--text-primary);
+}
+
+.auth-gate-cta {
+    padding: 5px 14px;
+    background: var(--primary-color);
+    color: #ffffff;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.auth-gate-cta:hover {
+    background: var(--primary-dark);
+}
+
+.auth-gate-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.auth-gate-close:hover {
+    color: var(--text-primary);
+}
+
 /* ── Input area ───────────────────────────────────────────────── */
 
 .chat-input-area {

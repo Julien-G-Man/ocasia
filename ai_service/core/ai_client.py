@@ -1,15 +1,16 @@
 import json
 import logging
-from typing import List, Optional, Union
 import httpx
+import openai
 import anthropic
+from typing import List, Optional, Union
 from core.config import settings
 from core.utils import _coerce_text, _extract_json_substring
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TIMEOUT = 10
-DEFAULT_PROVIDER_ORDER = ["nvidia_deepseek", "nvidia_openai", "claude"]
+DEFAULT_TIMEOUT = 30  # seconds — large-document prompts can take 15-25s to process
+DEFAULT_PROVIDER_ORDER = ["openai", "nvidia_deepseek", "nvidia_openai", "claude"]
 
 
 class APIIntegrationError(Exception):
@@ -39,6 +40,29 @@ class AIClient:
         self._refresh_keys()
         logger.info("AIClient initialized with providers: %s", self.providers)
 
+    # Marker injected by wrap_document_context() in Django's prompts.py
+    _DOC_MARKER = "STUDY MATERIAL — ANALYSE ONLY"
+
+    def _system_msg(self, prompt: str) -> str:
+        """
+        Return an appropriate system message based on whether the prompt
+        contains embedded study material (uploaded file context).
+
+        When a document is present the system message must explicitly tell the
+        model the content is inline — otherwise models trained to say "I can't
+        access uploaded files" will refuse to use it.
+        """
+        if self._DOC_MARKER in prompt:
+            return (
+                "You are a helpful educational assistant. "
+                "The user's message contains uploaded study material embedded between "
+                "'====' separator lines. Read that material carefully and use it as "
+                "your primary reference to answer the student's question at the end. "
+                "Never say you cannot access files — the document content is right "
+                "here in the message. Quote or paraphrase it directly in your response."
+            )
+        return "You are a helpful educational assistant. Provide accurate, structured responses."
+
     def _refresh_keys(self):
         # --- NVIDIA DeepSeek (OpenAI-compatible chat completions) ---
         self.nvidia_deepseek_key = settings.NVIDIA_DEEPSEEK_API_KEY
@@ -58,6 +82,14 @@ class AIClient:
         self.nvidia_openai_key = settings.NVIDIA_OPENAI_API_KEY
         self.nvidia_openai_url = settings.NVIDIA_OPENAI_API_URL
         self.nvidia_openai_model = settings.NVIDIA_OPENAI_MODEL
+
+        # --- OpenAI ---
+        self.openai_key = settings.OPENAI_API_KEY
+        self.openai_model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
+        self._openai_client: Optional[openai.AsyncOpenAI] = (
+            openai.AsyncOpenAI(api_key=self.openai_key)
+            if self.openai_key else None
+        )
 
         # --- Azure OpenAI ---
         self.azure_key = settings.AZURE_OPENAI_API_KEY
@@ -101,6 +133,9 @@ class AIClient:
                 elif provider == "nvidia_openai" and self.nvidia_openai_key:
                     raw = await self._call_nvidia_openai(client, prompt, max_tokens, timeout)
 
+                elif provider == "openai" and self.openai_key:
+                    raw = await self._call_openai(client, prompt, max_tokens, timeout)
+
                 elif provider == "azure" and self.azure_key and (self.azure_endpoint or self.azure_deployment):
                     raw = await self._call_azure_openai(client, prompt, max_tokens, timeout)
                     if isinstance(raw, str) and "[Safety Block]" in raw:
@@ -140,7 +175,7 @@ class AIClient:
                 try:
                     parsed = json.loads(text)
                     # Extract content from OpenAI-style choices wrapper (Azure, NVIDIA OpenAI, DeepSeek)
-                    if provider in ("azure", "nvidia_openai", "deepseek", "nvidia_deepseek") and isinstance(parsed, dict):
+                    if provider in ("azure", "nvidia_openai", "deepseek", "nvidia_deepseek", "openai") and isinstance(parsed, dict):
                         if "choices" in parsed:
                             content = _coerce_text(parsed["choices"][0].get("message", {}).get("content"))
                             if content:
@@ -202,7 +237,14 @@ class AIClient:
             except Exception as exc:
                 logger.warning("[mcp:ai_client] Claude tool use failed: %s — trying next", exc)
 
-        # 2. Try NVIDIA OpenAI-compatible tool use
+        # 2. Try OpenAI native tool use
+        if self.openai_key and self._openai_client:
+            try:
+                return await self._openai_with_tools(messages, tools, max_tokens, system, timeout)
+            except Exception as exc:
+                logger.warning("[mcp:ai_client] OpenAI tool use failed: %s — trying NVIDIA", exc)
+
+        # 3. Try NVIDIA OpenAI-compatible tool use
         if self.nvidia_openai_key:
             try:
                 return await self._openai_compat_with_tools(
@@ -212,7 +254,7 @@ class AIClient:
             except Exception as exc:
                 logger.warning("[mcp:ai_client] NVIDIA OpenAI tool use failed: %s — trying Azure", exc)
 
-        # 3. Try Azure OpenAI tool use
+        # 4. Try Azure OpenAI tool use
         if self.azure_key and self.azure_endpoint:
             try:
                 return await self._openai_compat_with_tools(
@@ -222,7 +264,7 @@ class AIClient:
             except Exception as exc:
                 logger.warning("[mcp:ai_client] Azure tool use failed: %s — text-mode fallback", exc)
 
-        # 4. Last resort: text-mode fallback
+        # 5. Last resort: text-mode fallback
         logger.info("[mcp:ai_client] using text-mode tool fallback")
         return await self._text_mode_tool_fallback(messages, tools, max_tokens, system, timeout)
 
@@ -384,6 +426,90 @@ class AIClient:
     #  Provider implementations                                            #
     # ------------------------------------------------------------------ #
 
+    async def _call_openai(self, client: httpx.AsyncClient, prompt: str, max_tokens: int, timeout: int = DEFAULT_TIMEOUT) -> str:
+        """Call OpenAI via the official openai SDK (AsyncOpenAI)."""
+        if self._openai_client is None:
+            raise APIIntegrationError("OpenAI API key not configured (OPENAI_API_KEY)")
+
+        try:
+            resp = await self._openai_client.chat.completions.create(
+                model=self.openai_model,
+                messages=[
+                    {"role": "system", "content": self._system_msg(prompt)},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
+        except openai.AuthenticationError as e:
+            raise APIIntegrationError(f"OpenAI authentication failed: {e}") from e
+        except openai.RateLimitError as e:
+            raise APIIntegrationError(f"OpenAI rate limit exceeded: {e}") from e
+        except openai.APIStatusError as e:
+            raise APIIntegrationError(f"OpenAI API error ({e.status_code}): {e.message}") from e
+
+        text = (resp.choices[0].message.content or "").strip()
+        if not text:
+            raise APIIntegrationError(f"OpenAI returned empty content. Finish reason: {resp.choices[0].finish_reason}")
+
+        logger.debug("OpenAI response snippet: %s...", text[:120])
+        return text
+
+    async def _openai_with_tools(
+        self, messages: list[dict], tools: list[dict],
+        max_tokens: int, system: str, timeout: int,
+    ) -> dict:
+        """OpenAI native tool use via the official openai SDK."""
+        openai_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t.get("description", ""),
+                    "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+                },
+            }
+            for t in tools
+        ]
+
+        all_messages = ([{"role": "system", "content": system}] if system else []) + list(messages)
+
+        try:
+            resp = await self._openai_client.chat.completions.create(
+                model=self.openai_model,
+                messages=all_messages,
+                tools=openai_tools,
+                tool_choice="auto",
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
+        except openai.AuthenticationError as e:
+            raise APIIntegrationError(f"OpenAI authentication failed: {e}") from e
+        except openai.RateLimitError as e:
+            raise APIIntegrationError(f"OpenAI rate limit exceeded: {e}") from e
+        except openai.APIStatusError as e:
+            raise APIIntegrationError(f"OpenAI API error ({e.status_code}): {e.message}") from e
+
+        choice = resp.choices[0]
+        msg = choice.message
+        tool_calls = []
+        if choice.finish_reason == "tool_calls":
+            for tc in (msg.tool_calls or []):
+                try:
+                    args = json.loads(tc.function.arguments) if tc.function.arguments else {}
+                except Exception:
+                    args = {}
+                tool_calls.append({"id": tc.id, "name": tc.function.name, "input": args})
+
+        stop_reason = "tool_use" if tool_calls else "end_turn"
+        logger.debug("[mcp:ai_client] openai stop_reason=%s calls=%d", stop_reason, len(tool_calls))
+        return {
+            "stop_reason": stop_reason,
+            "tool_calls": tool_calls,
+            "text": msg.content or None,
+            "raw_content": [msg],
+        }
+
     async def _call_claude(self, client: httpx.AsyncClient, prompt: str, max_tokens: int, timeout: int = DEFAULT_TIMEOUT) -> str:
         """
         Call Anthropic Claude using the official anthropic SDK.
@@ -396,7 +522,7 @@ class AIClient:
             message = await self._anthropic_client.messages.create(
                 model=self.claude_model,
                 max_tokens=max_tokens,
-                system="You are a helpful educational assistant. Provide accurate, structured responses.",
+                system=self._system_msg(prompt),
                 messages=[{"role": "user", "content": prompt}],
                 timeout=timeout,
             )
@@ -435,7 +561,7 @@ class AIClient:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a helpful educational assistant. Provide accurate, structured responses.",
+                    "content": self._system_msg(prompt),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -476,7 +602,7 @@ class AIClient:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a helpful educational assistant. Provide accurate, helpful responses to student questions.",
+                    "content": self._system_msg(prompt),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -539,7 +665,7 @@ class AIClient:
         headers = {"Content-Type": "application/json", "api-key": self.azure_key}
         payload = {
             "messages": [
-                {"role": "system", "content": "You are a helpful educational assistant."},
+                {"role": "system", "content": self._system_msg(prompt)},
                 {"role": "user", "content": prompt},
             ],
             "max_tokens": max_tokens,

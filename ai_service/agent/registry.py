@@ -15,11 +15,11 @@ ToolDefinition with a strict input_schema, register it here.
 import logging
 from typing import Callable
 
-from mcp_server.schemas import ToolDefinition
-from mcp_server.tools.youtube import extract_youtube_transcript
-from mcp_server.tools.evaluate import evaluate_answer
-from mcp_server.tools.summarize import summarize_text
-from mcp_server.tools.search import search_web
+from agent.schemas import ToolDefinition
+from agent.tools.youtube import extract_youtube_transcript
+from agent.tools.evaluate import evaluate_answer
+from agent.tools.summarize import summarize_text
+from agent.tools.search import search_web
 
 logger = logging.getLogger(__name__)
 

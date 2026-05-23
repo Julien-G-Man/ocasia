@@ -250,6 +250,10 @@ async def chatbot_file_api_async(request):
 
         # 2. Session & History
         user, session_obj = await _get_or_create_session(request, session_id=session_id)
+        if session_obj is None:
+            # Auth token absent or invalid — reject before wasting AI compute
+            logger.warning("File upload rejected: unauthenticated request (no valid token)")
+            return JsonResponse({"error": "Authentication required for file uploads."}, status=401)
         logger.debug("Authenticated session in use: %s", getattr(session_obj, "id", None))
         
         # 3. Save user message with file reference
@@ -270,7 +274,7 @@ async def chatbot_file_api_async(request):
             fastapi_resp = await call_fastapi(
                 "POST",
                 "/chatbot/",
-                json={"prompt": full_prompt, "max_tokens": 1000}, # Higher tokens for file analysis
+                json={"prompt": full_prompt, "max_tokens": 2000},  # document analysis needs more output tokens
                 headers=headers,
                 timeout=120.0, # Files take longer to process
             )
@@ -324,7 +328,7 @@ async def chatbot_file_api_async(request):
 
         return JsonResponse({
             "response": cleaned_response,
-            "session_id": session_obj.session_id,
+            "session_id": getattr(session_obj, "session_id", session_id),
             "filename": file.name
         })
 

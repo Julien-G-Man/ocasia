@@ -11,8 +11,8 @@ import inspect
 import logging
 import time
 
-from mcp_server.schemas import ToolCall, ToolResult
-from mcp_server.registry import get_handler, get_timeout
+from agent.schemas import ToolCall, ToolResult
+from agent.registry import get_handler, get_timeout
 
 logger = logging.getLogger(__name__)
 

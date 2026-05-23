@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.chatbot.routes import chatbot_router
 from services.quiz.routes import quiz_router
 from services.flashcards.routes import flashcards_router
-from mcp_server.router import mcp_router
+from agent.router import mcp_router
 from core.middleware import InternalAuthMiddleware
 from core.config import settings
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from '../../components/Navbar';
 import './Chatbot.css';
@@ -40,12 +41,19 @@ const formatFileSize = (size) => {
     return `${(size / 1024 / 1024).toFixed(2)} MB`;
 };
 
-const getWelcomeMessage = () => ({
-    id: messageIdCounter++,
-    text: "👋 Hello! I'm your AI Tutor and personal study assistant. Ask me anything about your materials, or pick a prompt below to get started.",
-    type: 'ai',
-    sender: 'AI Tutor',
-});
+const getWelcomeMessage = (user = null) => {
+    const name = user?.first_name || user?.username || null;
+    const greeting = name ? `Hello, ${name}!` : 'Hello!';
+    return {
+        id: messageIdCounter++,
+        text: `👋 ${greeting} I'm your AI Tutor and personal study assistant. Ask me anything about your materials, or pick a prompt below to get started.`,
+        type: 'ai',
+        sender: 'AI Tutor',
+    };
+};
+
+const freshSessionId = () =>
+    `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 const toUiMessage = (msg) => ({
     id: msg.id || messageIdCounter++,
@@ -63,11 +71,13 @@ const Chatbot = ({ user: userProp }) => {
     const [attachedFile, setAttachedFile]       = useState(null);
     const [currentSearchMode, setCurrentSearchMode] = useState('disabled');
     const [isProcessing, setIsProcessing]       = useState(false);
-    const [history, setHistory]                 = useState([getWelcomeMessage()]);
+    const [history, setHistory]                 = useState(() => [getWelcomeMessage(user)]);
     const [copiedId, setCopiedId]               = useState(null);
+    const [authPrompt, setAuthPrompt]           = useState(null); // 'file' | 'search' | null
+    const [fileSizeError, setFileSizeError]     = useState(null);
 
-    // Session state
-    const [currentSessionId, setCurrentSessionId]   = useState(null);
+    // Session state — start with a fresh session on every page load
+    const [currentSessionId, setCurrentSessionId]   = useState(freshSessionId);
     const [chatSessions, setChatSessions]           = useState([]);
     const [isSidebarOpen, setIsSidebarOpen]         = useState(
         typeof window !== 'undefined' && window.innerWidth > 768
@@ -80,6 +90,7 @@ const Chatbot = ({ user: userProp }) => {
     const scrollToBottomButtonRef  = useRef(null);
     const showScrollToBottomRef    = useRef(false);
     const visibilityRafRef         = useRef(null);
+    const didPersonalizeRef        = useRef(false);
 
     // ── Scroll helpers ─────────────────────────────────────────────
     const scrollToBottom = () => {
@@ -133,13 +144,8 @@ const Chatbot = ({ user: userProp }) => {
             setIsLoadingHistory(true);
             const response = await djangoApi.get('/chatbot/history/');
             if (response.data?.history) {
+                // Populate the sidebar — but always land on a fresh chat, not the last session
                 setChatSessions(response.data.history);
-                if (response.data.history.length > 0) {
-                    const first = response.data.history[0];
-                    const id = first.session_id || first.id;
-                    setCurrentSessionId(id);
-                    await loadSessionMessages(id);
-                }
             }
         } catch (err) {
             console.error('Failed to fetch chat history:', err);
@@ -153,7 +159,7 @@ const Chatbot = ({ user: userProp }) => {
             setHistory([{ id: messageIdCounter++, text: 'Loading past messages…', type: 'ai', sender: 'AI Tutor' }]);
             const res = await djangoApi.get('/chat/history/', { params: { session_id: sessionId } });
             const messages = Array.isArray(res?.data?.messages) ? res.data.messages : [];
-            setHistory(messages.length === 0 ? [getWelcomeMessage()] : messages.map(toUiMessage));
+            setHistory(messages.length === 0 ? [getWelcomeMessage(user)] : messages.map(toUiMessage));
         } catch (err) {
             console.error('Failed to load session:', err);
             setHistory([{ id: messageIdCounter++, text: '[Error: Failed to load conversation.]', type: 'ai', sender: 'AI Tutor' }]);
@@ -161,11 +167,11 @@ const Chatbot = ({ user: userProp }) => {
     };
 
     const handleNewChat = () => {
-        const newId = 'chat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        setCurrentSessionId(newId);
-        setHistory([getWelcomeMessage()]);
+        setCurrentSessionId(freshSessionId());
+        setHistory([getWelcomeMessage(user)]);
         setMessageInput('');
         clearAttachment();
+        setAuthPrompt(null);
     };
 
     const handleSwitchSession = async (sessionId) => {
@@ -184,8 +190,8 @@ const Chatbot = ({ user: userProp }) => {
                         setCurrentSessionId(nextId);
                         loadSessionMessages(nextId);
                     } else {
-                        setCurrentSessionId(null);
-                        setHistory([getWelcomeMessage()]);
+                        setCurrentSessionId(freshSessionId());
+                        setHistory([getWelcomeMessage(user)]);
                     }
                 }
                 return remaining;
@@ -237,9 +243,23 @@ const Chatbot = ({ user: userProp }) => {
                 form.append('message', text);
                 form.append('search_mode', currentSearchMode);
                 form.append('session_id', currentSessionId);
-                const res = await djangoApi.post('chat/file/', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-                const aiText = res.data?.response || '[Error: Empty response from file API]';
-                if (res.data?.session_id && res.data.session_id !== currentSessionId) setCurrentSessionId(res.data.session_id);
+                // Use fetch so the browser sets Content-Type: multipart/form-data; boundary=... automatically.
+                // axios's instance-level Content-Type: application/json default overrides FormData detection.
+                const token = localStorage.getItem('auth_token');
+                const baseUrl = djangoApi.defaults.baseURL.replace(/\/+$/, '');
+                const fileRes = await fetch(`${baseUrl}/chat/file/`, {
+                    method: 'POST',
+                    headers: token ? { Authorization: `Token ${token}` } : {},
+                    credentials: 'include',
+                    body: form,
+                });
+                if (!fileRes.ok) {
+                    const errData = await fileRes.json().catch(() => ({}));
+                    throw new Error(errData.error || `Upload failed (${fileRes.status})`);
+                }
+                const data = await fileRes.json();
+                const aiText = data.response || '[Error: Empty response from file API]';
+                if (data.session_id && data.session_id !== currentSessionId) setCurrentSessionId(data.session_id);
                 setHistory(prev => prev.map(m => m.id === placeholderId ? { ...m, text: aiText, isThinking: false } : m));
             } else {
                 const baseUrl = djangoApi.defaults.baseURL.replace(/\/+$/, '');
@@ -321,6 +341,24 @@ const Chatbot = ({ user: userProp }) => {
 
     useEffect(() => () => { if (visibilityRafRef.current) window.cancelAnimationFrame(visibilityRafRef.current); }, []);
     useEffect(() => { fetchChatHistory(); }, [fetchChatHistory]);
+
+    // Re-personalize welcome message once auth resolves (user may be null on first render)
+    useEffect(() => {
+        if (!user || didPersonalizeRef.current) return;
+        didPersonalizeRef.current = true;
+        setHistory(prev => {
+            // Only update if still on the untouched welcome screen
+            if (prev.length === 1 && prev[0].type === 'ai' && !prev[0].isThinking) {
+                return [getWelcomeMessage(user)];
+            }
+            return prev;
+        });
+    }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (!authPrompt) return;
+        const t = setTimeout(() => setAuthPrompt(null), 5000);
+        return () => clearTimeout(t);
+    }, [authPrompt]);
 
     // ── Computed ───────────────────────────────────────────────────
     const isSearchActive   = currentSearchMode !== 'disabled';
@@ -497,6 +535,22 @@ const Chatbot = ({ user: userProp }) => {
                         </div>
                     )}
 
+                    {/* ── File size error ── */}
+                    {fileSizeError && (
+                        <div className="file-size-error">⚠ {fileSizeError}</div>
+                    )}
+
+                    {/* ── Auth gate ── */}
+                    {authPrompt && (
+                        <div className="auth-gate-banner">
+                            <span className="auth-gate-text">
+                                🔒 <strong>{authPrompt === 'file' ? 'File uploads' : 'Web & Deep search'}</strong> require a free account
+                            </span>
+                            <Link to="/auth/signup" className="auth-gate-cta">Sign Up Free</Link>
+                            <button className="auth-gate-close" onClick={() => setAuthPrompt(null)} aria-label="Dismiss">✕</button>
+                        </div>
+                    )}
+
                     {/* ── Input area ── */}
                     <div className="chat-input-area">
                         <div className="chat-input-card">
@@ -517,24 +571,32 @@ const Chatbot = ({ user: userProp }) => {
                             />
                             <div className="chat-input-toolbar">
                                 <div className="chat-input-tools-left">
-                                    <label htmlFor="file-input" className="tool-btn" title="Attach file (PDF, DOCX, PPTX, TXT)">
+                                    <label
+                                        htmlFor={isAuthenticated ? "file-input" : undefined}
+                                        className="tool-btn"
+                                        title={isAuthenticated ? "Attach file (PDF, DOCX, PPTX, TXT)" : "Sign up to attach files"}
+                                        onClick={!isAuthenticated ? () => setAuthPrompt('file') : undefined}
+                                    >
                                         <FontAwesomeIcon icon={faFolder} />
-                                        <input
-                                            type="file"
-                                            id="file-input"
-                                            accept=".pdf,.docx,.pptx,.txt"
-                                            onChange={(e) => {
-                                                const file = e.target.files[0];
-                                                if (!file) { clearAttachment(); return; }
-                                                if (file.size > 10 * 1024 * 1024) {
-                                                    alert(`${file.name} is too large. Max 10 MB.`);
-                                                    e.target.value = '';
-                                                    return;
-                                                }
-                                                setAttachedFile(file);
-                                            }}
-                                            disabled={isProcessing}
-                                        />
+                                        {isAuthenticated && (
+                                            <input
+                                                type="file"
+                                                id="file-input"
+                                                accept=".pdf,.docx,.pptx,.txt"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (!file) { clearAttachment(); return; }
+                                                    if (file.size > 10 * 1024 * 1024) {
+                                                        setFileSizeError(`${file.name} exceeds the 10 MB limit.`);
+                                                        setTimeout(() => setFileSizeError(null), 4000);
+                                                        e.target.value = '';
+                                                        return;
+                                                    }
+                                                    setAttachedFile(file);
+                                                }}
+                                                disabled={isProcessing}
+                                            />
+                                        )}
                                     </label>
                                     <div className="search-mode-pills">
                                         {SEARCH_MODES.map(({ value, label }) => (
@@ -542,7 +604,13 @@ const Chatbot = ({ user: userProp }) => {
                                                 key={value}
                                                 type="button"
                                                 className={`search-pill${currentSearchMode === value ? ' active' : ''}`}
-                                                onClick={() => setCurrentSearchMode(value)}
+                                                onClick={() => {
+                                                    if (!isAuthenticated && value !== 'disabled') {
+                                                        setAuthPrompt('search');
+                                                        return;
+                                                    }
+                                                    setCurrentSearchMode(value);
+                                                }}
                                                 disabled={isProcessing}
                                             >
                                                 {label}

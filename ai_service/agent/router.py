@@ -2,9 +2,9 @@ import json
 import logging
 
 from fastapi import APIRouter, HTTPException
-from mcp_server.registry import get_definitions
-from mcp_server.executor import execute_tool
-from mcp_server.schemas import (
+from agent.registry import get_definitions
+from agent.executor import execute_tool
+from agent.schemas import (
     OrchestratorRequest, OrchestratorResponse, ToolCall, ToolResult,
 )
 from core.ai_client import ai_service
