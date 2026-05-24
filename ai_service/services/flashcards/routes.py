@@ -3,7 +3,7 @@ import re
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException
-from core.ai_client import ai_service, APIIntegrationError
+from core.ai_client import ai_client, APIIntegrationError
 from core.http import get_async_client
 from core.config import settings
 from .prompts import DIFFICULTY_PROMPTS, FORMATTING_GUIDELINES
@@ -113,7 +113,7 @@ Return ONLY valid JSON in this format:
         )
 
     try:
-        result = await ai_service.generate_content(client=client, prompt=prompt, max_tokens=1200, timeout=30)
+        result = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=1200, timeout=30)
 
         cards = _normalize_cards(result)
         if cards:
@@ -172,7 +172,7 @@ like a tutor helping a beginner.
         )
 
     try:
-        result = await ai_service.generate_content(client=client, prompt=prompt, max_tokens=200, timeout=30)
+        result = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=200, timeout=30)
 
         if isinstance(result, str) and result.strip():
             return {

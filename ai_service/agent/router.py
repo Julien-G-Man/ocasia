@@ -7,7 +7,7 @@ from agent.executor import execute_tool
 from agent.schemas import (
     OrchestratorRequest, OrchestratorResponse, ToolCall, ToolResult,
 )
-from core.ai_client import ai_service
+from core.ai_client import ai_client
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ async def orchestrate(request: OrchestratorRequest):
     while iterations < request.max_iterations:
         iterations += 1
         try:
-            result = await ai_service.generate_with_tools(
+            result = await ai_client.generate_with_tools(
                 messages=messages, tools=anthropic_tools,
                 max_tokens=request.max_tokens, system=system, timeout=60,
             )

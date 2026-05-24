@@ -6,7 +6,7 @@ and the student's answer, returns a score (0.0-1.0), a boolean, and
 brief reasoning.
 
 Extracted from apps/quiz/async_views._evaluate_short_answer and ported
-to call ai_service directly (no HTTP round-trip).
+to call ai_client directly (no HTTP round-trip).
 """
 
 import json
@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from core.ai_client import ai_service
+from core.ai_client import ai_client
 from core.http import get_async_client
 
 
@@ -54,7 +54,7 @@ Return ONLY valid JSON — no markdown, no code blocks:
 
     try:
         client = await get_async_client()
-        raw = await ai_service.generate_content(client=client, prompt=prompt, max_tokens=150, timeout=20)
+        raw = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=150, timeout=20)
 
         text = raw if isinstance(raw, str) else json.dumps(raw)
         # Strip markdown fences if present

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Inline handlers for quiz / flashcard generation.
-# These import from services/ and call ai_service directly, avoiding an
+# These import from services/ and call ai_client directly, avoiding an
 # HTTP round-trip from FastAPI back to itself.
 # ---------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ async def _generate_quiz_handler(
     from services.quiz.routes import _normalize_study_text, _parse_json_safe
     from services.quiz.prompts import _build_quiz_prompt
     from services.quiz.schemas import QuizRequest
-    from core.ai_client import ai_service
+    from core.ai_client import ai_client
     from core.http import get_async_client
 
     num_mcq = max(1, min(int(num_mcq), 20))
@@ -58,7 +58,7 @@ async def _generate_quiz_handler(
     estimated_tokens = max(2048, min(8192, num_mcq * 120 + num_short * 80 + 512))
 
     client = await get_async_client()
-    raw = await ai_service.generate_content(client=client, prompt=prompt, max_tokens=estimated_tokens, timeout=60)
+    raw = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=estimated_tokens, timeout=60)
 
     text = raw if isinstance(raw, str) else str(raw)
     data = _parse_json_safe(text)
@@ -82,7 +82,7 @@ async def _generate_flashcards_handler(
 ) -> dict:
     from services.flashcards.routes import _normalize_cards
     from services.flashcards.prompts import DIFFICULTY_PROMPTS
-    from core.ai_client import ai_service
+    from core.ai_client import ai_client
     from core.http import get_async_client
 
     num_cards = max(1, min(int(num_cards), 30))
@@ -99,7 +99,7 @@ async def _generate_flashcards_handler(
     )
 
     client = await get_async_client()
-    raw = await ai_service.generate_content(client=client, prompt=full_prompt, max_tokens=1200, timeout=30)
+    raw = await ai_client.generate_content(client=client, prompt=full_prompt, max_tokens=1200, timeout=30)
     cards = _normalize_cards(raw)
     if not cards:
         raise ValueError("AI returned an unreadable flashcard format.")
@@ -107,7 +107,7 @@ async def _generate_flashcards_handler(
 
 
 async def _explain_concept_handler(question: str, answer: str) -> dict:
-    from core.ai_client import ai_service
+    from core.ai_client import ai_client
     from core.http import get_async_client
 
     full_prompt = (
@@ -117,7 +117,7 @@ async def _explain_concept_handler(question: str, answer: str) -> dict:
         f"Explain this concept clearly in 3 short sentences like a tutor helping a beginner."
     )
     client = await get_async_client()
-    raw = await ai_service.generate_content(client=client, prompt=full_prompt, max_tokens=250, timeout=20)
+    raw = await ai_client.generate_content(client=client, prompt=full_prompt, max_tokens=250, timeout=20)
     explanation = raw.strip() if isinstance(raw, str) else str(raw).strip()
     return {"explanation": explanation}
 

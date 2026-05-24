@@ -719,4 +719,4 @@ class AIClient:
 # ------------------------------------------------------------------ #
 #  Global singleton                                                    #
 # ------------------------------------------------------------------ #
-ai_service = AIClient(provider_priority=settings.provider_list or DEFAULT_PROVIDER_ORDER)
+ai_client = AIClient(provider_priority=settings.provider_list or DEFAULT_PROVIDER_ORDER)

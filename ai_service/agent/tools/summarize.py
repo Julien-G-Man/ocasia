@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from core.ai_client import ai_service
+from core.ai_client import ai_client
 from core.http import get_async_client
 
 
@@ -49,7 +49,7 @@ TEXT:
         client = await get_async_client()
         # max_tokens: ~1.5 tokens per word, rounded up with headroom
         max_tokens = min(2048, max(256, int(max_words * 2)))
-        raw = await ai_service.generate_content(client=client, prompt=prompt, max_tokens=max_tokens, timeout=30)
+        raw = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=max_tokens, timeout=30)
 
         summary = raw.strip() if isinstance(raw, str) else str(raw).strip()
         logger.debug("[mcp:summarize] done words=%d", len(summary.split()))
