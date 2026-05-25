@@ -77,6 +77,7 @@ const Navbar = ({ user, brandOnly = false }) => {
                         <li><Link to="/ai-tutor">AI Tutor</Link></li>
                         <li><Link to="/quiz/create">Quiz</Link></li>
                         <li><Link to="/flashcards">Flashcards</Link></li>
+                        <li><Link to="/materials/community">Materials</Link></li>
                         <li className="nav-item-cta">
                           <Link to="/auth/login" className="btn btn-nav-secondary">Login</Link>
                         </li>
@@ -133,6 +134,7 @@ const Navbar = ({ user, brandOnly = false }) => {
                 <li><Link to="/ai-tutor" onClick={closeMenu}>AI Tutor</Link></li>
                 <li><Link to="/quiz/create" onClick={closeMenu}>Quiz</Link></li>
                 <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
+                <li><Link to="/materials/community" onClick={closeMenu}>Materials</Link></li>
                 <li><Link to="/auth/login" onClick={closeMenu}>Login</Link></li>
                 <li className="nav-item-cta">
                   <Link to="/auth/signup" className="btn btn-nav-secondary" onClick={closeMenu}>Sign Up</Link>

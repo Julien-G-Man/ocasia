@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy Django project
 COPY manage.py .
-COPY lamla/ lamla/
+COPY config/ config/
 COPY apps/ apps/
 COPY .env .env
 

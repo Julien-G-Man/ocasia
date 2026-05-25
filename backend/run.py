@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Set Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lamla.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 
 def main():
@@ -75,7 +75,7 @@ def main():
     
     # Run uvicorn
     uvicorn.run(
-        'lamla.asgi:application',
+        'config.asgi:application',
         host=args.host,
         port=args.port,
         reload=reload,

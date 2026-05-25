@@ -90,7 +90,7 @@ MIDDLEWARE = [
     'apps.dashboard.middleware.AnonymousUsageTrackingMiddleware',
 ]
 
-ROOT_URLCONF = 'lamla.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -107,7 +107,7 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "lamla.asgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 
 # Database Configuration
