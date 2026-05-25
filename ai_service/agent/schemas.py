@@ -51,3 +51,16 @@ class OrchestratorResponse(BaseModel):
     tool_calls_made: list[str] = Field(default_factory=list)
     iterations: int = 0
     error: str | None = None
+
+
+class ChatRequest(BaseModel):
+    """
+    Sent by Django to POST /agent/chat.
+    Django handles auth, DB, and user stats — FastAPI handles all AI work.
+    """
+    message: str
+    conversation_history: list[dict] = Field(default_factory=list)
+    tutor_mode: str = "direct"   # "direct" | "socratic"
+    user_stats: dict | None = None
+    file_text: str | None = None
+    user_id: int | None = None

@@ -1,7 +1,6 @@
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from services.chatbot.routes import chatbot_router
 from services.quiz.routes import quiz_router
 from services.flashcards.routes import flashcards_router
 from agent.router import agent_router
@@ -19,10 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Protect internal endpoints with shared-secret auth middleware
 app.add_middleware(InternalAuthMiddleware)
 
-app.include_router(chatbot_router, prefix="/chatbot")
 app.include_router(quiz_router, prefix="/quiz")
 app.include_router(flashcards_router, prefix="/flashcards")
 app.include_router(agent_router, prefix="/agent")

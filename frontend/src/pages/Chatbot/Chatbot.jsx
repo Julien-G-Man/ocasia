@@ -30,12 +30,6 @@ const STARTER_PROMPTS = [
 
 const QUICK_REPLIES = ['Explain more', 'Give me an example', 'Quiz me on this'];
 
-const SEARCH_MODES = [
-    { value: 'disabled',      label: 'AI Only' },
-    { value: 'web_search',    label: '🌐 Web'  },
-    { value: 'deep_research', label: '🔬 Deep' },
-];
-
 const formatFileSize = (size) => {
     if (!size || Number.isNaN(size)) return '';
     if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
@@ -68,16 +62,15 @@ const Chatbot = ({ user: userProp }) => {
     const user = userProp ?? authUser;
     const isAuthenticated = Boolean(user || localStorage.getItem('auth_token'));
 
-    const [messageInput, setMessageInput]       = useState('');
-    const [attachedFile, setAttachedFile]       = useState(null);
-    const [currentSearchMode, setCurrentSearchMode] = useState('disabled');
-    const [isProcessing, setIsProcessing]       = useState(false);
-    const [history, setHistory]                 = useState(() => [getWelcomeMessage(user)]);
-    const [copiedId, setCopiedId]               = useState(null);
-    const [authPrompt, setAuthPrompt]           = useState(null); // 'file' | 'search' | null
-    const [fileSizeError, setFileSizeError]     = useState(null);
+    const [messageInput, setMessageInput]     = useState('');
+    const [attachedFile, setAttachedFile]     = useState(null);
+    const [isSocratic, setIsSocratic]         = useState(false);
+    const [isProcessing, setIsProcessing]     = useState(false);
+    const [history, setHistory]               = useState(() => [getWelcomeMessage(user)]);
+    const [copiedId, setCopiedId]             = useState(null);
+    const [authPrompt, setAuthPrompt]         = useState(null); // 'file' | null
+    const [fileSizeError, setFileSizeError]   = useState(null);
 
-    // Session state — start with a fresh session on every page load
     const [currentSessionId, setCurrentSessionId]   = useState(freshSessionId);
     const [chatSessions, setChatSessions]           = useState([]);
     const [isSidebarOpen, setIsSidebarOpen]         = useState(
@@ -86,12 +79,12 @@ const Chatbot = ({ user: userProp }) => {
     const [isLoadingHistory, setIsLoadingHistory]   = useState(false);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-    const chatMessagesRef          = useRef(null);
-    const textareaRef              = useRef(null);
-    const scrollToBottomButtonRef  = useRef(null);
-    const showScrollToBottomRef    = useRef(false);
-    const visibilityRafRef         = useRef(null);
-    const didPersonalizeRef        = useRef(false);
+    const chatMessagesRef         = useRef(null);
+    const textareaRef             = useRef(null);
+    const scrollToBottomButtonRef = useRef(null);
+    const showScrollToBottomRef   = useRef(false);
+    const visibilityRafRef        = useRef(null);
+    const didPersonalizeRef       = useRef(false);
 
     // ── Scroll helpers ─────────────────────────────────────────────
     const scrollToBottom = () => {
@@ -145,7 +138,6 @@ const Chatbot = ({ user: userProp }) => {
             setIsLoadingHistory(true);
             const response = await djangoApi.get('/chatbot/history/');
             if (response.data?.history) {
-                // Populate the sidebar — but always land on a fresh chat, not the last session
                 setChatSessions(response.data.history);
             }
         } catch (err) {
@@ -221,6 +213,24 @@ const Chatbot = ({ user: userProp }) => {
         return msg;
     };
 
+    // Client-side typewriter: animates fullText into message with placeholderId
+    const runTypewriter = useCallback((fullText, placeholderId) => {
+        let i = 0;
+        const CHARS_PER_FRAME = 40;
+        const step = () => {
+            if (i >= fullText.length) {
+                scrollToBottom();
+                return;
+            }
+            i = Math.min(i + CHARS_PER_FRAME, fullText.length);
+            setHistory(prev => prev.map(m =>
+                m.id === placeholderId ? { ...m, text: fullText.slice(0, i), isThinking: false } : m
+            ));
+            requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const handleSendMessage = useCallback(async (e) => {
         if (e) e.preventDefault();
         let text = messageInput.trim();
@@ -237,15 +247,15 @@ const Chatbot = ({ user: userProp }) => {
         const placeholderId = placeholder.id;
         setIsProcessing(true);
 
+        const tutor_mode = isSocratic ? 'socratic' : 'direct';
+
         try {
             if (fileToSend) {
                 const form = new FormData();
                 form.append('file_upload', fileToSend);
                 form.append('message', text);
-                form.append('search_mode', currentSearchMode);
+                form.append('tutor_mode', tutor_mode);
                 form.append('session_id', currentSessionId);
-                // Use fetch so the browser sets Content-Type: multipart/form-data; boundary=... automatically.
-                // axios's instance-level Content-Type: application/json default overrides FormData detection.
                 const token = localStorage.getItem('auth_token');
                 const baseUrl = djangoApi.defaults.baseURL.replace(/\/+$/, '');
                 const fileRes = await fetch(`${baseUrl}/chat/file/`, {
@@ -261,52 +271,29 @@ const Chatbot = ({ user: userProp }) => {
                 const data = await fileRes.json();
                 const aiText = data.response || '[Error: Empty response from file API]';
                 if (data.session_id && data.session_id !== currentSessionId) setCurrentSessionId(data.session_id);
-                setHistory(prev => prev.map(m => m.id === placeholderId ? { ...m, text: aiText, isThinking: false } : m));
+                setIsProcessing(false);
+                runTypewriter(aiText, placeholderId);
             } else {
-                const baseUrl = djangoApi.defaults.baseURL.replace(/\/+$/, '');
-                const token = localStorage.getItem('auth_token');
-                const res = await fetch(`${baseUrl}/chat/stream/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Token ${token}` } : {}) },
-                    credentials: 'include',
-                    body: JSON.stringify({ message: text, search_mode: currentSearchMode, session_id: currentSessionId, conversation_history: [], context_document: null }),
+                const res = await djangoApi.post('/chat/', {
+                    message: text,
+                    session_id: currentSessionId,
+                    tutor_mode,
                 });
-                if (!res.ok || !res.body) throw new Error(`Stream API error: ${res.status}`);
-
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let accumulated = '';
-                let frameId = null;
-                let pending = '';
-                const flush = (force = false) => {
-                    if (!force && frameId !== null) return;
-                    const run = () => {
-                        frameId = null;
-                        if (!pending) return;
-                        const next = pending; pending = '';
-                        setHistory(prev => prev.map(m => m.id === placeholderId ? { ...m, text: next, isThinking: false } : m));
-                        scrollToBottom();
-                    };
-                    force ? run() : (frameId = window.requestAnimationFrame(run));
-                };
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    accumulated += decoder.decode(value, { stream: true });
-                    pending = accumulated;
-                    flush(false);
+                const aiText = res.data?.response || '[Error: Empty response]';
+                if (res.data?.session_id && res.data.session_id !== currentSessionId) {
+                    setCurrentSessionId(res.data.session_id);
                 }
-                flush(true);
+                setIsProcessing(false);
+                runTypewriter(aiText, placeholderId);
             }
         } catch (err) {
             console.error('API Error:', err);
-            const msg = err.response?.data?.detail || err.message || 'An unknown error occurred.';
+            const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'An unknown error occurred.';
             setHistory(prev => prev.map(m => m.id === placeholderId ? { ...m, text: `[Error: ${msg}]`, isThinking: false } : m));
-        } finally {
             setIsProcessing(false);
             scrollToBottom();
         }
-    }, [messageInput, attachedFile, currentSearchMode, isProcessing, currentSessionId]);
+    }, [messageInput, attachedFile, isSocratic, isProcessing, currentSessionId, runTypewriter]);
 
     const copyToClipboard = (text, id) => {
         navigator.clipboard.writeText(text)
@@ -343,18 +330,17 @@ const Chatbot = ({ user: userProp }) => {
     useEffect(() => () => { if (visibilityRafRef.current) window.cancelAnimationFrame(visibilityRafRef.current); }, []);
     useEffect(() => { fetchChatHistory(); }, [fetchChatHistory]);
 
-    // Re-personalize welcome message once auth resolves (user may be null on first render)
     useEffect(() => {
         if (!user || didPersonalizeRef.current) return;
         didPersonalizeRef.current = true;
         setHistory(prev => {
-            // Only update if still on the untouched welcome screen
             if (prev.length === 1 && prev[0].type === 'ai' && !prev[0].isThinking) {
                 return [getWelcomeMessage(user)];
             }
             return prev;
         });
     }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         if (!authPrompt) return;
         const t = setTimeout(() => setAuthPrompt(null), 5000);
@@ -362,7 +348,6 @@ const Chatbot = ({ user: userProp }) => {
     }, [authPrompt]);
 
     // ── Computed ───────────────────────────────────────────────────
-    const isSearchActive   = currentSearchMode !== 'disabled';
     const isReadyToSend    = messageInput.trim().length > 0 || attachedFile;
     const shouldBeDisabled = !isReadyToSend || isProcessing;
     const isWelcomeState   = history.length === 1 && history[0].type === 'ai' && !history[0].isThinking;
@@ -509,14 +494,6 @@ const Chatbot = ({ user: userProp }) => {
                         <FontAwesomeIcon icon={faArrowDown} />
                     </button>
 
-                    {/* ── Search indicator ── */}
-                    {isProcessing && isSearchActive && (
-                        <div className="search-indicator">
-                            <FontAwesomeIcon icon={faSpinner} spin />
-                            <span>{currentSearchMode === 'deep_research' ? 'Conducting deep research…' : 'Searching the web…'}</span>
-                        </div>
-                    )}
-
                     {/* ── File attachment bar ── */}
                     {attachedFile && (
                         <div className="file-status-bar">
@@ -543,7 +520,7 @@ const Chatbot = ({ user: userProp }) => {
                     {authPrompt && (
                         <div className="auth-gate-banner">
                             <span className="auth-gate-text">
-                                🔒 <strong>{authPrompt === 'file' ? 'File uploads' : 'Web & Deep search'}</strong> require a free account
+                                🔒 <strong>File uploads</strong> require a free account
                             </span>
                             <Link to="/auth/signup" className="auth-gate-cta">Sign Up Free</Link>
                             <button className="auth-gate-close" onClick={() => setAuthPrompt(null)} aria-label="Dismiss">✕</button>
@@ -598,23 +575,17 @@ const Chatbot = ({ user: userProp }) => {
                                         )}
                                     </label>
                                     <div className="search-mode-pills">
-                                        {SEARCH_MODES.map(({ value, label }) => (
-                                            <button
-                                                key={value}
-                                                type="button"
-                                                className={`search-pill${currentSearchMode === value ? ' active' : ''}`}
-                                                onClick={() => {
-                                                    if (!isAuthenticated && value !== 'disabled') {
-                                                        setAuthPrompt('search');
-                                                        return;
-                                                    }
-                                                    setCurrentSearchMode(value);
-                                                }}
-                                                disabled={isProcessing}
-                                            >
-                                                {label}
-                                            </button>
-                                        ))}
+                                        <button
+                                            type="button"
+                                            className={`search-pill${isSocratic ? ' active' : ''}`}
+                                            onClick={() => setIsSocratic(v => !v)}
+                                            title={isSocratic
+                                                ? 'Socratic mode on — guiding you through questions. Click to switch to direct answers.'
+                                                : 'Enable Socratic mode — learn through guided questions instead of direct answers'}
+                                            disabled={isProcessing}
+                                        >
+                                            {isSocratic ? '🧠 Socratic' : 'Socratic'}
+                                        </button>
                                     </div>
                                 </div>
                                 <button

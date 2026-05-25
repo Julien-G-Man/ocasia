@@ -12,13 +12,13 @@ quiz_router = APIRouter()
 
 try:
     # Prefer relative import when running as a package
-    from ...core.ai_client import ai_service
+    from ...core.ai_client import ai_client
 except Exception:  # pragma: no cover - fallback paths
     try:
-        from core.ai_client import ai_service
+        from core.ai_client import ai_client
     except Exception as e:
-        logger.exception("Could not import FastAPI ai_service for quiz: %s", e)
-        ai_service = None
+        logger.exception("Could not import FastAPI ai_client for quiz: %s", e)
+        ai_client = None
 
 
 def _as_text(value) -> str:
@@ -167,7 +167,7 @@ async def quiz_endpoint(payload: QuizRequest):
     """
     Internal FastAPI endpoint used by Django to generate quizzes via LLM.
     """
-    if ai_service is None:
+    if ai_client is None:
         raise HTTPException(status_code=503, detail="AI service not available")
 
     normalized_study_text = _normalize_study_text(payload.study_text)
@@ -187,7 +187,7 @@ async def quiz_endpoint(payload: QuizRequest):
 
         data = None
         async with httpx.AsyncClient(timeout=90) as client:
-            raw = await ai_service.generate_content(client, prompt, max_tokens=estimated_tokens, timeout=60)
+            raw = await ai_client.generate_content(client, prompt, max_tokens=estimated_tokens, timeout=60)
 
             logger.debug("Quiz provider returned type: %s", type(raw).__name__)
 
@@ -201,7 +201,7 @@ async def quiz_endpoint(payload: QuizRequest):
                         if data is None:
                             # One-shot repair attempt for malformed/truncated JSON-like output.
                             try:
-                                repair_raw = await ai_service.generate_content(
+                                repair_raw = await ai_client.generate_content(
                                     client,
                                     _build_repair_prompt(content_str[:6000]),
                                     max_tokens=estimated_tokens,
@@ -229,7 +229,7 @@ async def quiz_endpoint(payload: QuizRequest):
                 data = _parse_json_safe(raw_text)
                 if data is None:
                     try:
-                        repair_raw = await ai_service.generate_content(
+                        repair_raw = await ai_client.generate_content(
                             client,
                             _build_repair_prompt(raw_text[:6000]),
                             max_tokens=estimated_tokens,

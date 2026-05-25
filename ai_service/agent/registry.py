@@ -21,6 +21,19 @@ from agent.tools.evaluate import evaluate_answer
 from agent.tools.summarize import summarize_text
 from agent.tools.search import search_web
 
+
+async def _kb_search_handler(query: str, top_k: int = 4) -> dict:
+    from kb.loader import kb_store
+    results = kb_store.search(query, top_k=int(top_k))
+    if not results:
+        return {"chunks": [], "note": "No relevant platform knowledge found."}
+    return {
+        "chunks": [
+            {"heading": r["heading"], "text": r["text"]}
+            for r in results
+        ]
+    }
+
 logger = logging.getLogger(__name__)
 
 
@@ -127,6 +140,35 @@ async def _explain_concept_handler(question: str, answer: str) -> dict:
 # ---------------------------------------------------------------------------
 
 TOOL_REGISTRY: dict[str, dict] = {
+
+    "kb_search": {
+        "definition": ToolDefinition(
+            name="kb_search",
+            description=(
+                "Search the Lamla platform knowledge base for information about the platform, "
+                "its features, how things work, pricing, or support contacts. "
+                "Always call this first for any platform-specific question before using web_search. "
+                "Returns the most relevant knowledge chunks."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "What to look up in the knowledge base.",
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Number of chunks to return (default 4).",
+                        "default": 4,
+                    },
+                },
+                "required": ["query"],
+            },
+        ),
+        "handler": _kb_search_handler,
+        "timeout": 5.0,
+    },
 
     "extract_youtube_transcript": {
         "definition": ToolDefinition(

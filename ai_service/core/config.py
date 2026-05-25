@@ -214,6 +214,10 @@ if _PYDANTIC_SETTINGS:
             ),
         )
 
+        # Knowledge base
+        KB_SEARCH_PROVIDER: str = Field("tfidf")  # "tfidf" | "openai"
+        KB_FILE_PATH: str = Field("")              # explicit override; loader auto-resolves if empty
+
         # Flashcards
         FLASHCARDS_AI_MAX_CONCURRENT: int = Field(20)
         FLASHCARDS_AI_SEMAPHORE_WAIT_SECONDS: float = Field(10.0)
@@ -311,6 +315,9 @@ else:  # pragma: no cover
             ["FASTAPI_OUTBOUND_POOL_TIMEOUT", "FASTAPI_OUTBOUND_TIMEOUT_POOL"],
             10.0,
         )
+
+        KB_SEARCH_PROVIDER: str = _env("KB_SEARCH_PROVIDER", "tfidf")
+        KB_FILE_PATH: str = _env("KB_FILE_PATH", "")
 
         FLASHCARDS_AI_MAX_CONCURRENT: int = _env_int("FLASHCARDS_AI_MAX_CONCURRENT", 20)
         FLASHCARDS_AI_SEMAPHORE_WAIT_SECONDS: float = _env_float(
