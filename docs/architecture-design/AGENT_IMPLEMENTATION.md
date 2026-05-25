@@ -1,12 +1,12 @@
-# MCP Implementation — Lamla AI
+# Agent Implementation — Lamla AI
 
 > **Status:** Core layer implemented and wired. Two functional gaps remain (marked in section 12).
 
 ---
 
-## 1. What MCP Means Here
+## 1. What Agent Means Here
 
-MCP (Model Context Protocol) is a pattern where the AI receives a typed list of capabilities
+Agent (Model Context Protocol) is a pattern where the AI receives a typed list of capabilities
 (tools), can request to call them instead of generating a final response, and continues
 reasoning over the results until it produces a definitive answer.
 
@@ -22,7 +22,7 @@ This is not a different backend. It is an orchestration layer on top of what alr
 
 ## 2. Architecture
 
-### Before MCP
+### Before Agent
 
 ```
 React -> Django (auth, validation) -> FastAPI POST /chatbot/ -> one-shot LLM -> Django -> React
@@ -30,10 +30,10 @@ React -> Django (auth, validation) -> FastAPI POST /chatbot/ -> one-shot LLM -> 
 
 The AI was a black box at the end of a hardcoded pipeline.
 
-### After MCP
+### After Agent
 
 ```
-React -> Django (auth, validation) -> FastAPI POST /mcp/orchestrate
+React -> Django (auth, validation) -> FastAPI POST /agent/orchestrate
           |                                     |
      [persist, auth]               [tool registry + executor]
                                              |
@@ -51,10 +51,10 @@ The chatbot is now an AI orchestrator. Dedicated quiz and flashcard endpoints ar
 | Layer | Responsibility | Examples |
 |---|---|---|
 | Django | Auth, DB, routing, file I/O | Token validation, saving QuizSession, PDF extraction |
-| FastAPI | AI execution, tool orchestration | LLM calls, tool registry, MCP executor loop |
-| MCP tools | Atomic capabilities | generate_quiz, summarize_text, evaluate_answer |
+| FastAPI | AI execution, tool orchestration | LLM calls, tool registry, agent executor loop |
+| Agent tools | Atomic capabilities | generate_quiz, summarize_text, evaluate_answer |
 
-Django does not know about MCP tools. It calls FastAPI endpoints. FastAPI owns the registry.
+Django does not know about agent tools. It calls FastAPI endpoints. FastAPI owns the registry.
 
 ---
 
@@ -64,32 +64,32 @@ Django does not know about MCP tools. It calls FastAPI endpoints. FastAPI owns t
 ai_service/
    core/
       ai_client.py          # generate_with_tools() added (4-provider cascade)
-   mcp_server/              # new module
+   agent_server/              # new module
       __init__.py
       schemas.py            # ToolDefinition, ToolCall, ToolResult, OrchestratorRequest/Response
       registry.py           # TOOL_REGISTRY (6 tools), get_definitions(), get_handler()
       executor.py           # execute_tool() with 5 error classes + per-tool timeouts
-      router.py             # GET /mcp/tools, POST /mcp/call, POST /mcp/orchestrate
+      router.py             # GET /agent/tools, POST /agent/call, POST /agent/orchestrate
       tools/
          __init__.py
          youtube.py         # extract_youtube_transcript()
          evaluate.py        # evaluate_answer() (LLM + string-match fallback)
          summarize.py       # summarize_text() (truncation fallback on AI failure)
-   main.py                  # app.include_router(mcp_router, prefix="/mcp") added
+   main.py                  # app.include_router(agent_router, prefix="/agent") added
 
 backend/apps/chatbot/
-   helpers.py               # _build_mcp_context() added (returns system_prompt, messages)
-   async_views.py           # chatbot_api_async() branches on CHATBOT_USE_MCP setting
+   helpers.py               # _build_agent_context() added (returns system_prompt, messages)
+   async_views.py           # chatbot_api_async() branches on CHATBOT_USE_AGENT setting
 ```
 
-Note: the module is named `mcp_server/` (not `mcp/`) to avoid a collision with the `mcp` PyPI
+Note: the module is named `agent_server/` (not `agent/`) to avoid a collision with the `agent` PyPI
 package.
 
 ---
 
 ## 5. Registered Tools
 
-All tools live in `ai_service/mcp_server/registry.py`.
+All tools live in `ai_service/agent_server/registry.py`.
 Handlers run in-process — no internal HTTP round-trips.
 
 | Tool | Handler | Deterministic? | Timeout |
@@ -147,7 +147,7 @@ question: str, answer: str
 
 ## 6. Executor
 
-`mcp_server/executor.py` dispatches every tool call and handles all failure modes.
+`agent_server/executor.py` dispatches every tool call and handles all failure modes.
 It never raises — errors surface through `ToolResult.error`.
 
 | Exception caught | Cause | Log level |
@@ -198,7 +198,7 @@ It is the last resort, not the default path.
 
 ## 8. Orchestration Loop
 
-Endpoint: `POST /mcp/orchestrate`  
+Endpoint: `POST /agent/orchestrate`  
 Auth: `X-Internal-Secret` (same as all other FastAPI endpoints)
 
 ```
@@ -234,21 +234,21 @@ Auth: `X-Internal-Secret` (same as all other FastAPI endpoints)
 The main chatbot endpoint has two paths, selected by a Django setting:
 
 ```python
-use_mcp = getattr(settings, "CHATBOT_USE_MCP", False)
+use_agent = getattr(settings, "CHATBOT_USE_AGENT", False)
 
-if use_mcp:
+if use_agent:
     # Build system_prompt + Anthropic messages list separately
-    system_prompt, messages = await _build_mcp_context(user_message, history, user=user)
-    resp = await call_fastapi("POST", "/mcp/orchestrate", json={
+    system_prompt, messages = await _build_agent_context(user_message, history, user=user)
+    resp = await call_fastapi("POST", "/agent/orchestrate", json={
         "messages": messages,
         "system_prompt": system_prompt,
-        "tools": getattr(settings, "CHATBOT_MCP_TOOLS", None),
+        "tools": getattr(settings, "CHATBOT_AGENT_TOOLS", None),
         "max_tokens": max_tokens,
-        "max_iterations": getattr(settings, "CHATBOT_MCP_MAX_ITERATIONS", 5),
+        "max_iterations": getattr(settings, "CHATBOT_AGENT_MAX_ITERATIONS", 5),
     }, timeout=120.0)
     # Falls back to one-shot if orchestrate returns empty or non-200
 
-if not use_mcp:
+if not use_agent:
     # Original path — fully preserved
     full_prompt = await _build_chatbot_prompt(user_message, history, user=user)
     resp = await call_fastapi("POST", "/chatbot/", json={"prompt": full_prompt}, timeout=60.0)
@@ -256,7 +256,7 @@ if not use_mcp:
 
 Django still handles: session creation, saving ChatMessage records, auth, fallback responses.
 
-### _build_mcp_context (helpers.py)
+### _build_agent_context (helpers.py)
 
 New helper that returns `(system_prompt: str, messages: list[dict])`.
 
@@ -271,10 +271,10 @@ The existing `_build_chatbot_prompt()` is preserved and used as the one-shot fal
 
 ```python
 # settings.py or .env
-CHATBOT_USE_MCP = True               # Default: False (safe rollout — off until tested)
-CHATBOT_MCP_TOOLS = None             # None = all tools. Pass a list to restrict.
-CHATBOT_MCP_MAX_ITERATIONS = 5       # Default: 5
-CHATBOT_MAX_TOKENS = 1200            # Existing setting, reused for MCP too
+CHATBOT_USE_AGENT = True               # Default: False (safe rollout — off until tested)
+CHATBOT_AGENT_TOOLS = None             # None = all tools. Pass a list to restrict.
+CHATBOT_AGENT_MAX_ITERATIONS = 5       # Default: 5
+CHATBOT_MAX_TOKENS = 1200            # Existing setting, reused for the agent too
 ```
 
 ---
@@ -292,7 +292,7 @@ CHATBOT_MAX_TOKENS = 1200            # Existing setting, reused for MCP too
 | `POST /api/chat/stream/` | Still one-shot (see Pending) |
 | `POST /api/chat/file/` | Still one-shot (see Pending) |
 
-MCP is additive. The original endpoints and the one-shot chatbot path are fully intact.
+Agent is additive. The original endpoints and the one-shot chatbot path are fully intact.
 
 ---
 
@@ -317,7 +317,7 @@ MCP is additive. The original endpoints and the one-shot chatbot path are fully 
 
 ### 12.1 ~~search_web tool~~ — DONE
 
-`mcp_server/tools/search.py` implemented using Tavily (same provider as Django's websearch).
+`agent_server/tools/search.py` implemented using Tavily (same provider as Django's websearch).
 Registered at timeout 12s. The AI now decides when to search rather than a keyword heuristic
 in `_build_chatbot_prompt()`. Requires `SEARCH_API_KEY` or `TAVILY_API_KEY` env var.
 Falls back to empty results silently if missing.
@@ -326,9 +326,9 @@ Falls back to empty results silently if missing.
 
 ### 12.2 ~~Quiz _evaluate_short_answer~~ — DONE
 
-`apps/quiz/async_views._evaluate_short_answer()` now calls `POST /mcp/call` with
+`apps/quiz/async_views._evaluate_short_answer()` now calls `POST /agent/call` with
 `evaluate_answer` directly instead of routing through `/chatbot/`. Falls back to
-string match if the MCP call fails.
+string match if the agent call fails.
 
 ---
 
@@ -351,7 +351,7 @@ No unit or integration tests written yet for:
 - Individual tool handlers (youtube, evaluate, summarize)
 - Executor error handling (timeout, bad arguments, unexpected failure)
 - The orchestration loop (tool_use → tool_result → end_turn path)
-- Django MCP branch in `chatbot_api_async`
+- Django agent branch in `chatbot_api_async`
 
 ---
 
@@ -371,10 +371,10 @@ No unit or integration tests written yet for:
    - Each tool catches its own exceptions and returns `ToolResult.error`.
    - The executor never raises.
    - The orchestrator returns an `error` field instead of crashing.
-   - The Django chatbot falls back to one-shot `/chatbot/` if MCP returns empty or fails.
+   - The Django chatbot falls back to one-shot `/chatbot/` if agent returns empty or fails.
 
-6. **Django never calls `/mcp/tools`.** That endpoint is for debugging and future frontends.
-   Django only calls `/mcp/orchestrate` (and `/mcp/call` for direct tool invocation).
+6. **Django never calls `/agent/tools`.** That endpoint is for debugging and future frontends.
+   Django only calls `/agent/orchestrate` (and `/agent/call` for direct tool invocation).
 
 ---
 
@@ -385,8 +385,8 @@ User: `"Make me flashcards from https://youtube.com/watch?v=abc123"`
 ```
 Django chatbot_api_async:
   - Creates/loads session, saves user message to DB
-  - Calls _build_mcp_context() -> (system_prompt, messages)
-  - Calls POST /mcp/orchestrate
+  - Calls _build_agent_context() -> (system_prompt, messages)
+  - Calls POST /agent/orchestrate
 
 Orchestrator iteration 1:
   - AI: tool_use { name: "extract_youtube_transcript", input: {url: "..."} }
@@ -417,7 +417,7 @@ Total: 3 iterations, 2 tool calls. Django handles all persistence.
 ## 15. Anti-Patterns to Avoid
 
 - Do not add auth, scoring, or DB writes to any tool.
-- Do not put the MCP layer in Django — it belongs in FastAPI with the AI client.
+- Do not put the agent layer in Django — it belongs in FastAPI with the AI client.
 - Do not let tools call each other. The AI composes them; tools do not.
 - Do not expose all tools to every context. Use the `tools` whitelist in `OrchestratorRequest`.
 - Do not remove the direct quiz/flashcard endpoints. The quiz page calls them directly.

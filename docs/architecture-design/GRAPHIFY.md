@@ -64,7 +64,7 @@ At runtime, Lamla is split into three active layers:
 The key architectural decision is this boundary:
 
 - Django owns authentication, persistence, and user-facing API composition.
-- FastAPI owns AI provider interaction, structured generation, and MCP-style tool orchestration.
+- FastAPI owns AI provider interaction, structured generation, and agent-style tool orchestration.
 - Calls from Django to FastAPI are internal and gated by shared-secret middleware.
 
 ```mermaid
@@ -101,7 +101,7 @@ flowchart LR
         A2[chatbot routes]
         A3[quiz routes]
         A4[flashcards routes]
-        A5[mcp routes]
+        A5[agent routes]
         A6[internal auth middleware]
         AP[AI providers]
     end
@@ -230,7 +230,7 @@ Practical rule:
 - /chatbot
 - /quiz
 - /flashcards
-- /mcp
+- /agent
 - /
 - /health
 

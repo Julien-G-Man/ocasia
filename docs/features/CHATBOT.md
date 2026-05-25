@@ -92,7 +92,7 @@ Due for review: Organic Chemistry
 
 This is ~60 tokens. The bot uses it when relevant (e.g. "what should I study?", "how am I doing?") and ignores it when the question is unrelated. It is never injected for guests or users with zero quiz history.
 
-**Implementation:** `helpers._fetch_user_performance_sync(user)` runs 3 cheap DB queries (aggregate stats, top 3 weak areas, due topics). Called inside both `_build_chatbot_prompt` (classic path) and `_build_mcp_context` (MCP tool-loop path) via `sync_to_async`. Errors are caught and logged — a failed query never breaks the chat.
+**Implementation:** `helpers._fetch_user_performance_sync(user)` runs 3 cheap DB queries (aggregate stats, top 3 weak areas, due topics). Called inside both `_build_chatbot_prompt` (classic path) and `_build_agent_context` (agent tool-loop path) via `sync_to_async`. Errors are caught and logged — a failed query never breaks the chat.
 
 ## Platform Knowledge Store (`text_knowledge_store.py`)
 

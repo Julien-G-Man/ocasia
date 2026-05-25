@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import RichTextRenderer from '../../utils/richTextRenderer';
 import './Quiz.css';
@@ -13,6 +14,7 @@ const pingServers = () => {
 const Quiz = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { isAuthenticated, isLoading } = useAuth();
 
     const { quizData } = location.state || { quizData: null };
     const REDIRECT_PATH = '/quiz/create';
@@ -52,6 +54,10 @@ const Quiz = () => {
             alert(err.response?.data?.error || 'Failed to submit quiz. Please check your connection.');
         }
     }, [isSubmitting, quizData, userAnswers, allQuestions.length, storageKey, navigate]);
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) navigate('/auth/login');
+    }, [isLoading, isAuthenticated, navigate]);
 
     useEffect(() => {
         if (initializedRef.current) return;

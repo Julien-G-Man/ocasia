@@ -20,8 +20,6 @@ import {
     faPlay,
 } from '@fortawesome/free-solid-svg-icons';
 
-const GUEST_QUIZ_KEY = 'lamla_guest_quiz_used';
-
 const CreateQuiz = () => {
     const navigate  = useNavigate();
     const location  = useLocation();
@@ -52,7 +50,6 @@ const CreateQuiz = () => {
     const [sourceFilename, setSourceFilename] = useState(prefill.sourceTitle || '');
     const [errorMessages, setErrorMessages] = useState([]);
     const [toast, setToast] = useState({ message: '', type: '', visible: false });
-    const [showGuestWall, setShowGuestWall] = useState(false);
     const isProcessing = isExtracting || isGenerating;
     const processingMessage = isExtracting
         ? (activeTab === 'youtubeContent' ? 'Fetching YouTube transcript...' : 'Extracting text from file...')
@@ -60,13 +57,9 @@ const CreateQuiz = () => {
 
     const fileInputRef = useRef(null);
 
-    // Guest one-quiz gate: show blocking wall if they've already used their free quiz
     useEffect(() => {
-        if (isLoading) return;
-        if (!isAuthenticated && localStorage.getItem(GUEST_QUIZ_KEY) === 'true') {
-            setShowGuestWall(true);
-        }
-    }, [isLoading, isAuthenticated]);
+        if (!isLoading && !isAuthenticated) navigate('/auth/login');
+    }, [isLoading, isAuthenticated, navigate]);
 
     // --- Helpers ---
     const showToast = useCallback((message, type = 'info') => {
@@ -191,7 +184,6 @@ const CreateQuiz = () => {
                 source_type: sourceType,
             });
             
-            if (!isAuthenticated) localStorage.setItem(GUEST_QUIZ_KEY, 'true');
             navigate('/quiz/play', { state: { quizData: response.data } });
         } catch (err) {
             showToast(err.response?.data?.error || 'Generation failed', 'error');
@@ -214,31 +206,6 @@ const CreateQuiz = () => {
 
     return (
         <AppShell>
-            {showGuestWall && (
-                <div className="cq-processing-overlay" role="dialog" aria-modal="true">
-                    <div className="cq-processing-card" style={{ textAlign: 'center', gap: 16 }}>
-                        <div style={{ fontSize: '2rem' }}>🎓</div>
-                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>You've used your free quiz</h2>
-                        <p style={{ margin: 0, color: 'var(--text-muted, #aaa)', fontSize: '0.95rem' }}>
-                            Create a free account to unlock unlimited quizzes, flashcards, and more.
-                        </p>
-                        <button
-                            className="main-btn"
-                            style={{ marginTop: 8 }}
-                            onClick={() => navigate('/auth/signup', { state: { fromGuest: true } })}
-                        >
-                            Sign Up — it's free
-                        </button>
-                        <button
-                            className="clear-btn"
-                            style={{ marginTop: 4 }}
-                            onClick={() => navigate('/auth/login', { state: { fromGuest: true } })}
-                        >
-                            Already have an account? Sign in
-                        </button>
-                    </div>
-                </div>
-            )}
             {isProcessing && (
                 <div className="cq-processing-overlay" role="status" aria-live="polite">
                     <div className="cq-processing-card">

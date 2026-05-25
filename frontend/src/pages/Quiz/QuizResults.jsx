@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import RichTextRenderer from '../../utils/richTextRenderer';
@@ -82,12 +83,17 @@ const downloadAsDOCX = async (results) => {
 const QuizResults = ({ user }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { isAuthenticated, isLoading } = useAuth();
     const results = location.state?.results;
 
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [feedbackSent, setFeedbackSent] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) navigate('/auth/login');
+    }, [isLoading, isAuthenticated, navigate]);
 
     useEffect(() => {
         if (!results) navigate('/quiz/create');
