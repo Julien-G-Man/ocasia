@@ -389,7 +389,7 @@
 
 /* ── Empty state ─────────────────────────────────────────────── */
 .db-empty { text-align: center; padding: 56px 24px; color: var(--text-secondary); }
-.db-empty-icon { font-size: 2.2rem; margin-bottom: 10px; opacity: 0.35; }
+.db-empty-icon { font-size: 2.2rem; margin-bottom: 10px; opacity: 0.35; display: flex; justify-content: center; }
 .db-empty p { margin: 0 0 16px; font-size: 0.92rem; }
 
 /* ── Quick action cards ──────────────────────────────────────── */

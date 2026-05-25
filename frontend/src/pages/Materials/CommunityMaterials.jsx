@@ -7,15 +7,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faFilePdf, faDownload, faSearch, faUpload,
     faFilter, faUser, faCalendar, faSpinner, faTrash,
-    faMagicWandSparkles,
+    faGraduationCap,
 } from '@fortawesome/free-solid-svg-icons';
 import './Materials.css';
-
-const SUBJECT_ICONS = {
-    mathematics: '📐', sciences: '🔬', engineering: '⚙️', computing: '💻',
-    humanities: '📖', business: '💼', languages: '🌍', medicine: '🩺',
-    law: '⚖️', arts: '🎨', other: '📄',
-};
 
 const Materials = () => {
     const navigate = useNavigate();
@@ -129,10 +123,10 @@ const Materials = () => {
                     {/* ── Hero ── */}
                     <div className="mat-hero">
                         <div className="mat-hero-text">
-                            <h1>📚 Community Materials</h1>
+                            <h1>Shared Learning Files</h1>
                             <p>
-                                Community-shared PDFs — download raw files or push any PDF
-                                straight into Quiz Mode with one click.
+                                PDFs, slides, and notes uploaded by students.
+                                Download any file or generate a quiz from it in one click.
                             </p>
                         </div>
                         {isAuthenticated && (
@@ -166,7 +160,7 @@ const Materials = () => {
                                     className={`mat-subject-chip${subject === '' ? ' active' : ''}`}
                                     onClick={() => handleSubject('')}
                                 >
-                                    📚 All Subjects
+                                    All Subjects
                                 </button>
                                 {data.subjects.map(s => (
                                     <button
@@ -174,7 +168,7 @@ const Materials = () => {
                                         className={`mat-subject-chip${subject === s.value ? ' active' : ''}`}
                                         onClick={() => handleSubject(s.value)}
                                     >
-                                        {SUBJECT_ICONS[s.value] || '📄'} {s.label}
+                                        {s.label}
                                     </button>
                                 ))}
                             </div>
@@ -229,7 +223,9 @@ const Materials = () => {
                                 </div>
                             ) : data.materials.length === 0 ? (
                                 <div className="mat-empty">
-                                    <div className="mat-empty-icon">📭</div>
+                                    <div className="mat-empty-icon">
+                                        <FontAwesomeIcon icon={faFilePdf} />
+                                    </div>
                                     <p>
                                         {search || subject
                                             ? 'No materials match this filter.'
@@ -252,9 +248,6 @@ const Materials = () => {
                                             {/* Top row */}
                                             <div className="mat-card-top">
                                                 <div className="mat-card-icon-wrap">
-                                                    <span className="mat-card-emoji">
-                                                        {SUBJECT_ICONS[m.subject] || '📄'}
-                                                    </span>
                                                     <FontAwesomeIcon icon={faFilePdf} className="mat-pdf-icon" />
                                                 </div>
                                                 {m.subject && (
@@ -310,7 +303,7 @@ const Materials = () => {
                                                     >
                                                         {extracting === m.id
                                                             ? <><FontAwesomeIcon icon={faSpinner} spin /> Extracting…</>
-                                                            : <><FontAwesomeIcon icon={faMagicWandSparkles} />Use for Quiz</>}
+                                                            : <><FontAwesomeIcon icon={faGraduationCap} /> Quiz from File</>}
                                                     </button>
                                                     <button
                                                         className="mat-btn-primary mat-btn-compact"

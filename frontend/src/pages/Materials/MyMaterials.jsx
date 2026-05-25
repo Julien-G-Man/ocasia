@@ -9,7 +9,6 @@ import {
   faDownload,
   faSpinner,
   faTrash,
-  faCalendar,
   faFilePdf,
 } from '@fortawesome/free-solid-svg-icons';
 import './Materials.css';
@@ -21,6 +20,7 @@ const MyMaterials = () => {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [downloading, setDownloading] = useState(null);
 
   const fetchMine = useCallback(async () => {
     setLoading(true);
@@ -43,11 +43,14 @@ const MyMaterials = () => {
   }, [isAuthenticated, navigate, fetchMine]);
 
   const handleDownload = async (material) => {
+    setDownloading(material.id);
     try {
       const url = await materialsService.download(material.id);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Download failed', error);
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -56,7 +59,7 @@ const MyMaterials = () => {
     setDeleting(materialId);
     try {
       await materialsService.delete(materialId);
-      setMaterials((prev) => prev.filter((material) => material.id !== materialId));
+      setMaterials((prev) => prev.filter((m) => m.id !== materialId));
     } catch (error) {
       console.error('Delete failed', error);
     } finally {
@@ -68,66 +71,86 @@ const MyMaterials = () => {
     <AppShell>
       <main className="db-main">
         <div className="db-tab">
+
           <div className="db-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h1>My Materials</h1>
-              <p>Your uploaded files, ready for quizzes and downloads.</p>
+              <h1>My Uploads</h1>
+              <p>Files you've shared with the community.</p>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="db-btn db-btn-ghost" onClick={() => navigate('/materials/community')}>
-                View Community Uploads
+                Browse All Files
               </button>
               <button className="db-btn db-btn-primary" onClick={() => navigate('/materials/upload')}>
                 <FontAwesomeIcon icon={faCloudUploadAlt} style={{ marginRight: 6 }} />
-                Upload Material
+                Upload File
               </button>
             </div>
           </div>
 
           <div className="db-card">
+            <div className="db-card-header">
+              <h2>Uploaded files</h2>
+              {!loading && materials.length > 0 && (
+                <span style={{ fontSize: 13, color: 'var(--text-muted, #888)' }}>
+                  {materials.length} file{materials.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
             {loading ? (
-              <div className="db-empty"><p>Loading your materials…</p></div>
+              <div className="db-empty">
+                <p>Loading your files…</p>
+              </div>
             ) : materials.length === 0 ? (
               <div className="db-empty">
-                <div className="db-empty-icon">📁</div>
-                <p>You have not uploaded anything yet.</p>
+                <div className="db-empty-icon">
+                  <FontAwesomeIcon icon={faFilePdf} />
+                </div>
+                <p>You haven't uploaded anything yet.</p>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                   <button className="db-btn db-btn-ghost" onClick={() => navigate('/materials/community')}>
-                    View All Materials
+                    Browse All Files
                   </button>
                   <button className="db-btn db-btn-primary" onClick={() => navigate('/materials/upload')}>
-                    Upload Material
+                    Upload File
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="db-materials-list">
+              <div className="db-activity-list">
                 {materials.map((material) => (
-                  <div className="db-material-row" key={material.id}>
-                    <div className="db-material-info">
-                      <h3>{material.title || material.original_filename || 'Untitled material'}</h3>
-                      <p>
+                  <div className="db-activity-item" key={material.id}>
+                    <div className="db-activity-dot">
+                      <FontAwesomeIcon icon={faFilePdf} />
+                    </div>
+                    <div className="db-activity-body">
+                      <p>{material.title || material.original_filename || 'Untitled'}</p>
+                      <span>
                         {material.subject_label || material.subject || 'General'}
                         {material.file_size_display ? ` · ${material.file_size_display}` : ''}
-                      </p>
-                    </div>
-                    <div className="db-material-meta">
-                      <span>
-                        <FontAwesomeIcon icon={faCalendar} /> {new Date(material.created_at).toLocaleDateString()}
+                        {` · ${material.download_count ?? 0} downloads`}
+                        {` · ${new Date(material.created_at).toLocaleDateString()}`}
                       </span>
-                      <span>{material.download_count || 0} downloads</span>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                      <button className="db-btn db-btn-ghost db-btn-sm" onClick={() => handleDownload(material)}>
-                        <FontAwesomeIcon icon={faDownload} /> Download
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button
+                        className="db-btn db-btn-ghost db-btn-sm"
+                        onClick={() => handleDownload(material)}
+                        disabled={downloading === material.id}
+                      >
+                        {downloading === material.id
+                          ? <FontAwesomeIcon icon={faSpinner} spin />
+                          : <FontAwesomeIcon icon={faDownload} />}
                       </button>
                       <button
                         className="db-btn db-btn-danger db-btn-sm"
                         onClick={() => handleDelete(material.id)}
                         disabled={deleting === material.id}
                       >
-                        {deleting === material.id ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faTrash} />} {' '}
-                        Delete
+                        {deleting === material.id
+                          ? <FontAwesomeIcon icon={faSpinner} spin />
+                          : <FontAwesomeIcon icon={faTrash} />}
                       </button>
                     </div>
                   </div>
@@ -135,6 +158,7 @@ const MyMaterials = () => {
               </div>
             )}
           </div>
+
         </div>
       </main>
     </AppShell>

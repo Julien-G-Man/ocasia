@@ -293,7 +293,7 @@
     border-radius: var(--radius-lg, 12px);
     color: var(--text-muted);
 }
-.mat-empty-icon { font-size: 3rem; margin-bottom: 14px; display: block; }
+.mat-empty-icon { font-size: 3rem; margin-bottom: 14px; display: flex; justify-content: center; color: var(--text-muted); }
 .mat-empty p { font-size: 1rem; margin: 0 0 24px; }
 
 /* ── Cards grid ─────────────────────────────────────────────── */
