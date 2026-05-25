@@ -1,5 +1,5 @@
 """
-MCP Tool: search_web
+Agent tool: search_web
 
 Calls the Tavily Search API to retrieve current web results.
 Used by the AI when a question requires up-to-date or factual
@@ -21,7 +21,7 @@ async def search_web(query: str, num_results: int = 3) -> dict:
     """
     api_key = os.environ.get("SEARCH_API_KEY") or os.environ.get("TAVILY_API_KEY")
     if not api_key:
-        logger.warning("[mcp:search] SEARCH_API_KEY not set — returning empty results")
+        logger.warning("[agent:search] SEARCH_API_KEY not set — returning empty results")
         return {"results": []}
 
     try:
@@ -51,9 +51,9 @@ async def search_web(query: str, num_results: int = 3) -> dict:
             }
             for r in data.get("results", [])
         ]
-        logger.debug("[mcp:search] query=%r results=%d", query[:80], len(results))
+        logger.debug("[agent:search] query=%r results=%d", query[:80], len(results))
         return {"results": results}
 
     except Exception as exc:
-        logger.warning("[mcp:search] search failed for %r: %s", query[:80], exc)
+        logger.warning("[agent:search] search failed for %r: %s", query[:80], exc)
         return {"results": []}

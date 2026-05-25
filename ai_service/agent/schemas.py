@@ -32,7 +32,7 @@ class ToolResult(BaseModel):
 
 class OrchestratorRequest(BaseModel):
     """
-    Sent by Django to POST /mcp/orchestrate.
+    Sent by Django to POST /agent/orchestrate.
 
     messages: Anthropic messages format [{role, content}, ...]
     tools:    Optional whitelist of tool names. None = all registered tools.

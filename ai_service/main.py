@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from services.chatbot.routes import chatbot_router
 from services.quiz.routes import quiz_router
 from services.flashcards.routes import flashcards_router
-from agent.router import mcp_router
+from agent.router import agent_router
 from core.middleware import InternalAuthMiddleware
 from core.config import settings
 
@@ -25,7 +25,7 @@ app.add_middleware(InternalAuthMiddleware)
 app.include_router(chatbot_router, prefix="/chatbot")
 app.include_router(quiz_router, prefix="/quiz")
 app.include_router(flashcards_router, prefix="/flashcards")
-app.include_router(mcp_router, prefix="/mcp")
+app.include_router(agent_router, prefix="/agent")
 
 logger.info("FastAPI CORS allowed origins: %s", settings.allowed_origins_list)
 

@@ -27,7 +27,7 @@ class AIClient:
           One-shot text generation. Used by all existing service routes.
 
       generate_with_tools(messages, tools, ...)
-          MCP orchestration step. Sends a messages list + tool definitions to
+          Agent orchestration step. Sends a messages list + tool definitions to
           the AI. Returns either a final text response or a list of tool calls.
           Primary: Claude (Anthropic native tool use).
           Fallback: OpenAI-compatible providers (NVIDIA, Azure).
@@ -203,7 +203,7 @@ class AIClient:
         return ""
 
     # ------------------------------------------------------------------ #
-    #  MCP: generate_with_tools                                          #
+    #  Agent: generate_with_tools                                          #
     # ------------------------------------------------------------------ #
 
     async def generate_with_tools(
@@ -235,14 +235,14 @@ class AIClient:
             try:
                 return await self._claude_with_tools(messages, tools, max_tokens, system, timeout)
             except Exception as exc:
-                logger.warning("[mcp:ai_client] Claude tool use failed: %s — trying next", exc)
+                logger.warning("[agent:ai_client] Claude tool use failed: %s — trying next", exc)
 
         # 2. Try OpenAI native tool use
         if self.openai_key and self._openai_client:
             try:
                 return await self._openai_with_tools(messages, tools, max_tokens, system, timeout)
             except Exception as exc:
-                logger.warning("[mcp:ai_client] OpenAI tool use failed: %s — trying NVIDIA", exc)
+                logger.warning("[agent:ai_client] OpenAI tool use failed: %s — trying NVIDIA", exc)
 
         # 3. Try NVIDIA OpenAI-compatible tool use
         if self.nvidia_openai_key:
@@ -252,7 +252,7 @@ class AIClient:
                     messages, tools, max_tokens, system, timeout,
                 )
             except Exception as exc:
-                logger.warning("[mcp:ai_client] NVIDIA OpenAI tool use failed: %s — trying Azure", exc)
+                logger.warning("[agent:ai_client] NVIDIA OpenAI tool use failed: %s — trying Azure", exc)
 
         # 4. Try Azure OpenAI tool use
         if self.azure_key and self.azure_endpoint:
@@ -262,10 +262,10 @@ class AIClient:
                     messages, tools, max_tokens, system, timeout, is_azure=True,
                 )
             except Exception as exc:
-                logger.warning("[mcp:ai_client] Azure tool use failed: %s — text-mode fallback", exc)
+                logger.warning("[agent:ai_client] Azure tool use failed: %s — text-mode fallback", exc)
 
         # 5. Last resort: text-mode fallback
-        logger.info("[mcp:ai_client] using text-mode tool fallback")
+        logger.info("[agent:ai_client] using text-mode tool fallback")
         return await self._text_mode_tool_fallback(messages, tools, max_tokens, system, timeout)
 
     async def _claude_with_tools(
@@ -289,7 +289,7 @@ class AIClient:
                 text_parts.append(block.text)
 
         stop_reason = "tool_use" if tool_calls else "end_turn"
-        logger.debug("[mcp:ai_client] claude stop_reason=%s calls=%d", stop_reason, len(tool_calls))
+        logger.debug("[agent:ai_client] claude stop_reason=%s calls=%d", stop_reason, len(tool_calls))
         return {
             "stop_reason": stop_reason,
             "tool_calls": tool_calls,
@@ -352,7 +352,7 @@ class AIClient:
                 tool_calls.append({"id": tc.get("id", ""), "name": tc["function"]["name"], "input": args})
 
         stop_reason = "tool_use" if tool_calls else "end_turn"
-        logger.debug("[mcp:ai_client] openai-compat stop_reason=%s calls=%d", stop_reason, len(tool_calls))
+        logger.debug("[agent:ai_client] openai-compat stop_reason=%s calls=%d", stop_reason, len(tool_calls))
         return {
             "stop_reason": stop_reason,
             "tool_calls": tool_calls,
@@ -405,7 +405,7 @@ class AIClient:
             parsed = _json.loads(cleaned)
             if isinstance(parsed, dict) and parsed.get("action") == "tool_call":
                 tc_id = f"textmode_{parsed['name']}_{id(parsed)}"
-                logger.debug("[mcp:ai_client] text-mode detected tool_call name=%s", parsed["name"])
+                logger.debug("[agent:ai_client] text-mode detected tool_call name=%s", parsed["name"])
                 return {
                     "stop_reason": "tool_use",
                     "tool_calls": [{"id": tc_id, "name": parsed["name"], "input": parsed.get("input", {})}],
@@ -502,7 +502,7 @@ class AIClient:
                 tool_calls.append({"id": tc.id, "name": tc.function.name, "input": args})
 
         stop_reason = "tool_use" if tool_calls else "end_turn"
-        logger.debug("[mcp:ai_client] openai stop_reason=%s calls=%d", stop_reason, len(tool_calls))
+        logger.debug("[agent:ai_client] openai stop_reason=%s calls=%d", stop_reason, len(tool_calls))
         return {
             "stop_reason": stop_reason,
             "tool_calls": tool_calls,

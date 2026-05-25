@@ -1,12 +1,12 @@
 """
-MCP Tool: extract_youtube_transcript
+Agent tool: extract_youtube_transcript
 
 Fetches the full transcript and title from a YouTube URL.
 This is a deterministic tool (no LLM involved). It is safe to
 expose to the AI as it cannot modify any state.
 
 Logic is identical to apps/quiz/youtube_api.py -- kept here so the
-FastAPI MCP layer can call it in-process without an HTTP round-trip
+FastAPI agent layer can call it in-process without an HTTP round-trip
 back to Django.
 """
 
@@ -40,7 +40,7 @@ def _fetch_transcript_sync(video_id: str) -> str:
             "Add it to requirements.txt and redeploy."
         )
 
-    logger.info("[mcp:youtube] fetching transcript video_id=%s", video_id)
+    logger.info("[agent:youtube] fetching transcript video_id=%s", video_id)
 
     try:
         api = YouTubeTranscriptApi()
@@ -79,13 +79,13 @@ async def _fetch_video_title(video_id: str) -> str:
             if resp.status_code == 200:
                 return resp.json().get("title", "")
     except Exception:
-        logger.debug("[mcp:youtube] title lookup failed video_id=%s", video_id, exc_info=True)
+        logger.debug("[agent:youtube] title lookup failed video_id=%s", video_id, exc_info=True)
     return ""
 
 
 async def extract_youtube_transcript(url: str) -> dict:
     """
-    MCP tool handler. Returns:
+    Agent tool handler. Returns:
         {"text": str, "title": str, "video_id": str}
     Raises ValueError with a user-facing message on any expected failure.
     """
@@ -103,7 +103,7 @@ async def extract_youtube_transcript(url: str) -> dict:
     )
 
     if isinstance(transcript_result, Exception):
-        logger.warning("[mcp:youtube] extraction failed video_id=%s err=%s", video_id, transcript_result)
+        logger.warning("[agent:youtube] extraction failed video_id=%s err=%s", video_id, transcript_result)
         raise ValueError(str(transcript_result))
 
     if isinstance(title_result, Exception):
@@ -116,7 +116,7 @@ async def extract_youtube_transcript(url: str) -> dict:
         raise ValueError("The transcript for this video is too short to be useful.")
 
     logger.info(
-        "[mcp:youtube] done video_id=%s title=%r chars=%d",
+        "[agent:youtube] done video_id=%s title=%r chars=%d",
         video_id, title, len(transcript),
     )
     return {"text": transcript, "title": title, "video_id": video_id}

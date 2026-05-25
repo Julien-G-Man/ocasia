@@ -1,5 +1,5 @@
 """
-MCP Executor
+Agent executor
 
 Dispatches a ToolCall to its registered handler, enforces per-tool timeouts,
 and records execution timing. All errors are caught here and returned as a
@@ -26,7 +26,7 @@ async def execute_tool(call: ToolCall) -> ToolResult:
     tool_input = call.input
 
     logger.info(
-        "[mcp:executor] start tool=%s id=%s input_keys=%s",
+        "[agent:executor] start tool=%s id=%s input_keys=%s",
         tool_name, call.tool_use_id, list(tool_input.keys()),
     )
 
@@ -46,7 +46,7 @@ async def execute_tool(call: ToolCall) -> ToolResult:
 
         duration_ms = (time.perf_counter() - t0) * 1000
         logger.info(
-            "[mcp:executor] done tool=%s id=%s duration_ms=%.1f",
+            "[agent:executor] done tool=%s id=%s duration_ms=%.1f",
             tool_name, call.tool_use_id, duration_ms,
         )
         return ToolResult(
@@ -58,14 +58,14 @@ async def execute_tool(call: ToolCall) -> ToolResult:
 
     except KeyError as exc:
         duration_ms = (time.perf_counter() - t0) * 1000
-        logger.error("[mcp:executor] unknown tool=%s: %s", tool_name, exc)
+        logger.error("[agent:executor] unknown tool=%s: %s", tool_name, exc)
         return ToolResult(tool_use_id=call.tool_use_id, name=tool_name,
                          error=f"Unknown tool '{tool_name}'.", duration_ms=duration_ms)
 
     except asyncio.TimeoutError:
         duration_ms = (time.perf_counter() - t0) * 1000
         timeout = get_timeout(tool_name)
-        logger.warning("[mcp:executor] timeout tool=%s id=%s after %.1fs",
+        logger.warning("[agent:executor] timeout tool=%s id=%s after %.1fs",
                        tool_name, call.tool_use_id, timeout)
         return ToolResult(tool_use_id=call.tool_use_id, name=tool_name,
                          error=f"Tool '{tool_name}' timed out after {timeout:.0f}s.",
@@ -74,7 +74,7 @@ async def execute_tool(call: ToolCall) -> ToolResult:
     except TypeError as exc:
         # Bad arguments from the AI
         duration_ms = (time.perf_counter() - t0) * 1000
-        logger.warning("[mcp:executor] bad input tool=%s id=%s error=%s input=%s",
+        logger.warning("[agent:executor] bad input tool=%s id=%s error=%s input=%s",
                        tool_name, call.tool_use_id, exc, tool_input)
         return ToolResult(tool_use_id=call.tool_use_id, name=tool_name,
                          error=f"Tool '{tool_name}' received unexpected arguments: {exc}",
@@ -83,7 +83,7 @@ async def execute_tool(call: ToolCall) -> ToolResult:
     except ValueError as exc:
         # Expected user-facing error (bad URL, transcript unavailable, etc.)
         duration_ms = (time.perf_counter() - t0) * 1000
-        logger.warning("[mcp:executor] tool error tool=%s id=%s error=%s",
+        logger.warning("[agent:executor] tool error tool=%s id=%s error=%s",
                        tool_name, call.tool_use_id, exc)
         return ToolResult(tool_use_id=call.tool_use_id, name=tool_name,
                          error=str(exc), duration_ms=duration_ms)
@@ -91,7 +91,7 @@ async def execute_tool(call: ToolCall) -> ToolResult:
     except Exception as exc:
         # Unexpected failure — log full traceback
         duration_ms = (time.perf_counter() - t0) * 1000
-        logger.exception("[mcp:executor] unexpected error tool=%s id=%s", tool_name, call.tool_use_id)
+        logger.exception("[agent:executor] unexpected error tool=%s id=%s", tool_name, call.tool_use_id)
         return ToolResult(
             tool_use_id=call.tool_use_id,
             name=tool_name,

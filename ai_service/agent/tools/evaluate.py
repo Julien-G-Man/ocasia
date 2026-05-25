@@ -1,5 +1,5 @@
 """
-MCP Tool: evaluate_answer
+Agent tool: evaluate_answer
 
 LLM-based short-answer evaluator. Given a question, the correct answer,
 and the student's answer, returns a score (0.0-1.0), a boolean, and
@@ -33,7 +33,7 @@ async def evaluate_answer(
     Falls back to exact-string comparison when the AI is unavailable.
     """
     if not user_answer.strip():
-        logger.debug("[mcp:evaluate] empty user_answer — scoring 0")
+        logger.debug("[agent:evaluate] empty user_answer — scoring 0")
         return {"is_correct": False, "score": 0.0, "reasoning": "No answer provided."}
 
     prompt = f"""You are an expert quiz evaluator. Evaluate the student answer below.
@@ -67,15 +67,15 @@ Return ONLY valid JSON — no markdown, no code blocks:
             "reasoning": str(parsed.get("reasoning", "Evaluation complete.")),
         }
         logger.debug(
-            "[mcp:evaluate] is_correct=%s score=%.2f",
+            "[agent:evaluate] is_correct=%s score=%.2f",
             result["is_correct"], result["score"],
         )
         return result
 
     except json.JSONDecodeError as exc:
-        logger.warning("[mcp:evaluate] JSON parse failed: %s. Raw: %.200s", exc, text if "text" in dir() else "")
+        logger.warning("[agent:evaluate] JSON parse failed: %s. Raw: %.200s", exc, text if "text" in dir() else "")
     except Exception as exc:
-        logger.warning("[mcp:evaluate] AI call failed: %s — falling back to string match", exc)
+        logger.warning("[agent:evaluate] AI call failed: %s — falling back to string match", exc)
 
     # Fallback: exact string comparison
     is_correct = user_answer.strip().lower() == correct_answer.strip().lower()

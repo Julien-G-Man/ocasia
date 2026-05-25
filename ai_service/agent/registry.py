@@ -1,5 +1,5 @@
 """
-MCP Tool Registry
+Agent Tool Registry
 
 Single source of truth for all tools exposed to the AI.
 
@@ -8,7 +8,7 @@ Each entry contains:
   handler     -- async callable(**input) -> any
   timeout     -- per-tool execution timeout in seconds
 
-To add a new tool: write a handler in mcp_server/tools/, add a
+To add a new tool: write a handler in agent/tools/, add a
 ToolDefinition with a strict input_schema, register it here.
 """
 
@@ -208,7 +208,7 @@ TOOL_REGISTRY: dict[str, dict] = {
             name="generate_quiz",
             description=(
                 "Generate a quiz from a body of study text. "
-                "Returns MCQ and/or short-answer questions. "
+                "Returns Agent and/or short-answer questions. "
                 "Use when the user provides text or a transcript and wants a quiz."
             ),
             input_schema={
@@ -329,7 +329,7 @@ def get_definitions(names: list[str] | None) -> list[ToolDefinition]:
         if name in TOOL_REGISTRY:
             result.append(TOOL_REGISTRY[name]["definition"])
         else:
-            logger.warning("[mcp:registry] unknown tool requested: %s", name)
+            logger.warning("[agent:registry] unknown tool requested: %s", name)
     return result
 
 

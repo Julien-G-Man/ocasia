@@ -1,5 +1,5 @@
 """
-MCP Tool: summarize_text
+Agent tool: summarize_text
 
 Condenses a body of text into key points. Used by the AI when it needs
 to reduce a large document before passing it to another tool (e.g.,
@@ -35,7 +35,7 @@ async def summarize_text(
     # Hard-cap input so we don't blow the token budget
     truncated = text[:20_000]
     if len(text) > 20_000:
-        logger.debug("[mcp:summarize] input truncated from %d to 20000 chars", len(text))
+        logger.debug("[agent:summarize] input truncated from %d to 20000 chars", len(text))
 
     focus_line = f"\nFocus: {focus.strip()}" if focus.strip() else ""
 
@@ -52,11 +52,11 @@ TEXT:
         raw = await ai_client.generate_content(client=client, prompt=prompt, max_tokens=max_tokens, timeout=30)
 
         summary = raw.strip() if isinstance(raw, str) else str(raw).strip()
-        logger.debug("[mcp:summarize] done words=%d", len(summary.split()))
+        logger.debug("[agent:summarize] done words=%d", len(summary.split()))
         return {"summary": summary}
 
     except Exception as exc:
-        logger.warning("[mcp:summarize] AI call failed: %s", exc)
+        logger.warning("[agent:summarize] AI call failed: %s", exc)
         # Graceful degradation: return a truncated version of the raw text
         words = text.split()
         fallback = " ".join(words[: max_words]) + ("..." if len(words) > max_words else "")
