@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from '../../components/Navbar';
+import AppShell from '../../components/AppShell/AppShell';
 import './Chatbot.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -425,9 +426,7 @@ const Chatbot = ({ user: userProp }) => {
     };
 
     // ── Render ─────────────────────────────────────────────────────
-    return (
-        <>
-        <Navbar user={user} />
+    const chatBody = (
         <div className="chat-wrapper">
             <Sidebar
                 sessions={chatSessions}
@@ -634,8 +633,11 @@ const Chatbot = ({ user: userProp }) => {
                 </div>
             </div>
         </div>
-        </>
     );
+
+    return isAuthenticated
+        ? <AppShell showSidebar={false}>{chatBody}</AppShell>
+        : <><Navbar />{chatBody}</>;
 };
 
 export default Chatbot;
