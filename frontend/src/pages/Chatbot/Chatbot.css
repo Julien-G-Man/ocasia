@@ -922,3 +922,154 @@
         display: none;
     }
 }
+
+
+/* ── Quiz form & start-quiz cards ───────────────────────────── */
+
+.quiz-form-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 260px;
+    max-width: 400px;
+}
+
+.quiz-form-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.quiz-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.quiz-form-field label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.quiz-form-field input,
+.quiz-form-field select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.quiz-form-field input:focus,
+.quiz-form-field select:focus {
+    border-color: var(--primary-color);
+}
+
+.quiz-form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.quiz-form-generate-btn {
+    align-self: flex-start;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.quiz-form-generate-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.quiz-form-generate-btn:not(:disabled):hover {
+    opacity: 0.88;
+}
+
+.start-quiz-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.start-quiz-label {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.start-quiz-btn {
+    align-self: flex-start;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.start-quiz-btn:hover {
+    opacity: 0.88;
+}
+
+/* ── Quiz generation overlay (matches CreateQuiz processing card) ── */
+
+.quiz-gen-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.quiz-gen-card {
+    min-width: 260px;
+    max-width: 420px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+}
+
+.quiz-gen-card p {
+    margin: 14px 0 0;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.quiz-gen-spinner {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: quizGenSpin 0.8s linear infinite;
+}
+
+@keyframes quizGenSpin {
+    to { transform: rotate(360deg); }
+}

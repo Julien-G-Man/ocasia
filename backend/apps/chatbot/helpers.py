@@ -118,13 +118,30 @@ async def _save_ai_message(session_obj, ai_message: str):
         raise
 
 
+_QUIZ_MSG_PREFIX = "__QUIZ__:"
+
+def _summarize_message_content(content: str) -> str:
+    """Replace quiz data blobs with a short summary for AI context."""
+    if content.startswith(_QUIZ_MSG_PREFIX):
+        try:
+            import json as _json
+            data = _json.loads(content[len(_QUIZ_MSG_PREFIX):])
+            subject = data.get("subject", "unknown topic")
+            n = len(data.get("mcq_questions", []))
+            diff = data.get("difficulty", "")
+            return f"[Quiz generated: {subject}, {n} questions, {diff} difficulty]"
+        except Exception:
+            return "[Quiz generated]"
+    return content
+
+
 async def _get_conversation_history(session_obj, limit: int = 10):
     """Get conversation history for context."""
     if session_obj is None:
         return []
     history_qs = await sync_to_async(list)(session_obj.messages.order_by("-created_at")[:limit])
     return [
-        {"message_type": msg.sender, "content": msg.content}
+        {"message_type": msg.sender, "content": _summarize_message_content(msg.content)}
         for msg in reversed(history_qs)
     ]
 
@@ -158,9 +175,10 @@ def fallback_response(user_message: str) -> str:
 
 def _fetch_user_performance_sync(user) -> dict | None:
     """
-    Fetch compact performance snapshot for authenticated user.
+    Fetch full performance snapshot for authenticated user.
     Returns None if user has no quiz history.
-    Three cheap DB queries: aggregate stats, weak areas, due topics.
+    Sends all topics (no minimum threshold) + recent quiz sessions so the AI
+    can discuss results the user just took, not just long-term aggregates.
     """
     try:
         from django.db.models import Avg, Count
@@ -175,20 +193,40 @@ def _fetch_user_performance_sync(user) -> dict | None:
             return None
 
         avg_score = round(float(agg["avg_score"] or 0), 1)
-        qs = TopicPerformance.objects.filter(user=user, total_questions__gte=3)
-        weak = list(qs.order_by("accuracy")[:3].values_list("topic", "accuracy"))
-        strong = list(qs.order_by("-accuracy")[:3].values_list("topic", "accuracy"))
+
+        # All topics sorted weakest-first — no minimum so a brand-new quiz shows up immediately
+        all_topics = list(
+            TopicPerformance.objects.filter(user=user)
+            .order_by("accuracy")
+            .values_list("topic", "accuracy", "total_questions")
+        )
+
+        # Last 5 quiz sessions so the AI knows about very recent results
+        recent = list(
+            QuizSession.objects.filter(user=user)
+            .order_by("-created_at")[:5]
+            .values("subject", "score_percentage", "correct_answers", "total_questions")
+        )
+
         due = list(
             QuizTopicSchedule.objects.filter(user=user, next_review__lte=timezone.now())
-            .order_by("next_review")[:3]
+            .order_by("next_review")[:5]
             .values_list("topic", flat=True)
         )
 
         return {
             "total_quizzes": total_quizzes,
             "avg_score": avg_score,
-            "weak_areas": [(t, round(a, 1)) for t, a in weak],
-            "strong_areas": [(t, round(a, 1)) for t, a in strong],
+            "all_topics": [(t, round(float(a), 1), q) for t, a, q in all_topics],
+            "recent_quizzes": [
+                {
+                    "subject": r["subject"],
+                    "score": round(float(r["score_percentage"]), 1),
+                    "correct": r["correct_answers"],
+                    "total": r["total_questions"],
+                }
+                for r in recent
+            ],
             "due_topics": due,
         }
     except Exception:

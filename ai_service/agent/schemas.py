@@ -64,3 +64,14 @@ class ChatRequest(BaseModel):
     user_stats: dict | None = None
     file_text: str | None = None
     user_id: int | None = None
+
+
+class AgentQuizGenerateRequest(BaseModel):
+    """
+    Sent by Django to POST /agent/quiz/generate/.
+    Bypasses the conversational loop — dedicated quiz generation endpoint.
+    """
+    topic: str
+    num_questions: int = Field(default=10, ge=5, le=20)
+    time_limit: int = Field(default=15, ge=5, le=60)
+    user_stats: dict | None = None

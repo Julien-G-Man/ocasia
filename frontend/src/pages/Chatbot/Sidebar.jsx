@@ -22,7 +22,6 @@ const Sidebar = ({
   user,                  // User object (to check authentication)
   isAuthenticated,       // Whether the visitor is signed in
 }) => {
-  const [confirmModal, setConfirmModal] = useState(null); // {sessionId, sessionData}
   const [openMenuSessionId, setOpenMenuSessionId] = useState(null);
   const [renameModal, setRenameModal] = useState(null); // {sessionId, title}
   const [renameValue, setRenameValue] = useState('');
@@ -99,31 +98,11 @@ const Sidebar = ({
     }
   };
 
-  // Handle session item click - show confirmation modal
   const handleSessionClick = (session) => {
     const sessionKey = session.session_id || session.id;
-    if (sessionKey === currentSessionId) {
-      // Already on this session
-      return;
-    }
-    setConfirmModal(session);
-  };
-
-  // Confirm session switch
-  const handleConfirmSwitch = () => {
-    if (confirmModal) {
-      onSwitchSession?.(confirmModal.session_id || confirmModal.id);
-      setConfirmModal(null);
-      // Close sidebar on mobile after switching
-      if (window.innerWidth <= 768) {
-        onToggleSidebar?.();
-      }
-    }
-  };
-
-  // Cancel session switch
-  const handleCancelSwitch = () => {
-    setConfirmModal(null);
+    if (sessionKey === currentSessionId) return;
+    onSwitchSession?.(sessionKey);
+    if (window.innerWidth <= 768) onToggleSidebar?.();
   };
 
   const handleToggleSessionMenu = (sessionId, e) => {
@@ -309,32 +288,6 @@ const Sidebar = ({
           )}
         </div>
       </div>
-
-      {/* Confirmation Modal */}
-      {confirmModal && (
-        <div className="confirmation-modal-overlay">
-          <div className="confirmation-modal">
-            <h3 className="confirmation-modal-title">Switch Conversation?</h3>
-            <p className="confirmation-modal-message">
-              Your current chat will be saved. You can return to it anytime from this sidebar.
-            </p>
-            <div className="confirmation-modal-buttons">
-              <button
-                className="confirmation-modal-btn cancel"
-                onClick={handleCancelSwitch}
-              >
-                Cancel
-              </button>
-              <button
-                className="confirmation-modal-btn confirm"
-                onClick={handleConfirmSwitch}
-              >
-                Yes, Switch
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Rename modal */}
       {renameModal && (

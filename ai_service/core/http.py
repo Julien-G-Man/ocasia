@@ -19,6 +19,6 @@ async def get_async_client():
                 max_keepalive_connections=settings.FASTAPI_OUTBOUND_MAX_KEEPALIVE,
                 keepalive_expiry=30,
             ),
-            http2=True,
+            http2=False,
         )
     return async_client

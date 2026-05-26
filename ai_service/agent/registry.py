@@ -119,6 +119,14 @@ async def _generate_flashcards_handler(
     return {"cards": cards}
 
 
+async def _request_quiz_form_handler(topic: str = "") -> dict:
+    """
+    No-op signal tool. Returns immediately — no LLM call.
+    The router detects this call and sets action='show_quiz_form' in the response.
+    """
+    return {"status": "quiz_form_shown", "topic": topic}
+
+
 async def _explain_concept_handler(question: str, answer: str) -> dict:
     from core.ai_client import ai_client
     from core.http import get_async_client
@@ -324,6 +332,32 @@ TOOL_REGISTRY: dict[str, dict] = {
         ),
         "handler": _explain_concept_handler,
         "timeout": 20.0,
+    },
+
+    "request_quiz_form": {
+        "definition": ToolDefinition(
+            name="request_quiz_form",
+            description=(
+                "Signal that the user wants to take a quiz. "
+                "Call this immediately when the user expresses intent to take, create, or be quizzed on a topic. "
+                "Pass the topic the user mentioned as 'topic'. "
+                "Do NOT ask the user for more details — just call this tool. "
+                "An inline setup form will appear in the chat for the user to fill in."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The subject or topic the user wants to be quizzed on (extracted from conversation).",
+                        "default": "",
+                    },
+                },
+                "required": [],
+            },
+        ),
+        "handler": _request_quiz_form_handler,
+        "timeout": 2.0,
     },
 
     "search_web": {

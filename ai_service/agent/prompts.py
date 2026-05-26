@@ -41,8 +41,10 @@ When referencing a platform page, format it as a markdown link so the user can c
 _TOOLS_RULES = """\
 TOOLS:
 - kb_search(query): Search Lamla's knowledge base. Always call this first for platform-specific questions.
-- web_search(query): Search the web for current or external information.
-  Never use web_search for questions about the Lamla platform — use kb_search instead.\
+- search_web(query): Search the web for current or external information.
+  Never use search_web for questions about the Lamla platform — use kb_search instead.
+- request_quiz_form(topic): Call this IMMEDIATELY when the user wants to take or create a quiz.
+  Extract the topic from their message and pass it. Do NOT ask for more details — just call it.\
 """
 
 _SOCRATIC_RULES = """\
@@ -82,12 +84,14 @@ def build_chat_system_prompt(tutor_mode: str, user_stats: dict | None) -> str:
             "STUDENT LEARNING PROGRESS:",
             f"[{user_stats.get('total_quizzes', 0)} quizzes taken | Avg score: {user_stats.get('avg_score', 0)}%]",
         ]
-        weak = user_stats.get("weak_areas", [])
-        if weak:
-            perf.append(f"Weak topics: {', '.join(f'{t} ({a}%)' for t, a in weak)}")
-        strong = user_stats.get("strong_areas", [])
-        if strong:
-            perf.append(f"Strong topics: {', '.join(f'{t} ({a}%)' for t, a in strong)}")
+        recent = user_stats.get("recent_quizzes", [])
+        if recent:
+            parts = [f"{r['subject']} ({r['correct']}/{r['total']}, {r['score']}%)" for r in recent]
+            perf.append(f"Recent quizzes: {', '.join(parts)}")
+        all_topics = user_stats.get("all_topics", [])
+        if all_topics:
+            parts = [f"{t} ({a}%, {q}q)" for t, a, q in all_topics]
+            perf.append(f"All topics (weakest first): {', '.join(parts)}")
         due = user_stats.get("due_topics", [])
         if due:
             perf.append(f"Due for review: {', '.join(due)}")

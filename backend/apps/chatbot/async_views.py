@@ -58,6 +58,8 @@ async def chatbot_api_async(request):
 
         # 5. Forward to FastAPI /agent/chat
         ai_response = ""
+        chat_action = None
+        chat_prefill = None
         try:
             headers = build_fastapi_headers()
             fastapi_resp = await call_fastapi(
@@ -77,9 +79,13 @@ async def chatbot_api_async(request):
             if fastapi_resp.status_code == 200:
                 resp_json = fastapi_resp.json()
                 ai_response = resp_json.get("response", "")
+                chat_action = resp_json.get("action")
+                chat_prefill = resp_json.get("prefill")
                 if not ai_response:
                     logger.warning("[chatbot] FastAPI returned empty response")
             else:
+                chat_action = None
+                chat_prefill = None
                 logger.warning(
                     "[chatbot] FastAPI /agent/chat returned %d: %s",
                     fastapi_resp.status_code, fastapi_resp.text[:200],
@@ -94,15 +100,22 @@ async def chatbot_api_async(request):
             )
 
         if not ai_response:
+            chat_action = None
+            chat_prefill = None
             ai_response = fallback_response(user_message)
 
         # 6. Save + return
         cleaned = ai_response.strip()
         await _save_ai_message(session_obj, cleaned)
-        return JsonResponse({
+        response_payload = {
             "response": cleaned,
             "session_id": session_obj.session_id if session_obj else None,
-        })
+        }
+        if chat_action:
+            response_payload["action"] = chat_action
+        if chat_prefill:
+            response_payload["prefill"] = chat_prefill
+        return JsonResponse(response_payload)
 
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
@@ -194,6 +207,69 @@ async def chatbot_file_api_async(request):
         return JsonResponse({"error": "Internal server error"}, status=500)
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+async def create_quiz_from_agent(request):
+    """
+    Authenticated proxy: fetches user_stats then forwards to FastAPI /agent/quiz/generate/.
+    Called by the inline quiz-param card in the chatbot UI.
+    """
+    try:
+        data = json.loads(request.body) if request.body else {}
+        topic = data.get("topic", "").strip()
+        session_id = data.get("session_id", "").strip()
+        if not topic:
+            return JsonResponse({"error": "topic is required"}, status=400)
+
+        user = await _resolve_authenticated_user(request)
+        if not user:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+
+        user_stats = await sync_to_async(_fetch_user_performance_sync, thread_sensitive=True)(user)
+
+        try:
+            headers = build_fastapi_headers()
+            fastapi_resp = await call_fastapi(
+                "POST",
+                "/agent/quiz/generate/",
+                json={
+                    "topic": topic,
+                    "num_questions": int(data.get("num_questions", 10)),
+                    "time_limit": int(data.get("time_limit", 15)),
+                    "user_stats": user_stats,
+                },
+                headers=headers,
+                timeout=120.0,
+            )
+        except (httpx.TimeoutException, httpx.RequestError) as e:
+            logger.error("[quiz/agent] FastAPI unreachable: %s", e)
+            return JsonResponse({"error": "AI service temporarily unavailable."}, status=503)
+
+        if fastapi_resp.status_code != 200:
+            logger.error("[quiz/agent] FastAPI error %d: %s", fastapi_resp.status_code, fastapi_resp.text[:200])
+            return JsonResponse({"error": "Quiz generation failed."}, status=503)
+
+        resp_data = fastapi_resp.json()
+
+        # Persist quiz as a special chat message so it survives session reloads across browsers.
+        # The frontend detects the __QUIZ__: prefix in toUiMessage and renders a StartQuizCard.
+        quiz_data = resp_data.get("quiz_data")
+        if session_id and quiz_data:
+            session_obj = await sync_to_async(
+                ChatSession.objects.filter(user=user, session_id=session_id).first
+            )()
+            if session_obj:
+                await _save_ai_message(session_obj, f"__QUIZ__:{json.dumps(quiz_data)}")
+
+        return JsonResponse(resp_data)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        logger.error("[quiz/agent] error: %s", e, exc_info=True)
+        return JsonResponse({"error": "Internal server error"}, status=500)
+
+
 @require_http_methods(["GET"])
 async def get_conversation_history(request):
     start = perf_counter()
@@ -248,6 +324,7 @@ async def get_conversation_history(request):
         )
 
 
+@csrf_exempt
 @require_http_methods(["DELETE"])
 async def clear_conversation_history(request):
     start = perf_counter()
@@ -260,8 +337,7 @@ async def clear_conversation_history(request):
                 return JsonResponse({"detail": "Authentication required"}, status=401)
 
             session_obj = await sync_to_async(
-                ChatSession.objects.filter(user=user, session_id=requested_session_id).first
-            )()
+                ChatSession.objects.filter(user=user, session_id=requested_session_id).first)()
         else:
             user, session_obj = await _get_or_create_session(request)
 

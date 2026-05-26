@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from '../../components/Navbar';
 import AppShell from '../../components/AppShell/AppShell';
@@ -14,6 +14,7 @@ import {
     faCheck,
     faAngleDoubleLeft,
     faArrowDown,
+    faPlay,
 } from '@fortawesome/free-solid-svg-icons';
 import djangoApi from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -21,8 +22,159 @@ import RichTextRenderer, { normalizeRichTextContent } from '../../utils/richText
 
 let messageIdCounter = Date.now();
 
+// ── Inline quiz card components ────────────────────────────────────────────
+
+const QuizFormCard = ({ prefillTopic = '', onGenerate, isGenerating }) => {
+    const [topic, setTopic] = useState(prefillTopic);
+    const [numQ, setNumQ] = useState(10);
+    const [timeLimit, setTimeLimit] = useState(15);
+
+    return (
+        <div className="quiz-form-card">
+            <p className="quiz-form-title">Set up your quiz</p>
+            <div className="quiz-form-field">
+                <label htmlFor="qfc-topic">Topic</label>
+                <input
+                    id="qfc-topic"
+                    type="text"
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    placeholder="e.g. Thermodynamics"
+                    disabled={isGenerating}
+                />
+            </div>
+            <div className="quiz-form-row">
+                <div className="quiz-form-field">
+                    <label htmlFor="qfc-numq">Questions</label>
+                    <select id="qfc-numq" value={numQ} onChange={e => setNumQ(Number(e.target.value))} disabled={isGenerating}>
+                        {[5, 10, 15, 20].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                </div>
+                <div className="quiz-form-field">
+                    <label htmlFor="qfc-time">Time limit (min)</label>
+                    <select id="qfc-time" value={timeLimit} onChange={e => setTimeLimit(Number(e.target.value))} disabled={isGenerating}>
+                        {[5, 10, 15, 20, 30].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                </div>
+            </div>
+            <button
+                className="quiz-form-generate-btn"
+                onClick={() => onGenerate(topic, numQ, timeLimit)}
+                disabled={!topic.trim() || isGenerating}
+            >
+                {isGenerating
+                    ? <><FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: 6 }} />Generating…</>
+                    : 'Generate Quiz'}
+            </button>
+        </div>
+    );
+};
+
+const StartQuizCard = ({ quizData, onStart }) => (
+    <div className="start-quiz-card">
+        <p className="start-quiz-label">
+            Your <strong>{quizData.subject}</strong> quiz is ready!
+            {' '}({quizData.mcq_questions?.length || 0} questions · {quizData.difficulty})
+        </p>
+        <button className="start-quiz-btn" onClick={onStart}>
+            <FontAwesomeIcon icon={faPlay} style={{ marginRight: 6 }} />
+            Start Quiz
+        </button>
+    </div>
+);
+
+const MessageBubble = ({
+    message,
+    copiedId,
+    onCopy,
+    onQuizGenerate,
+    quizFormGenerating,
+    onStartQuiz,
+}) => {
+    const isAI = message.type === 'ai';
+
+    if (message.type === 'quiz_form') {
+        return (
+            <div className="message-row ai-row">
+                <div className="ai-avatar-wrap">
+                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                </div>
+                <div className="message-bubble ai-message">
+                    <QuizFormCard
+                        prefillTopic={message.prefillTopic || ''}
+                        onGenerate={onQuizGenerate}
+                        isGenerating={quizFormGenerating}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (message.type === 'start_quiz') {
+        return (
+            <div className="message-row ai-row">
+                <div className="ai-avatar-wrap">
+                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                </div>
+                <div className="message-bubble ai-message">
+                    <StartQuizCard
+                        quizData={message.quizData}
+                        onStart={() => onStartQuiz(message.quizData)}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className={`message-row ${isAI ? 'ai-row' : 'user-row'}`}>
+            {isAI && (
+                <div className="ai-avatar-wrap">
+                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                </div>
+            )}
+            <div className={`message-bubble ${message.type}-message`}>
+                {message.sender && (
+                    <div className="sender-row">
+                        <span className="sender-name">{message.sender}</span>
+                        {!message.isThinking && (
+                            <button
+                                className={`copy-btn${copiedId === message.id ? ' copied' : ''}`}
+                                title="Copy to clipboard"
+                                onClick={() => onCopy(normalizeRichTextContent(message.text), message.id)}
+                            >
+                                {copiedId === message.id
+                                    ? <><FontAwesomeIcon icon={faCheck} size="xs" /> Copied</>
+                                    : <FontAwesomeIcon icon={faCopy} size="xs" />}
+                            </button>
+                        )}
+                    </div>
+                )}
+                {message.attachment && (
+                    <div className="message-attachment-chip">
+                        <span className="attachment-chip-icon"><FontAwesomeIcon icon={faFolder} /></span>
+                        <span className="attachment-chip-name">{message.attachment.name}</span>
+                        <span className="attachment-chip-size">{formatFileSize(message.attachment.size)}</span>
+                    </div>
+                )}
+                {message.isThinking ? (
+                    <div className="ai-thinking-dots" aria-label="AI is typing">
+                        <span /><span /><span />
+                    </div>
+                ) : (
+                    <RichTextRenderer
+                        text={message.text}
+                        className="message-content"
+                        normalizeMath={message.type === 'ai'}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
 const STARTER_PROMPTS = [
-    { icon: '📝', text: 'Quiz me on a topic from my notes' },
+    { icon: '📝', text: 'Quiz me on a topic from my weak areas' },
     { icon: '📄', text: 'Summarise my uploaded document' },
     { icon: '💡', text: 'Explain a concept I\'m struggling with' },
     { icon: '🎯', text: 'Help me prepare for my exams' },
@@ -50,26 +202,38 @@ const getWelcomeMessage = (user = null) => {
 const freshSessionId = () =>
     `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-const toUiMessage = (msg) => ({
-    id: msg.id || messageIdCounter++,
-    text: msg.content || '',
-    type: msg.sender === 'user' ? 'user' : 'ai',
-    sender: msg.sender === 'ai' ? 'AI Tutor' : null,
-});
+const QUIZ_MSG_PREFIX = '__QUIZ__:';
+
+const toUiMessage = (msg) => {
+    if (msg.content?.startsWith(QUIZ_MSG_PREFIX)) {
+        try {
+            const quizData = JSON.parse(msg.content.slice(QUIZ_MSG_PREFIX.length));
+            return { id: msg.id || messageIdCounter++, type: 'start_quiz', quizData, text: '', sender: 'AI Tutor' };
+        } catch { /* fall through to normal message */ }
+    }
+    return {
+        id: msg.id || messageIdCounter++,
+        text: msg.content || '',
+        type: msg.sender === 'user' ? 'user' : 'ai',
+        sender: msg.sender === 'ai' ? 'AI Tutor' : null,
+    };
+};
 
 const Chatbot = ({ user: userProp }) => {
     const { user: authUser } = useAuth();
     const user = userProp ?? authUser;
     const isAuthenticated = Boolean(user || localStorage.getItem('auth_token'));
+    const navigate = useNavigate();
 
-    const [messageInput, setMessageInput]     = useState('');
-    const [attachedFile, setAttachedFile]     = useState(null);
-    const [isSocratic, setIsSocratic]         = useState(false);
-    const [isProcessing, setIsProcessing]     = useState(false);
-    const [history, setHistory]               = useState(() => [getWelcomeMessage(user)]);
-    const [copiedId, setCopiedId]             = useState(null);
-    const [authPrompt, setAuthPrompt]         = useState(null); // 'file' | null
-    const [fileSizeError, setFileSizeError]   = useState(null);
+    const [messageInput, setMessageInput]         = useState('');
+    const [attachedFile, setAttachedFile]         = useState(null);
+    const [isSocratic, setIsSocratic]             = useState(false);
+    const [isProcessing, setIsProcessing]         = useState(false);
+    const [history, setHistory]                   = useState(() => [getWelcomeMessage(user)]);
+    const [copiedId, setCopiedId]                 = useState(null);
+    const [authPrompt, setAuthPrompt]             = useState(null); // 'file' | null
+    const [fileSizeError, setFileSizeError]       = useState(null);
+    const [quizFormGenerating, setQuizFormGenerating] = useState(false);
 
     const [currentSessionId, setCurrentSessionId]   = useState(freshSessionId);
     const [chatSessions, setChatSessions]           = useState([]);
@@ -152,6 +316,7 @@ const Chatbot = ({ user: userProp }) => {
             setHistory([{ id: messageIdCounter++, text: 'Loading past messages…', type: 'ai', sender: 'AI Tutor' }]);
             const res = await djangoApi.get('/chat/history/', { params: { session_id: sessionId } });
             const messages = Array.isArray(res?.data?.messages) ? res.data.messages : [];
+            // toUiMessage detects __QUIZ__: messages and returns start_quiz type automatically
             setHistory(messages.length === 0 ? [getWelcomeMessage(user)] : messages.map(toUiMessage));
         } catch (err) {
             console.error('Failed to load session:', err);
@@ -174,7 +339,7 @@ const Chatbot = ({ user: userProp }) => {
 
     const handleDeleteSession = async (sessionId) => {
         try {
-            await djangoApi.delete('/chat/history/', { params: { session_id: sessionId } });
+            await djangoApi.delete('/chat/history/clear/', { params: { session_id: sessionId } });
             setChatSessions((prev) => {
                 const remaining = prev.filter((s) => (s.session_id || s.id) !== sessionId);
                 if (currentSessionId === sessionId) {
@@ -211,6 +376,42 @@ const Chatbot = ({ user: userProp }) => {
         const msg = { id: messageIdCounter++, text, type, sender, ...extra };
         setHistory(prev => [...prev, msg]);
         return msg;
+    };
+
+    const handleQuizFormGenerate = async (topic, numQ, timeLimit) => {
+        if (!topic.trim() || quizFormGenerating) return;
+        setQuizFormGenerating(true);
+        try {
+            const res = await djangoApi.post('/quiz/create-from-agent/', {
+                topic,
+                num_questions: numQ,
+                time_limit: timeLimit,
+                session_id: currentSessionId,
+            });
+            const quizData = res.data?.quiz_data;
+            if (!quizData) throw new Error('No quiz data returned');
+
+            // Replace quiz_form card with start_quiz card
+            setHistory(prev => {
+                const idx = prev.findLastIndex(m => m.type === 'quiz_form');
+                if (idx === -1) {
+                    return [...prev, { id: messageIdCounter++, type: 'start_quiz', quizData, text: '', sender: 'AI Tutor' }];
+                }
+                const next = [...prev];
+                next[idx] = { ...next[idx], type: 'start_quiz', quizData };
+                return next;
+            });
+        } catch (err) {
+            console.error('Quiz generation failed:', err);
+            const msg = err.response?.data?.error || 'Could not generate quiz. Please try again.';
+            alert(msg);
+        } finally {
+            setQuizFormGenerating(false);
+        }
+    };
+
+    const handleStartQuiz = (quizData) => {
+        navigate('/quiz/play', { state: { quizData } });
     };
 
     // Client-side typewriter: animates fullText into message with placeholderId
@@ -280,11 +481,17 @@ const Chatbot = ({ user: userProp }) => {
                     tutor_mode,
                 });
                 const aiText = res.data?.response || '[Error: Empty response]';
+                const chatAction = res.data?.action;
+                const chatPrefill = res.data?.prefill;
                 if (res.data?.session_id && res.data.session_id !== currentSessionId) {
                     setCurrentSessionId(res.data.session_id);
+                    fetchChatHistory(); // refresh sidebar when a new backend session is assigned
                 }
                 setIsProcessing(false);
                 runTypewriter(aiText, placeholderId);
+                if (chatAction === 'show_quiz_form') {
+                    addMessage('', 'quiz_form', 'AI Tutor', { prefillTopic: chatPrefill?.topic || '' });
+                }
             }
         } catch (err) {
             console.error('API Error:', err);
@@ -360,59 +567,17 @@ const Chatbot = ({ user: userProp }) => {
         pointerEvents: showScrollToBottom ? 'auto' : 'none',
     };
 
-    // ── Sub-components ─────────────────────────────────────────────
-    const MessageBubble = ({ message }) => {
-        const isAI = message.type === 'ai';
-        return (
-            <div className={`message-row ${isAI ? 'ai-row' : 'user-row'}`}>
-                {isAI && (
-                    <div className="ai-avatar-wrap">
-                        <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
-                    </div>
-                )}
-                <div className={`message-bubble ${message.type}-message`}>
-                    {message.sender && (
-                        <div className="sender-row">
-                            <span className="sender-name">{message.sender}</span>
-                            {!message.isThinking && (
-                                <button
-                                    className={`copy-btn${copiedId === message.id ? ' copied' : ''}`}
-                                    title="Copy to clipboard"
-                                    onClick={() => copyToClipboard(normalizeRichTextContent(message.text), message.id)}
-                                >
-                                    {copiedId === message.id
-                                        ? <><FontAwesomeIcon icon={faCheck} size="xs" /> Copied</>
-                                        : <FontAwesomeIcon icon={faCopy} size="xs" />}
-                                </button>
-                            )}
-                        </div>
-                    )}
-                    {message.attachment && (
-                        <div className="message-attachment-chip">
-                            <span className="attachment-chip-icon"><FontAwesomeIcon icon={faFolder} /></span>
-                            <span className="attachment-chip-name">{message.attachment.name}</span>
-                            <span className="attachment-chip-size">{formatFileSize(message.attachment.size)}</span>
-                        </div>
-                    )}
-                    {message.isThinking ? (
-                        <div className="ai-thinking-dots" aria-label="AI is typing">
-                            <span /><span /><span />
-                        </div>
-                    ) : (
-                        <RichTextRenderer
-                            text={message.text}
-                            className="message-content"
-                            normalizeMath={message.type === 'ai'}
-                        />
-                    )}
-                </div>
-            </div>
-        );
-    };
-
     // ── Render ─────────────────────────────────────────────────────
     const chatBody = (
         <div className="chat-wrapper">
+            {quizFormGenerating && (
+                <div className="quiz-gen-overlay" role="status" aria-live="polite">
+                    <div className="quiz-gen-card">
+                        <div className="quiz-gen-spinner" aria-hidden="true" />
+                        <p>Generating your quiz with AI…</p>
+                    </div>
+                </div>
+            )}
             <Sidebar
                 sessions={chatSessions}
                 currentSessionId={currentSessionId}
@@ -445,7 +610,17 @@ const Chatbot = ({ user: userProp }) => {
 
                     {/* ── Messages ── */}
                     <div id="chat-messages" ref={chatMessagesRef} onScroll={scheduleScrollVisibility}>
-                        {history.map(msg => <MessageBubble key={msg.id} message={msg} />)}
+                        {history.map(msg => (
+                            <MessageBubble
+                                key={msg.id}
+                                message={msg}
+                                copiedId={copiedId}
+                                onCopy={copyToClipboard}
+                                onQuizGenerate={handleQuizFormGenerate}
+                                quizFormGenerating={quizFormGenerating}
+                                onStartQuiz={handleStartQuiz}
+                            />
+                        ))}
 
                         {isWelcomeState && (
                             <div className="starter-prompts">

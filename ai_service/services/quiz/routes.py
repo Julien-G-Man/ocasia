@@ -1,8 +1,8 @@
+import ast
 import json
 import logging
 import re
 import unicodedata
-import httpx
 from fastapi import APIRouter, HTTPException
 from .schemas import QuizQuestion, QuizRequest, QuizResponse
 from .prompts import _build_quiz_prompt, _build_repair_prompt
@@ -13,12 +13,15 @@ quiz_router = APIRouter()
 try:
     # Prefer relative import when running as a package
     from ...core.ai_client import ai_client
+    from ...core.http import get_async_client
 except Exception:  # pragma: no cover - fallback paths
     try:
         from core.ai_client import ai_client
+        from core.http import get_async_client
     except Exception as e:
         logger.exception("Could not import FastAPI ai_client for quiz: %s", e)
         ai_client = None
+        get_async_client = None
 
 
 def _as_text(value) -> str:
@@ -154,6 +157,16 @@ def _parse_json_safe(text, provider_hint: str = "") -> dict | None:
         except json.JSONDecodeError:
             pass
 
+    # Attempt 3: ast.literal_eval — handles Python dict literals with single quotes
+    # (some providers return {'key': 'val'} instead of {"key": "val"})
+    for candidate in ([extracted] if extracted else []) + [clean]:
+        try:
+            result = ast.literal_eval(candidate)
+            if isinstance(result, (dict, list)):
+                return result
+        except Exception:
+            pass
+
     logger.warning(
         "Could not parse JSON from %s response. First 300 chars: %s",
         provider_hint or "provider",
@@ -186,65 +199,65 @@ async def quiz_endpoint(payload: QuizRequest):
         estimated_tokens = max(2048, min(8192, (payload.num_mcq * 120) + (payload.num_short * 80) + 512))
 
         data = None
-        async with httpx.AsyncClient(timeout=90) as client:
-            raw = await ai_client.generate_content(client, prompt, max_tokens=estimated_tokens, timeout=60)
+        client = await get_async_client()
+        raw = await ai_client.generate_content(client, prompt, max_tokens=estimated_tokens, timeout=60)
 
-            logger.debug("Quiz provider returned type: %s", type(raw).__name__)
+        logger.debug("Quiz provider returned type: %s", type(raw).__name__)
 
-            if isinstance(raw, dict):
-                if "choices" in raw and isinstance(raw.get("choices"), list):
-                    # Azure response format – extract content string from choices
-                    try:
-                        content_str = _as_text(raw["choices"][0].get("message", {}).get("content"))
-                        logger.debug("Extracted Azure content (first 100): %s", content_str[:100])
-                        data = _parse_json_safe(content_str, provider_hint="Azure")
-                        if data is None:
-                            # One-shot repair attempt for malformed/truncated JSON-like output.
-                            try:
-                                repair_raw = await ai_client.generate_content(
-                                    client,
-                                    _build_repair_prompt(content_str[:6000]),
-                                    max_tokens=estimated_tokens,
-                                    timeout=60,
-                                )
-                                repair_text = (
-                                    _as_text(repair_raw.get("choices", [{}])[0].get("message", {}).get("content"))
-                                    if isinstance(repair_raw, dict)
-                                    else _as_text(repair_raw)
-                                )
-                                data = _parse_json_safe(repair_text, provider_hint="Azure-repair")
-                            except Exception as repair_exc:
-                                logger.warning("Azure repair attempt failed: %s", repair_exc)
-                        if data is None:
-                            raise HTTPException(status_code=502, detail="Failed to parse Azure response")
-                    except (KeyError, IndexError) as e:
-                        logger.error("Malformed Azure choices structure: %s", e)
+        if isinstance(raw, dict):
+            if "choices" in raw and isinstance(raw.get("choices"), list):
+                # Azure response format – extract content string from choices
+                try:
+                    content_str = _as_text(raw["choices"][0].get("message", {}).get("content"))
+                    logger.debug("Extracted Azure content (first 100): %s", content_str[:100])
+                    data = _parse_json_safe(content_str, provider_hint="Azure")
+                    if data is None:
+                        # One-shot repair attempt for malformed/truncated JSON-like output.
+                        try:
+                            repair_raw = await ai_client.generate_content(
+                                client,
+                                _build_repair_prompt(content_str[:6000]),
+                                max_tokens=estimated_tokens,
+                                timeout=60,
+                            )
+                            repair_text = (
+                                _as_text(repair_raw.get("choices", [{}])[0].get("message", {}).get("content"))
+                                if isinstance(repair_raw, dict)
+                                else _as_text(repair_raw)
+                            )
+                            data = _parse_json_safe(repair_text, provider_hint="Azure-repair")
+                        except Exception as repair_exc:
+                            logger.warning("Azure repair attempt failed: %s", repair_exc)
+                    if data is None:
                         raise HTTPException(status_code=502, detail="Failed to parse Azure response")
-                else:
-                    # Already a parsed dict (e.g. DeepSeek / Gemini returning clean JSON)
-                    data = raw
+                except (KeyError, IndexError) as e:
+                    logger.error("Malformed Azure choices structure: %s", e)
+                    raise HTTPException(status_code=502, detail="Failed to parse Azure response")
             else:
-                # String response – strip fences then parse
-                raw_text = str(raw)
-                data = _parse_json_safe(raw_text)
-                if data is None:
-                    try:
-                        repair_raw = await ai_client.generate_content(
-                            client,
-                            _build_repair_prompt(raw_text[:6000]),
-                            max_tokens=estimated_tokens,
-                            timeout=60,
-                        )
-                        repair_text = (
-                            _as_text(repair_raw.get("choices", [{}])[0].get("message", {}).get("content"))
-                            if isinstance(repair_raw, dict)
-                            else _as_text(repair_raw)
-                        )
-                        data = _parse_json_safe(repair_text, provider_hint="repair")
-                    except Exception as repair_exc:
-                        logger.warning("Repair attempt failed: %s", repair_exc)
-                if data is None:
-                    raise HTTPException(status_code=502, detail="Invalid quiz format from AI provider")
+                # Already a parsed dict (e.g. DeepSeek / Gemini returning clean JSON)
+                data = raw
+        else:
+            # String response – strip fences then parse
+            raw_text = str(raw)
+            data = _parse_json_safe(raw_text)
+            if data is None:
+                try:
+                    repair_raw = await ai_client.generate_content(
+                        client,
+                        _build_repair_prompt(raw_text[:6000]),
+                        max_tokens=estimated_tokens,
+                        timeout=60,
+                    )
+                    repair_text = (
+                        _as_text(repair_raw.get("choices", [{}])[0].get("message", {}).get("content"))
+                        if isinstance(repair_raw, dict)
+                        else _as_text(repair_raw)
+                    )
+                    data = _parse_json_safe(repair_text, provider_hint="repair")
+                except Exception as repair_exc:
+                    logger.warning("Repair attempt failed: %s", repair_exc)
+            if data is None:
+                raise HTTPException(status_code=502, detail="Invalid quiz format from AI provider")
 
         # Validate response structure
         mcq_questions = data.get("mcq_questions", []) if data else []
