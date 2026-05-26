@@ -33,6 +33,16 @@
   - require valid `X-Internal-Secret`
   - browser-origin requests must be in `FASTAPI_ALLOWED_ORIGINS`
 
+### FastAPI Agent Endpoints
+
+| Endpoint | Caller | Purpose |
+|---|---|---|
+| `POST /agent/chat` | Django `chatbot_api_async` | Main chatbot — agent loop with `kb_search`, `search_web`, `request_quiz_form` |
+| `POST /agent/quiz/generate/` | Django `create_quiz_from_agent` | Standalone quiz generation from chatbot (no agent loop) |
+| `POST /agent/orchestrate` | Internal / future features | Generic tool-loop endpoint |
+| `GET /agent/tools` | Debug | List registered tools |
+| `POST /agent/call` | Debug | Direct single-tool invocation |
+
 ## Warmup Model
 
 React wakes both services:
@@ -60,11 +70,19 @@ Also:
 
 ## Data Ownership
 
-- Quiz history: `apps.quiz.models.QuizSession`
+- Quiz history: `apps.quiz.models.QuizSession`, `TopicPerformance`, `QuizTopicSchedule`
 - Flashcards: `apps.flashcards.models.Deck`, `Flashcard`
 - Chat: `apps.chatbot.models.ChatSession`, `ChatMessage`
 - Users/auth: `apps.accounts.models.User`
 - Payments: `apps.subscriptions.models.Donation`, `Subscription`, `PaymentHistory`
+
+### Special ChatMessage Formats
+
+`ChatMessage.content` is plain text for normal messages. The prefix `__QUIZ__:` marks
+an inline quiz generated via the AI Tutor — the frontend detects this and renders a
+Start Quiz card. The raw JSON is never forwarded to the LLM (summarised to a single line
+in `_get_conversation_history`). The sidebar preview strips the JSON and shows
+"Quiz generated: \<topic\>" via `dashboard_views._preview`.
 
 ## Authentication Architecture
 

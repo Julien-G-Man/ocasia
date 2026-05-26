@@ -106,9 +106,14 @@ Handlers run in-process — no internal HTTP round-trips.
 
 ### Chatbot tool subset
 
-`POST /agent/chat` only exposes `kb_search` and `search_web` to the AI.
-The other tools (quiz generation, YouTube, etc.) are available via `POST /agent/orchestrate`
-when called with the appropriate tool whitelist.
+`POST /agent/chat` exposes exactly these three tools (`_CHAT_TOOLS`):
+
+```python
+_CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]
+```
+
+All other tools (YouTube, summarize, evaluate, generate_quiz, generate_flashcards, explain_concept)
+are available via `POST /agent/orchestrate` when called with the appropriate whitelist.
 
 ### Input/output schemas
 
@@ -250,7 +255,7 @@ Debug/direct-call endpoints. Not called by Django in production.
 2. Resolve auth + get/create session.
 3. Save user message to DB.
 4. Fetch last 20 messages from session history.
-5. Fetch user stats via `_fetch_user_performance_sync()` (3 cheap DB queries).
+5. Fetch user stats via `_fetch_user_performance_sync()` — all topics (no minimum threshold), last 5 quiz sessions, and due topics.
 6. `POST /agent/chat` with the structured payload.
 7. On FastAPI failure: return static fallback (message not persisted).
 8. Save AI response to DB, return to React.
@@ -275,12 +280,22 @@ All prompt text lives in `ai_service/agent/prompts.py`. The router never builds 
 The chatbot system prompt (`build_chat_system_prompt`) contains:
 - Platform facts (name, URLs, support contacts)
 - Formatting rules (markdown links for page references)
-- Tool usage rules (kb_search first, web_search for external only)
+- Tool usage rules (kb_search first, web_search for external only, request_quiz_form for quiz intent)
 - Current date
-- User stats block (injected if available)
+- User stats block (injected if available): recent quiz sessions, all topics sorted weakest-first, due topics
 - Socratic mode block (injected if `tutor_mode == "socratic"`)
 
-Total: under 400 tokens without user stats + Socratic mode.
+The user stats block format (from `_fetch_user_performance_sync`):
+```
+STUDENT LEARNING PROGRESS:
+[5 quizzes taken | Avg score: 72.4%]
+Recent quizzes: Thermodynamics (8/10, 80%), Mechanics (4/10, 40%)
+All topics (weakest first): Mechanics (40%, 10q), Calculus (58%, 6q), Thermodynamics (80%, 10q)
+Due for review: Mechanics
+```
+
+`__QUIZ__:` messages in conversation history are summarized to `[Quiz generated: Topic, N questions, difficulty]`
+before being sent to the AI — the raw JSON blob is never forwarded.
 
 ---
 
@@ -360,5 +375,169 @@ Django chatbot_api_async:
 - Do not add auth, scoring, or DB writes to any tool.
 - Do not put prompt construction in Django — it belongs in FastAPI `prompts.py`.
 - Do not let tools call each other. The AI composes them; tools do not.
-- Do not expose all tools to the chatbot. Use `_CHAT_TOOLS = ["kb_search", "web_search"]`.
+- Do not expose all tools to the chatbot. Use `_CHAT_TOOLS = ["kb_search", "web_search", "request_quiz_form"]`.
 - Do not remove the direct quiz/flashcard endpoints. The quiz page calls them directly.
+
+---
+
+## 17. Agentic Quiz Creation — Inline UI Flow
+
+### Problem solved
+
+The previous approach required the chatbot to fill a text box on the Create Quiz page, which
+triggered a second unrelated LLM call. This design makes the chatbot the single entry point for
+quiz creation — no navigation away, no second agent call.
+
+### Two-phase architecture
+
+**Phase 1 — Intent detection and form signal**
+
+1. User expresses quiz intent (e.g., *"Quiz me on Thermodynamics with 10 questions"*).
+2. The agent calls `request_quiz_form(topic="Thermodynamics")` — a no-op tool that returns immediately.
+3. `_run_agent_loop` detects this call and sets `side_data["action"] = "show_quiz_form"`.
+4. `/agent/chat` returns `{ "response": "...", "action": "show_quiz_form", "prefill": {"topic": "Thermodynamics"} }`.
+5. Django passes `action` and `prefill` through to React.
+6. React appends an inline quiz-param card to the chat history (topic, num_questions, time_limit inputs, pre-filled from `prefill`).
+
+**Phase 2 — Generation and navigation**
+
+7. User confirms or adjusts params and clicks **Generate**.
+8. A full-screen loading overlay (spinner + "Generating your quiz with AI…") appears, matching the quiz/flashcard creation page style.
+9. React POSTs to `POST /api/quiz/create-from-agent/` (Django proxy — requires auth) with `{ topic, num_questions, time_limit, session_id }`.
+10. Django fetches `user_stats`, proxies to `POST /agent/quiz/generate/` (FastAPI), then saves `__QUIZ__:<json>` as an AI message in the current `ChatSession`.
+11. FastAPI auto-determines difficulty from `user_stats` and calls `_generate_quiz_handler`.
+12. Returns `{ "quiz_data": { mcq_questions, short_questions, subject, difficulty, id, time_limit } }`.
+13. Overlay disappears. React replaces the quiz-param card with a **Start Quiz** card.
+14. User clicks → `navigate('/quiz/play', { state: { quizData } })`. No second AI call.
+
+```
+React
+  │  user: "quiz me on Thermodynamics"
+  ▼
+Django POST /api/chat/
+  └── POST /agent/chat (FastAPI)
+        agent loop → request_quiz_form("Thermodynamics")
+        side_data = { action: "show_quiz_form", prefill: { topic: "Thermodynamics" } }
+        return { response: "...", action: "show_quiz_form", prefill: {...} }
+  └── passes action + prefill through to React
+
+React renders inline quiz-param card
+  │  user fills form, clicks Generate
+  ▼
+Django POST /api/quiz/create-from-agent/
+  └── fetches user_stats
+  └── POST /agent/quiz/generate/ (FastAPI)
+        _determine_difficulty(user_stats, topic)
+        _generate_quiz_handler(study_text=..., subject=topic, ...)
+        return { quiz_data: { mcq_questions, ..., id, time_limit } }
+  └── returns quiz_data to React
+
+React renders Start Quiz card → navigate('/quiz/play')
+```
+
+### request_quiz_form tool
+
+| Property | Value |
+|---|---|
+| Name | `request_quiz_form` |
+| Type | No-op signal tool |
+| Input | `topic: str` (optional, extracted from conversation) |
+| Output | `{ "status": "quiz_form_shown", "topic": "<topic>" }` |
+| Timeout | 2s |
+
+The handler returns immediately without any LLM call. Its sole purpose is to give the AI a
+typed way to signal intent. The router captures the output and sets `side_data`, which flows
+out-of-band through the response.
+
+### Difficulty auto-determination
+
+`POST /agent/quiz/generate/` computes difficulty from `user_stats` without asking the user.
+It looks up the specific topic in `all_topics` first, then falls back to overall average:
+
+| Condition (evaluated in order) | Difficulty |
+|---|---|
+| `user_stats` absent or empty | medium |
+| Topic found in `all_topics`, accuracy < 60% | hard (struggling — extra practice) |
+| Topic found in `all_topics`, accuracy 60–79% | medium |
+| Topic found in `all_topics`, accuracy ≥ 80% | hard (already strong — challenge further) |
+| Topic not found, `avg_score` ≥ 80% | hard |
+| Topic not found, `avg_score` 60–79% | medium |
+| Topic not found, `avg_score` < 60% | easy |
+
+### _run_agent_loop signature change
+
+`_run_agent_loop` now returns a **3-tuple** `(text, error, side_data)`.
+`side_data` carries out-of-band signals from tool execution.
+The chatbot route unpacks this and merges it into the HTTP response.
+Callers that only needed the 2-tuple were internal — there is one call site in the router.
+
+### New FastAPI endpoint
+
+`POST /agent/quiz/generate/` — standalone, not part of the conversational loop.
+
+```json
+Request:
+{
+  "topic": "string",
+  "num_questions": 10,
+  "time_limit": 15,
+  "user_stats": { ... } | null
+}
+
+Response:
+{
+  "quiz_data": {
+    "mcq_questions": [...],
+    "short_questions": [...],
+    "subject": "string",
+    "difficulty": "easy|medium|hard",
+    "id": "agent-<hex8>",
+    "time_limit": 15
+  }
+}
+```
+
+### Django proxy
+
+`POST /api/quiz/create-from-agent/` — authenticated view that:
+1. Reads `topic`, `num_questions`, `time_limit`, and `session_id` from the request body.
+2. Authenticates the user via `_resolve_authenticated_user` (does **not** create a session).
+3. Fetches `user_stats` for the logged-in user.
+4. Proxies to FastAPI `/agent/quiz/generate/`.
+5. On success, looks up the existing `ChatSession` by `session_id` and saves `__QUIZ__:<json>` as an AI message — this is what makes the Start Quiz card persist across sessions and devices.
+6. Returns `{ "quiz_data": ... }` to the frontend.
+
+No `QuizSession` is created here — Django creates one only when the user submits answers
+via `POST /api/quiz/submit/`, exactly as with manually created quizzes.
+
+### Quiz card persistence
+
+The Start Quiz card is stored server-side, not in localStorage. The sentinel prefix `__QUIZ__:`
+in the `ChatMessage.content` field marks it as quiz data.
+
+- **`_get_conversation_history`** strips the JSON and replaces it with
+  `[Quiz generated: Topic, N questions, difficulty]` before forwarding history to the AI.
+- **`dashboard_views._preview`** renders `"Quiz generated: Topic"` in the sidebar session list.
+- **`Chatbot.toUiMessage`** detects the prefix and returns `{ type: 'start_quiz', quizData }`,
+  which renders `StartQuizCard` — this runs automatically on every session load, across any browser or device.
+
+### Frontend message types
+
+| `message.type` | Component | Rendered as |
+|---|---|---|
+| `"quiz_form"` | `QuizFormCard` | Topic input + num_questions select + time_limit select + Generate button |
+| `"start_quiz"` | `StartQuizCard` | Quiz summary line + **Start Quiz** button |
+
+Both are rendered inside the standard AI bubble area to stay visually consistent.
+`QuizFormCard` maintains its own local state (topic, numQ, timeLimit) and is pre-filled
+from `message.prefillTopic` when the agent extracted the topic from the conversation.
+
+`quiz_form` messages are frontend-only (never persisted to DB).
+`start_quiz` messages are reconstructed from `__QUIZ__:` DB messages on every session load via `toUiMessage`.
+
+### Component structure
+
+`MessageBubble` is defined **outside** the `Chatbot` component and receives all callbacks as
+explicit props (`onCopy`, `onQuizGenerate`, `quizFormGenerating`, `onStartQuiz`, `copiedId`).
+Defining it inside `Chatbot` caused React to remount it on every re-render (new function
+reference = new component type), which reset `QuizFormCard`'s local topic input.

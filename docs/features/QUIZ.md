@@ -38,12 +38,17 @@ From `backend/apps/quiz/urls.py`:
 
 - `POST /api/quiz/ajax-extract-text/` — extract text from uploaded file
 - `POST /api/quiz/extract-youtube/` — extract transcript from YouTube URL
-- `POST /api/quiz/generate/` — generate quiz via FastAPI
+- `POST /api/quiz/generate/` — generate quiz via FastAPI (Create Quiz page)
 - `POST /api/quiz/submit/` — evaluate and store quiz results
 - `POST /api/quiz/download/` — download quiz as PDF/DOCX
 - `GET /api/quiz/history/` — authenticated user's past sessions
+- `GET /api/quiz/sessions/<id>/` — fetch stored questions for a past session (used by Try Again)
 - `GET /api/quiz/weak-areas/` — bottom 5 topics by accuracy (min 3 questions attempted)
 - `GET /api/quiz/due-topics/` — topics where `next_review <= now`, ordered most overdue first
+
+From `backend/apps/chatbot/urls.py`:
+
+- `POST /api/quiz/create-from-agent/` — chatbot-triggered quiz generation (see [Chatbot feature](CHATBOT.md))
 
 ## FastAPI Endpoint
 
@@ -111,11 +116,28 @@ All three paths converge at the same `generate/` endpoint once `extractedText` i
 | Quiz time | 1–120 min | 10 |
 | Difficulty | easy / medium / hard / random | random |
 
+## Agentic Quiz Creation (via Chatbot)
+
+Quizzes can also be generated directly from the AI Tutor chat without navigating to `/quiz/create`.
+
+1. User expresses quiz intent in chat → agent calls `request_quiz_form(topic)`.
+2. An inline quiz-param card appears in the chat (topic, num_questions, time_limit).
+3. User submits → `POST /api/quiz/create-from-agent/` → FastAPI auto-determines difficulty from user stats → questions generated.
+4. A **Start Quiz** card replaces the form; clicking it navigates to `/quiz/play`.
+
+The generated quiz card is persisted as a `__QUIZ__:` chat message so it reappears when the user returns to that conversation. Difficulty is picked automatically:
+- Topic accuracy < 60% → hard; 60–79% → medium; ≥ 80% → hard (challenge mode)
+- No topic history: overall avg ≥ 80% → hard; ≥ 60% → medium; else → easy
+
+See [AGENT_IMPLEMENTATION.md § 17](../architecture-design/AGENT_IMPLEMENTATION.md) for the full two-phase flow.
+
 ## Weak Area Detection
 
 After every quiz submission, `submit_quiz_api_async` updates `TopicPerformance` for the quiz subject using atomic `F()` expressions (race-condition safe). Accuracy is recomputed after each update.
 
-`GET /api/quiz/weak-areas/` returns the 5 lowest-accuracy topics for the user, filtered to topics with at least 3 questions attempted (noise filter). Used by the dashboard weak areas card and injected into the chatbot system prompt.
+`GET /api/quiz/weak-areas/` returns the 5 lowest-accuracy topics for the user, filtered to topics with at least 3 questions attempted (noise filter). Used by the dashboard weak areas card.
+
+The chatbot receives **all** `TopicPerformance` rows (no minimum threshold) plus the last 5 `QuizSession` records so the AI can discuss results the user just took.
 
 ### Historical Backfill
 
