@@ -57,3 +57,16 @@ async def search_web(query: str, num_results: int = 3) -> dict:
     except Exception as exc:
         logger.warning("[agent:search] search failed for %r: %s", query[:80], exc)
         return {"results": []}
+
+
+async def _kb_search_handler(query: str, top_k: int = 4) -> dict:
+    from kb.loader import kb_store
+    results = kb_store.search(query, top_k=int(top_k))
+    if not results:
+        return {"chunks": [], "note": "No relevant platform knowledge found."}
+    return {
+        "chunks": [
+            {"heading": r["heading"], "text": r["text"]}
+            for r in results
+        ]
+    }

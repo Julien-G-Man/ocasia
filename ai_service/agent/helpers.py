@@ -1,10 +1,10 @@
 import json
 import logging
 
+from core.ai_client import ai_client
 from agent.executor import execute_tool
 from agent.registry import get_definitions
 from agent.schemas import ToolCall
-from core.ai_client import ai_client
 
 logger = logging.getLogger(__name__)
 
