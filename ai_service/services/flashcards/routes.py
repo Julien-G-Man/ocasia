@@ -1,5 +1,3 @@
-import json
-import re
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException
@@ -8,6 +6,8 @@ from core.http import get_async_client
 from core.config import settings
 from .prompts import DIFFICULTY_PROMPTS, FORMATTING_GUIDELINES
 from .schemas import FlashcardRequest, FlashcardExplainRequest
+from .helpers import _normalize_cards
+
 
 flashcards_router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -15,43 +15,6 @@ logger = logging.getLogger(__name__)
 AI_MAX_CONCURRENT = max(20, settings.FLASHCARDS_AI_MAX_CONCURRENT)
 AI_SEMAPHORE_WAIT_SECONDS = settings.FLASHCARDS_AI_SEMAPHORE_WAIT_SECONDS
 _ai_semaphore = asyncio.Semaphore(AI_MAX_CONCURRENT)
-
-
-def _normalize_cards(raw):
-    """Normalize raw AI output into [{question, answer}] list."""
-    if isinstance(raw, list):
-        out = []
-        for item in raw:
-            if isinstance(item, dict):
-                q = (item.get("question") or item.get("front") or "").strip()
-                a = (item.get("answer") or item.get("back") or "").strip()
-                if q and a:
-                    out.append({"question": q[:2000], "answer": a[:4000]})
-        return out
-
-    if isinstance(raw, dict):
-        if "cards" in raw:
-            return _normalize_cards(raw.get("cards"))
-        return []
-
-    if isinstance(raw, str):
-        # Try full JSON parse first.
-        try:
-            parsed = json.loads(raw)
-            return _normalize_cards(parsed)
-        except Exception:
-            pass
-
-        # Try extracting JSON array from mixed text.
-        match = re.search(r"\[[\s\S]*\]", raw)
-        if match:
-            try:
-                parsed = json.loads(match.group(0))
-                return _normalize_cards(parsed)
-            except Exception:
-                pass
-
-    return []
 
 
 async def _try_acquire_ai_slot() -> bool:

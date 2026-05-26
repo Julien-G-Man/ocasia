@@ -149,7 +149,7 @@ TOOL_REGISTRY: dict[str, dict] = {
                 "Call this immediately when the user expresses intent to take, create, or be quizzed on a topic. "
                 "Pass the topic the user mentioned as 'topic'. "
                 "Do NOT ask the user for more details — just call this tool. "
-                "An inline setup form will appear in the chat for the user to fill in."
+                "An inline setup form will appear in the chat below for the user to fill in."
             ),
             input_schema={
                 "type": "object",
