@@ -3,7 +3,8 @@
   --results-yellow-dark: #172554;
   --results-black: #ffffff;
   --results-surface: #ffffff;
-  --results-surface-alt: #f8fafc;
+  --results-surface-alt: #f0f6fb;
+  --results-content-card: #d4e8f8;
   --results-border: #e2e8f0;
   --results-text-primary: #0f172a;
   --results-text-secondary: #475569;
@@ -53,7 +54,14 @@
   font-weight: 800;
 }
 
-.results-summary-card,
+.results-summary-card {
+  background: var(--results-content-card);
+  border: 1px solid #b8d9f0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
 .results-actions-card {
   background: var(--results-surface);
   border: 1px solid var(--results-border);
