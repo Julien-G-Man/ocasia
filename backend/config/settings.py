@@ -36,15 +36,12 @@ cloudinary.config(
     secure=True
 )
 
-ALLOWED_HOSTS = [
-    "*",
-    "localhost",
-    "http://localhost:3000",
-    "lamla-api.onrender.com",
-    "https://lamla-api.onrender.com",
-    "https://lamla-ai.vercel.app",
-    "https://lamla-ai.netlify.app"
-]
+_allowed_env = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = (
+    [h.strip() for h in _allowed_env.split(",") if h.strip()]
+    if _allowed_env
+    else ["localhost", "127.0.0.1"]
+)
 
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
@@ -74,7 +71,8 @@ INSTALLED_APPS = [
     'apps.flashcards',
     'apps.dashboard',
     'apps.materials',
-    'apps.subscriptions'
+    'apps.subscriptions',
+    'apps.clash',
 ]
 
 MIDDLEWARE = [
@@ -108,6 +106,35 @@ TEMPLATES = [
 ]
 
 ASGI_APPLICATION = "config.asgi.application"
+
+REDIS_URL = os.getenv("REDIS_URL", "")
+
+if REDIS_URL:
+    # Production / local dev with Redis — multi-worker safe
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        }
+    }
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    # Local dev without Redis — single uvicorn process only
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 
 
 # Database Configuration
