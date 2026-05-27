@@ -63,11 +63,16 @@ From `backend/config/urls.py`:
 - `/api/` + `apps.flashcards.urls`
 - `/api/` + `apps.dashboard.urls`
 - `/api/` + `apps.subscriptions.urls`
+- `/api/` + `apps.clash.urls`
 
 Also:
 
 - `/health/`
 - `/warmup/`
+
+WebSocket routes (ASGI, `backend/config/asgi.py`):
+
+- `ws/clash/<room_code>/` → `ClashConsumer`
 
 ## Data Ownership
 
@@ -76,6 +81,7 @@ Also:
 - Chat: `apps.chatbot.models.ChatSession`, `ChatMessage`
 - Users/auth: `apps.accounts.models.User`
 - Payments: `apps.subscriptions.models.Donation`, `Subscription`, `PaymentHistory`
+- Clash rooms: `apps.clash.models.ClashRoom`, `ClashParticipant`
 
 ### Special ChatMessage Formats
 
@@ -125,3 +131,104 @@ in `_get_conversation_history`). The sidebar preview strips the JSON and shows
 - Methods: `login()`, `signup()`, `googleAuth()`, `logout()`
 - Rehydrates auth from localStorage on page load
 - All auth methods update context state before navigation (no page reload needed)
+
+---
+
+## WebSocket Architecture (Clash)
+
+### Overview
+
+```
+React (ClashLobby / ClashPlay)
+    │  ws://<host>/ws/clash/<room_code>/?token=<DRF token>
+    ↓
+Django Channels ASGI router  (backend/config/asgi.py)
+    ↓
+ClashConsumer  (AsyncJsonWebsocketConsumer)
+    ↓
+Redis Channel Layer  (channels_redis — one group per room)
+    ↓
+Django cache  (live game state per room, TTL 2h)
+    ↓
+PostgreSQL  (ClashRoom, ClashParticipant — persisted at game end)
+```
+
+### Channel Layer
+
+Configured in `settings.py` when `REDIS_URL` env var is set:
+
+```python
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
+```
+
+Falls back to `InMemoryChannelLayer` when `REDIS_URL` is absent (local dev only —
+does not support multiple workers).
+
+### ClashConsumer Lifecycle
+
+1. `connect()` — validate DRF token, load room, join channel group, send `game_catchup` if mid-game.
+2. `receive_json()` — dispatches `start_game` (host only) or `submit_answer`.
+3. `disconnect()` — set `self.connected = False`, remove from group, re-broadcast lobby.
+
+### Game Loop
+
+`handle_start_game()` creates an `asyncio.Task` and stores it in
+`ClashConsumer._game_tasks[room_code]` (class-level dict). The task persists
+across the host's disconnect/reconnect within the same worker process.
+
+```
+countdown (asyncio.sleep 3s)
+→ for each question:
+    broadcast clash.new_question
+    poll every 0.5s — break if all answered or timer expires
+    broadcast clash.question_ended  (answer + explanation + top3)
+    asyncio.sleep(3s)  — reveal pause
+→ broadcast clash.game_finished
+→ persist scores + ranks to DB
+```
+
+Participant count is re-fetched at the start of each question iteration so
+disconnected players don't stall the "all answered" check.
+
+### Event Type Mapping
+
+Django Channels routes group_send messages using `type` field dots→underscores:
+
+| `type` (in group_send) | Handler method |
+|---|---|
+| `clash.player_joined` | `clash_player_joined` |
+| `clash.game_starting` | `clash_game_starting` |
+| `clash.new_question` | `clash_new_question` |
+| `clash.question_ended` | `clash_question_ended` |
+| `clash.game_finished` | `clash_game_finished` |
+
+The frontend must check against the dot-notation string (e.g. `case "clash.new_question"`).
+
+### `_safe_send` Pattern
+
+All channel-layer event handlers call `_safe_send(event)` instead of `send_json(event)`
+directly. This guards against the `RuntimeError: Unexpected ASGI message 'websocket.send'`
+crash that occurs when a broadcast reaches a consumer whose WebSocket has already closed:
+
+```python
+async def _safe_send(self, event):
+    if not self.connected:
+        return
+    try:
+        await self.send_json(event)
+    except Exception:
+        pass
+```
+
+### Scoring
+
+```
+correct answer → BASE_POINTS (1000) + SPEED_BONUS_MAX (500) × (1 − elapsed/time_limit)
+wrong / no answer → 0
+max per question → 1500 pts
+```

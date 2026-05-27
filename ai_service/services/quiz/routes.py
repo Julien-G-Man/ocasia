@@ -56,9 +56,11 @@ async def quiz_endpoint(payload: QuizRequest):
     prompt = _build_quiz_prompt(prompt_payload)
 
     try:
-        # Scale max_tokens with quiz size: each MCQ needs ~120 tokens, short ~80.
-        # Add 512 overhead for JSON structure. Floor at 2048, cap at 8192.
-        estimated_tokens = max(2048, min(8192, (payload.num_mcq * 120) + (payload.num_short * 80) + 512))
+        # Scale max_tokens with quiz size.
+        # Each MCQ needs ~250 tokens (question + 4 options + answer + explanation,
+        # including code fences for technical topics). Short answers need ~150.
+        # Add 1024 overhead for JSON structure. Floor at 4096, cap at 8192.
+        estimated_tokens = max(4096, min(8192, (payload.num_mcq * 250) + (payload.num_short * 150) + 1024))
         print(
             "quiz_endpoint token estimate:",
             {"subject": payload.subject, "estimated_tokens": estimated_tokens},

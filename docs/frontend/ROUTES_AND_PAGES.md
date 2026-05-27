@@ -108,6 +108,19 @@ Aliases: `/ai`, `/chat`, `/chatbot` → all redirect to `/ai-tutor`
 
 ---
 
+## Clash (Multiplayer)
+
+| Route | Component | Notes |
+|---|---|---|
+| `/clash` | ClashCreate | Toggle between **Host a Room** and **Join a Room**. `?join=CODE` auto-switches to the join tab and pre-fills the room code (used by lobby share links). |
+| `/clash/lobby/:code` | ClashLobby | Waiting room. Participant list updates live via WebSocket. Host sees Start button; others see waiting status. |
+| `/clash/play/:code` | ClashPlay | Live quiz — 2-column layout (question + options on left, standings sidebar on right). Timer bar, answer feedback, and explanation shown after each question. |
+| `/clash/results/:code` | ClashResults | Final results — 2-column layout (podium + personal result on left, full leaderboard on right). |
+
+All Clash routes require authentication.
+
+---
+
 ## Fallback
 
 | Route | Component |

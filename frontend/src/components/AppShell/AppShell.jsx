@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faRobot, faBook, faLayerGroup, faFolder,
-  faRightFromBracket, faUser,
+  faRightFromBracket, faUser, faBolt,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../context/AuthContext';
 import './AppShell.css';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',  icon: faHome,       path: '/dashboard'       },
   { label: 'Quiz',       icon: faBook,       path: '/quiz'            },
   { label: 'Flashcards', icon: faLayerGroup, path: '/flashcards'      },
+  { label: 'Clash',      icon: faBolt,       path: '/clash'           },
   { label: 'Materials',  icon: faFolder,     path: '/materials/mine'  },
   { label: 'AI Tutor',   icon: faRobot,      path: '/ai-tutor'        },
   { label: 'Profile',    icon: faUser,       path: '/profile'         },

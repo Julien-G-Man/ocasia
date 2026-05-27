@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Navbar from "../../components/Navbar";
+import AppShell from "../../components/AppShell/AppShell";
 import "./Clash.css";
 
 const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
@@ -114,8 +114,7 @@ export default function ClashCreate() {
   }
 
   return (
-    <>
-      <Navbar />
+    <AppShell>
       <div className="clash-create-page">
         {(loading || isExtracting) && (
           <div className="clash-loading-overlay">
@@ -334,6 +333,6 @@ export default function ClashCreate() {
 
         {error && <p className="clash-error">{error}</p>}
       </div>
-    </>
+    </AppShell>
   );
 }

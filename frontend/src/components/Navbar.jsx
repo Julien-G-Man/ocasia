@@ -65,6 +65,7 @@ const Navbar = ({ user, brandOnly = false }) => {
                         <li><Link to="/dashboard">Dashboard</Link></li>
                         <li><Link to="/quiz">Quiz</Link></li>
                         <li><Link to="/flashcards">Flashcards</Link></li>
+                        <li><Link to="/clash">Clash</Link></li>
                         <li><Link to="/materials/community">Materials</Link></li>
                         <li><Link to="/ai-tutor">AI Tutor</Link></li>
                         <li className="nav-item-cta">
@@ -122,6 +123,7 @@ const Navbar = ({ user, brandOnly = false }) => {
                 <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
                 <li><Link to="/quiz" onClick={closeMenu}>Quiz</Link></li>
                 <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
+                <li><Link to="/clash" onClick={closeMenu}>Clash</Link></li>
                 <li><Link to="/materials/community" onClick={closeMenu}>Materials</Link></li>
                 <li><Link to="/ai-tutor" onClick={closeMenu}>AI Tutor</Link></li>
                 <li className="nav-item-cta">

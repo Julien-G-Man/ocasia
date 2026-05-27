@@ -23,6 +23,13 @@ const FEATURES = [
     description: "Create and study with AI-generated flashcards for quick review.",
   },
   {
+    href: "/clash",
+    image: "/assets/clash-vs.jpg",
+    alt: "Clash",
+    title: "Clash",
+    description: "Challenge friends to real-time multiplayer quiz battles. One room code, up to 20 players, live leaderboard.",
+  },
+  {
     href: "/#exam-analyzer",
     image: "/assets/uni_exams.jpg",
     alt: "Exam Analyzer",

@@ -50,6 +50,7 @@ const Footer = () => {
             <li><Link to="/ai-tutor">AI Tutor</Link></li>
             <li><Link to="/quiz/create">Quiz</Link></li>
             <li><Link to="/flashcards">Flashcards</Link></li>
+            <li><Link to="/clash">Clash</Link></li>
             <li><Link to="/#exam-analyzer">Exam Analyzer</Link></li>
           </ul>
         </div>
