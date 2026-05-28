@@ -32,7 +32,7 @@ FastAPI (`ai_service/.env` or process env):
 - HuggingFace: `HUGGING_FACE_API_TOKEN`, `HUGGING_FACE_MODEL`
 - `SEARCH_API_KEY` (or `TAVILY_API_KEY`) — Tavily web search key used by the `search_web` agent tool
 - `KB_SEARCH_PROVIDER` — KB retrieval backend: `tfidf` (default, no cost) or `openai`
-- `KB_FILE_PATH` — override path to `text_embeddings.json` (optional; auto-resolved if unset)
+- `KB_FILE_PATH` — override path to the `platform_kb/` directory (optional; auto-resolved if unset)
 
 See `docs/architecture-design/AI_PROVIDERS.md` for full provider docs.
 

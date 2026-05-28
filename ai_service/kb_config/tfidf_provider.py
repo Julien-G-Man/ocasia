@@ -1,9 +1,8 @@
-import json
 import logging
 import re
 from pathlib import Path
 
-from kb.base import KBSearchProvider
+from kb_config.base import KBSearchProvider
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +62,14 @@ class TFIDFProvider(KBSearchProvider):
         return results
 
     def _load(self, kb_file: Path) -> None:
-        if not kb_file.exists():
-            logger.warning("[kb:tfidf] knowledge file not found: %s", kb_file)
+        if not kb_file.is_dir():
+            logger.warning("[kb:tfidf] expected a directory, got: %s", kb_file)
             return
         try:
-            raw = json.loads(kb_file.read_text(encoding="utf-8"))
+            from kb_config.md_parser import load_kb_dir
+            raw = load_kb_dir(kb_file)
         except Exception:
-            logger.exception("[kb:tfidf] failed to load %s", kb_file)
+            logger.exception("[kb:tfidf] failed to load KB from %s", kb_file)
             return
 
         chunks: dict[str, dict] = {}

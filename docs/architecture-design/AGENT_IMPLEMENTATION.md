@@ -80,12 +80,14 @@ ai_service/
       evaluate.py        # evaluate_answer()
       summarize.py       # summarize_text()
       search.py          # search_web() via Tavily
-  kb/
+  kb_config/
     base.py              # KBSearchProvider ABC
     tfidf_provider.py    # Default — token overlap + keyword/heading boost
-    loader.py            # Resolves KB file path, instantiates provider, exposes kb_store singleton
+    loader.py            # Resolves platform_kb/ path, instantiates provider, exposes kb_store singleton
+    md_parser.py         # Loads kb_index.json + .md files, merges into chunk dicts
   platform_kb/
-    text_embeddings.json # Platform knowledge chunks (single source of truth)
+    kb_index.json        # Chunk index: chunk_id -> {heading, source_file, keywords}
+    *.md                 # Content files, one ## section per chunk, matched by heading
   services/
     quiz/                # POST /quiz/ — standalone quiz generation
     flashcards/          # POST /flashcards/ — standalone flashcard generation

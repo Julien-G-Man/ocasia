@@ -1,0 +1,217 @@
+{
+  "platform_overview.md::s1": {
+    "heading": "What Lamla Is",
+    "source_file": "platform_overview.md",
+    "keywords": ["lamla", "platform", "overview", "purpose", "ai tutor", "learning app", "edtech", "study platform", "exam prep", "what is lamla", "about lamla"]
+  },
+  "platform_overview.md::s2": {
+    "heading": "Who Built Lamla",
+    "source_file": "platform_overview.md",
+    "keywords": ["developers", "team", "founders", "who made lamla", "creators", "knust", "ghana", "computer science", "information technology", "student team", "mission"]
+  },
+  "platform_overview.md::s3": {
+    "heading": "Main Navigation",
+    "source_file": "platform_overview.md",
+    "keywords": ["navigation", "menu", "navbar", "where to find", "how to access", "main menu"]
+  },
+  "platform_overview.md::s4": {
+    "heading": "Who It Is For",
+    "source_file": "platform_overview.md",
+    "keywords": ["students", "learners", "education", "university", "school", "independent learning", "exam preparation", "target audience"]
+  },
+  "platform_overview.md::s5": {
+    "heading": "Key Benefits",
+    "source_file": "platform_overview.md",
+    "keywords": ["value", "benefits", "revision", "retention", "productivity", "time saving", "study smarter", "why use lamla"]
+  },
+  "platform_overview.md::s6": {
+    "heading": "Getting Started",
+    "source_file": "platform_overview.md",
+    "keywords": ["getting started", "how to start", "first steps", "begin", "sign up and start", "new user"]
+  },
+  "platform_overview.md::s7": {
+    "heading": "Quick Access URLs and Website",
+    "source_file": "platform_overview.md",
+    "keywords": ["urls", "web addresses", "links", "page urls", "direct links", "website", "site", "homepage", "url", "address", "lamla url", "platform url", "where is", "find lamla", "open lamla", "access lamla", "lamla website", "lamla link", "lamla.ai", "vercel"]
+  },
+  "learning_tools.md::s1": {
+    "heading": "Quiz Generator",
+    "source_file": "learning_tools.md",
+    "keywords": ["quiz", "quiz generator", "test", "exam practice", "questions", "mcq", "multiple choice", "short answer", "assessment", "create quiz", "take quiz", "quiz mode", "quiz page", "generate quiz", "youtube quiz", "video quiz", "youtube transcript", "youtube tab", "paste youtube link"]
+  },
+  "learning_tools.md::s2": {
+    "heading": "Flashcards",
+    "source_file": "learning_tools.md",
+    "keywords": ["flashcards", "deck", "spaced repetition", "revision cards", "memorization", "study mode", "active recall", "flashcard deck", "create flashcards", "flashcard page"]
+  },
+  "learning_tools.md::s3": {
+    "heading": "AI Tutor",
+    "source_file": "learning_tools.md",
+    "keywords": ["chatbot", "ai tutor", "assistant", "ask question", "explanation", "help", "chat", "conversation", "ai help", "study help", "chat interface", "chatbot page"]
+  },
+  "learning_tools.md::s4": {
+    "heading": "Materials Library",
+    "source_file": "learning_tools.md",
+    "keywords": ["materials", "study materials", "pdf", "community", "shared resources", "library", "download", "upload materials", "document library", "shared documents", "materials page"]
+  },
+  "learning_tools.md::s5": {
+    "heading": "Dashboard And Progress",
+    "source_file": "learning_tools.md",
+    "keywords": ["dashboard", "progress", "analytics", "stats", "activity", "performance", "trends", "learning statistics", "my progress", "study stats", "dashboard page", "user dashboard"]
+  },
+  "learning_tools.md::s6": {
+    "heading": "Quiz History Page",
+    "source_file": "learning_tools.md",
+    "keywords": ["quiz history", "past quizzes", "quiz page", "history page", "my quizzes", "previous quizzes", "quiz results history", "quiz scores"]
+  },
+  "learning_tools.md::s7": {
+    "heading": "Weak Area Detection and Spaced Quiz Scheduling",
+    "source_file": "learning_tools.md",
+    "keywords": ["weak areas", "weak topics", "struggling", "performance tracking", "topic performance", "spaced quiz", "due for review", "quiz schedule", "what to study", "study recommendation", "next review", "topic accuracy", "low score topics"]
+  },
+  "learning_tools.md::s8": {
+    "heading": "I Know Your Progress",
+    "source_file": "learning_tools.md",
+    "keywords": ["ai tutor performance", "bot knows my progress", "personalized tutor", "study advice", "what should i study", "how am i doing", "tutor awareness", "ai knows my results", "personalized study", "chatbot performance", "ai tutor weak areas"]
+  },
+  "accounts_and_auth.md::s1": {
+    "heading": "Sign Up And Login",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["signup", "sign up", "login", "account", "username", "email", "password", "register", "authentication", "create account", "where to login", "how to sign up", "new account"]
+  },
+  "accounts_and_auth.md::s2": {
+    "heading": "Email Verification",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["email verification", "verify email", "verification link", "resend verification", "confirm email", "verification email"]
+  },
+  "accounts_and_auth.md::s3": {
+    "heading": "Profile Settings",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["profile", "update profile", "profile image", "avatar", "account settings", "display name", "edit profile", "my profile", "photo", "profile picture", "upload photo"]
+  },
+  "accounts_and_auth.md::s4": {
+    "heading": "Dashboard Access",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["dashboard", "where is dashboard", "access dashboard", "my dashboard", "user dashboard"]
+  },
+  "accounts_and_auth.md::s5": {
+    "heading": "Logout",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["logout", "log out", "sign out", "exit account", "end session"]
+  },
+  "accounts_and_auth.md::s6": {
+    "heading": "Password Security",
+    "source_file": "accounts_and_auth.md",
+    "keywords": ["password reset", "change password", "password security", "forgot password", "reset password"]
+  },
+  "files_and_limits.md::s1": {
+    "heading": "Supported Upload Types",
+    "source_file": "files_and_limits.md",
+    "keywords": ["upload", "file", "pdf", "pptx", "docx", "txt", "document", "file types", "supported formats", "where to upload", "file upload button"]
+  },
+  "files_and_limits.md::s2": {
+    "heading": "File Size Limits",
+    "source_file": "files_and_limits.md",
+    "keywords": ["size limit", "file limit", "max upload", "too large", "file too big", "maximum file size"]
+  },
+  "files_and_limits.md::s3": {
+    "heading": "Text Length Limits",
+    "source_file": "files_and_limits.md",
+    "keywords": ["text limit", "character limit", "too much text", "maximum length", "long text"]
+  },
+  "files_and_limits.md::s4": {
+    "heading": "Request Timeouts",
+    "source_file": "files_and_limits.md",
+    "keywords": ["timeout", "slow", "taking too long", "request timeout", "processing time"]
+  },
+  "files_and_limits.md::s5": {
+    "heading": "Model Context Limits",
+    "source_file": "files_and_limits.md",
+    "keywords": ["context limit", "token limit", "too much context", "model limits", "input too long"]
+  },
+  "files_and_limits.md::s6": {
+    "heading": "Rate Limiting",
+    "source_file": "files_and_limits.md",
+    "keywords": ["rate limit", "too many requests", "slow down", "request limit", "throttling"]
+  },
+  "files_and_limits.md::s7": {
+    "heading": "Best Practices For File Uploads",
+    "source_file": "files_and_limits.md",
+    "keywords": ["tips", "best practices", "upload tips", "file recommendations", "how to get best results"]
+  },
+  "files_and_limits.md::s8": {
+    "heading": "Common Error Messages",
+    "source_file": "files_and_limits.md",
+    "keywords": ["error", "error messages", "errors", "not working", "failed", "troubleshooting"]
+  },
+  "files_and_limits.md::s9": {
+    "heading": "Browser And Device Support",
+    "source_file": "files_and_limits.md",
+    "keywords": ["browser", "device", "compatible", "mobile", "desktop", "what browser", "which devices"]
+  },
+  "files_and_limits.md::s10": {
+    "heading": "YouTube Quiz Input",
+    "source_file": "files_and_limits.md",
+    "keywords": ["youtube", "video", "youtube video", "youtube url", "video transcript", "youtube transcript", "youtube tab", "video quiz", "youtube quiz", "captions", "load transcript", "supported youtube links", "youtu.be", "youtube shorts"]
+  },
+  "support_and_policies.md::s1": {
+    "heading": "How To Get Help",
+    "source_file": "support_and_policies.md",
+    "keywords": ["support", "contact", "email", "whatsapp", "help desk", "customer service", "technical support", "get help", "contact us", "lamla support", "lamla contact"]
+  },
+  "support_and_policies.md::s2": {
+    "heading": "What We Can Help With",
+    "source_file": "support_and_policies.md",
+    "keywords": ["troubleshooting", "bug report", "account issue", "feature help", "problem", "error", "not working"]
+  },
+  "support_and_policies.md::s3": {
+    "heading": "Getting Faster Help",
+    "source_file": "support_and_policies.md",
+    "keywords": ["response time", "support delay", "follow up", "help tips", "faster response"]
+  },
+  "support_and_policies.md::s4": {
+    "heading": "Feedback And Suggestions",
+    "source_file": "support_and_policies.md",
+    "keywords": ["feedback", "suggestions", "feature request", "improvement", "ideas"]
+  },
+  "models_and_capabilities.md::s1": {
+    "heading": "AI Behind Lamla",
+    "source_file": "models_and_capabilities.md",
+    "keywords": ["ai models", "which ai", "what ai does lamla use", "powered by", "ai technology", "chatgpt", "claude", "ai provider", "large language model"]
+  },
+  "models_and_capabilities.md::s2": {
+    "heading": "Why Responses Sometimes Vary",
+    "source_file": "models_and_capabilities.md",
+    "keywords": ["slow response", "ai slow", "response quality", "why different answers", "inconsistent", "ai response time", "generation speed"]
+  },
+  "clash.md::s1": {
+    "heading": "What Is Clash",
+    "source_file": "clash.md",
+    "keywords": ["clash", "multiplayer", "quiz battle", "real-time quiz", "quiz competition", "play with friends", "competitive quiz", "live quiz", "quiz game", "group quiz", "challenge friends", "what is clash", "about clash"]
+  },
+  "clash.md::s2": {
+    "heading": "How To Host A Clash Room",
+    "source_file": "clash.md",
+    "keywords": ["host clash", "create clash room", "start clash", "new clash", "clash setup", "clash host", "create room", "clash topic", "clash difficulty", "clash questions", "clash time", "clash settings"]
+  },
+  "clash.md::s3": {
+    "heading": "How To Join A Clash Room",
+    "source_file": "clash.md",
+    "keywords": ["join clash", "clash room code", "enter room code", "join game", "clash join", "join multiplayer", "clash code", "6 character code", "room code", "join friend"]
+  },
+  "clash.md::s4": {
+    "heading": "Playing A Clash Game",
+    "source_file": "clash.md",
+    "keywords": ["clash gameplay", "clash questions", "clash timer", "answering clash", "clash round", "clash answer", "clash reveal", "clash explanation", "how clash works", "clash game flow", "clash countdown"]
+  },
+  "clash.md::s5": {
+    "heading": "Clash Scoring And Points",
+    "source_file": "clash.md",
+    "keywords": ["clash scoring", "clash points", "how points work", "speed bonus", "clash score", "points per question", "max points", "wrong answer points", "clash leaderboard score", "point calculation"]
+  },
+  "clash.md::s6": {
+    "heading": "Clash Results And Leaderboard",
+    "source_file": "clash.md",
+    "keywords": ["clash results", "clash leaderboard", "clash winner", "clash podium", "clash final score", "after clash", "clash end", "results screen", "clash ranking", "who won clash", "clash history"]
+  }
+}

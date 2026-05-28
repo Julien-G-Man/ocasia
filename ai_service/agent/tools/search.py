@@ -60,7 +60,7 @@ async def search_web(query: str, num_results: int = 3) -> dict:
 
 
 async def _kb_search_handler(query: str, top_k: int = 4) -> dict:
-    from kb.loader import kb_store
+    from kb_config.loader import kb_store
     results = kb_store.search(query, top_k=int(top_k))
     if not results:
         return {"chunks": [], "note": "No relevant platform knowledge found."}
