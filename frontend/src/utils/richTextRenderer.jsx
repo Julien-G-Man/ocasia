@@ -3,8 +3,19 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import 'katex/dist/katex.min.css';
+
+// Allow className on every element (needed for md-* CSS classes).
+// Everything else follows the strict defaultSchema allowlist.
+// Sanitize runs BEFORE rehypeKatex so KaTeX's own output is never stripped.
+const sanitizeSchema = {
+    ...defaultSchema,
+    attributes: {
+        ...defaultSchema.attributes,
+        '*': [...(defaultSchema.attributes?.['*'] ?? []), 'className'],
+    },
+};
 import './richText.css';
 import { normalizeScientificText } from './scientificText';
 
@@ -82,7 +93,7 @@ const RichTextRenderer = ({
         <Wrapper className={wrapperClassName} {...wrapperProps}>
             <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeRaw, rehypeKatex]}
+                rehypePlugins={[[rehypeSanitize, sanitizeSchema], rehypeKatex]}
                 components={getRichTextMarkdownComponents({ inline, components })}
             >
                 {content}

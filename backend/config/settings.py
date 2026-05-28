@@ -185,7 +185,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
-        "auth": "5/hour",  # Auth endpoints (signup, login, verify) - strict
+        "auth": "5/hour",    # Auth endpoints (signup, login, verify) - strict
+        "contact": "10/hour",  # Contact form / newsletter - prevents email spam
     },
     # Return clean 401s instead of redirecting to login page
     "UNAUTHENTICATED_USER": None,

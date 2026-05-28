@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import user_to_dict
+from .views import AuthThrottle
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -24,11 +25,12 @@ User = get_user_model()
 class GoogleAuthView(APIView):
     """
     POST /api/auth/google/ - Exchange Google ID token for app auth token.
-    
+
     Frontend sends Google ID token (from Google Sign-In SDK),
     backend verifies it, creates/updates user, returns app auth token.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [AuthThrottle]
 
     def post(self, request):
         google_token = request.data.get('token')

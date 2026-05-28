@@ -6,6 +6,98 @@
 - Keep Django and FastAPI `FASTAPI_SECRET` synchronized and private.
 - Keep CORS and CSRF allowlists explicit in production.
 
+## Security Review Findings - 2026-05-28
+
+This section records vulnerabilities and security gaps found by static review of the repository. Severity reflects likely production impact if the affected paths are reachable from the public web.
+
+### High: Raw HTML Rendering in Rich Text Output
+
+**Evidence:** `frontend/src/utils/richTextRenderer.jsx` imports `rehype-raw` and passes it to `ReactMarkdown`. That renderer is reused for chatbot responses, flashcards, quiz questions/results, and admin content views.
+
+**Risk:** AI responses, uploaded study material, generated quiz/flashcard content, and stored admin-visible tutor responses can contain raw HTML. Rendering raw HTML creates an HTML injection surface and can become XSS if a dangerous element, attribute, URL transform bypass, or future markdown/plugin change slips through.
+
+**Recommended fix:**
+- Remove `rehypeRaw` unless raw HTML is a hard requirement.
+- If raw HTML must be supported, add `rehype-sanitize` with a strict allowlist for educational formatting only.
+- Keep links restricted to `http:`, `https:`, and `mailto:` and continue using `rel="noopener noreferrer"` for new tabs.
+- Treat all AI/model output and extracted file text as untrusted user-controlled input.
+
+### Medium: Google OAuth Endpoint Is Not Throttled
+
+**Evidence:** `backend/apps/accounts/google_auth.py` sets `permission_classes = [AllowAny]`, but unlike signup/login/password-reset views in `backend/apps/accounts/views.py`, it does not set `throttle_classes = [AuthThrottle]`.
+
+**Risk:** Attackers can repeatedly submit arbitrary Google ID tokens, causing repeated calls to Google's token verifier and noisy authentication attempts. This can become an abuse, logging, or availability issue. The existing documentation currently says Google auth shares the auth endpoint rate limit, but the code does not enforce that.
+
+**Recommended fix:**
+- Reuse `AuthThrottle` on `GoogleAuthView`.
+- Consider separate throttle scopes for expensive third-party verification endpoints.
+
+### Medium: Public Email and Feedback Endpoints Lack Abuse Controls
+
+**Evidence:** `backend/apps/dashboard/views.py` exposes `ContactMessageView`, `NewsletterSubscribeView`, and `QuizFeedbackView` with `AllowAny`. Contact/newsletter views send email, and quiz feedback can create anonymous `QuizExperienceRating` records.
+
+**Risk:** These endpoints can be abused for email spam, inbox flooding, database noise, and reputation damage with no authentication, CAPTCHA, per-IP throttle, or deduplication beyond session-based rating updates.
+
+**Recommended fix:**
+- Add DRF throttles for contact, newsletter, and anonymous feedback.
+- Add CAPTCHA or a server-side proof/challenge for contact/newsletter forms.
+- Deduplicate newsletter submissions by normalized email.
+- Consider persisting contact submissions separately and queueing email delivery with spam scoring.
+
+### Medium: Upload Extractors Trust File Extensions
+
+**Evidence:** `backend/apps/quiz/extract_text.py` and `backend/apps/chatbot/file_extractor.py` choose parsers from `file.name` extension. `backend/apps/flashcards/extract_text_helper.py` adds MIME checks, but still relies on client-supplied metadata rather than file signatures.
+
+**Risk:** An attacker can upload malformed or mislabeled files to parser libraries (`PyPDF2`, `python-docx`, `python-pptx`). The 10 MB size limit helps, but extension-only validation still leaves parser abuse and resource exhaustion risk. This is higher risk because these endpoints process untrusted documents synchronously in request flow.
+
+**Recommended fix:**
+- Validate file signatures with `python-magic` or equivalent before parsing.
+- Keep extension and MIME checks, but treat them as hints only.
+- Add parser timeouts or run extraction in an isolated worker.
+- Enforce page/slide/paragraph count limits in addition to byte-size limits.
+- Align quiz, flashcards, chatbot, profile image, and material upload validation rules.
+
+### Medium: Long-Lived Auth Tokens Are Stored in localStorage
+
+**Evidence:** both frontends read and write `auth_token` in `localStorage` and send it as `Authorization: Token ...`.
+
+**Risk:** Any XSS or malicious browser extension can steal bearer tokens. DRF tokens are long-lived and only rotate on login/password reset/change/logout, so a stolen token remains useful until invalidated.
+
+**Recommended fix:**
+- Prefer secure, HttpOnly, SameSite cookies for browser sessions.
+- If bearer tokens remain, add token expiry and refresh/rotation.
+- Reduce XSS exposure first, especially the raw HTML rendering path above.
+
+### Low: Material Upload Allows PDF-by-Extension
+
+**Evidence:** `backend/apps/materials/serializers.py` rejects uploads only when both content type is not PDF and the filename does not end in `.pdf`. A non-PDF file named `*.pdf` can pass initial upload validation.
+
+**Risk:** Public material downloads may host mislabeled content, and later extraction/download paths must defend against non-PDF payloads. `MaterialExtractView` checks the `%PDF` magic bytes before extraction, which reduces impact for extraction, but upload acceptance is still too loose.
+
+**Recommended fix:**
+- Require both a trusted content check and `.pdf` extension for material uploads.
+- Verify first bytes before upload or immediately after upload.
+- Store detected content type separately from client-supplied metadata.
+
+### Low: Internal FastAPI Secret Comparison Is Plain String Equality
+
+**Evidence:** `ai_service/core/middleware.py` compares `internal_secret != settings.FASTAPI_SECRET`.
+
+**Risk:** If FastAPI is accidentally exposed publicly, a timing side channel may leak tiny information about the shared internal secret. The bigger control remains network isolation plus a strong secret.
+
+**Recommended fix:**
+- Use `hmac.compare_digest()` for `X-Internal-Secret`.
+- Keep FastAPI private where possible and verify production ingress rules.
+
+### Documentation Drift — Resolved
+
+All four drift items identified in this review have been corrected:
+
+- **Password complexity:** `validate_password_complexity` shown in this document does not exist in the codebase. `AUTH_PASSWORD_VALIDATORS` uses Django's four default validators only (min length 8, not common, not entirely numeric, not similar to user attributes). There is no uppercase/lowercase/special-character enforcement. The Password Security section below has been updated to reflect reality.
+- **Token invalidation:** `ChangePasswordView` **does** delete existing tokens and issue a fresh one. The Token Security section below has been corrected.
+- **XSS prevention:** `_no_html()` has been added to `ContactFormSerializer` — `title`, `name`, and `message` now reject inputs containing `<`, `>`, or `script`. The serializer section below is now accurate.
+- **Google OAuth throttling:** `AuthThrottle` has been added to `GoogleAuthView`. The Rate Limiting section below is now accurate.
+
 ## CORS / CSRF
 
 Django:
@@ -34,7 +126,7 @@ FastAPI:
 
 - **Stateless tokens:** Tokens don't expire automatically; invalidation is the primary control.
 - **Logout:** Explicitly invalidates the user's current token.
-- **Password change:** Does NOT invalidate tokens (user remains logged in; optional to logout first).
+- **Password change:** Invalidates all existing tokens and issues a fresh one (`ChangePasswordView` calls `Token.objects.filter(user=user).delete()` then creates a new token).
 - **Sensitive operations:** Contact/newsletter endpoints are public; no token required.
 
 ### Google OAuth Security
@@ -48,7 +140,7 @@ FastAPI:
 1. **Client ID validation:** Only tokens signed for configured `GOOGLE_OAUTH_CLIENT_ID` are accepted
 2. **Email verification:** Google OAuth users are auto-verified (`is_email_verified=True`) since Google confirms email ownership
 3. **Token rotation:** Same token rotation policy as password login (old tokens deleted, new token issued)
-4. **Rate limiting:** Google auth endpoint shares same rate limits as traditional login (5/hour per IP)
+4. **Rate limiting:** `AuthThrottle` applied — same 5/hour per IP as traditional login
 5. **User matching:** Users matched by email (case-insensitive); duplicate signup prevented
 6. **Profile data:** Only email, name, and profile picture extracted from Google token
 
@@ -73,13 +165,18 @@ GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret  # Not currently used in token-exc
 
 ### Rate Limiting (Brute Force Protection)
 
-The following endpoints are rate-limited to **5 requests per hour per IP address**:
+The following endpoints are rate-limited to **5 requests per hour per IP address** (`AuthThrottle`, scope `"auth"`):
 
 - `POST /api/auth/signup/`
 - `POST /api/auth/login/`
-- `POST /api/auth/google/` - **Google OAuth endpoint**
+- `POST /api/auth/google/`
 - `POST /api/auth/verify-email/`
 - `POST /api/auth/resend-verification/`
+
+The following public endpoints are rate-limited to **10 requests per hour per IP address** (`ContactThrottle`, scope `"contact"`):
+
+- `POST /api/dashboard/contact/`
+- `POST /api/dashboard/newsletter/`
 
 **Configuration:**
 ```python
@@ -122,7 +219,7 @@ All user input is validated via Django REST Framework serializers with strict bo
 **Accounts:**
 - `email`: required, valid format, unique, max 254 characters
 - `username`: required, 1–50 characters, alphanumeric with underscores/hyphens, unique
-- `password`: required, min 8 characters, must include uppercase, lowercase, digit, special character
+- `password`: required, validated by Django's `AUTH_PASSWORD_VALIDATORS` (min 8 chars, not common, not numeric-only, not similar to user attributes)
 - `first_name`, `last_name`: optional, max 100 characters each
 
 **Dashboard:**
@@ -140,9 +237,11 @@ All user input is validated via Django REST Framework serializers with strict bo
 
 ### XSS Prevention
 
-Contact form and newsletter serializers reject inputs containing:
+`ContactFormSerializer` (title, name, message fields) rejects inputs containing:
 - `<` or `>` (HTML tags)
 - `script` (common XSS vector)
+
+This check is enforced by `_no_html()` in `backend/apps/dashboard/serializers.py`. The newsletter endpoint accepts only a valid email address so no HTML check is needed there.
 
 **Error response (400):**
 ```json
@@ -197,25 +296,14 @@ API responses avoid verbose error details that could expose:
 
 ### Complexity Requirements
 
-All passwords must meet these requirements:
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one digit
-- At least one special character
+Passwords are validated via `password_validation.validate_password()` which enforces `AUTH_PASSWORD_VALIDATORS` (Django defaults):
 
-**Validation:**
-```python
-def validate_password_complexity(password):
-    if not re.search(r'[A-Z]', password):
-        raise ValidationError("Password must contain an uppercase letter.")
-    if not re.search(r'[a-z]', password):
-        raise ValidationError("Password must contain a lowercase letter.")
-    if not re.search(r'\d', password):
-        raise ValidationError("Password must contain a digit.")
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        raise ValidationError("Password must contain a special character.")
-```
+- Minimum 8 characters (`MinimumLengthValidator`)
+- Not a commonly used password (`CommonPasswordValidator`)
+- Not entirely numeric (`NumericPasswordValidator`)
+- Not too similar to username/email (`UserAttributeSimilarityValidator`)
+
+There is **no** uppercase, lowercase, or special-character requirement enforced in code. The input validation section of this document previously listed a `validate_password_complexity` function — that function does not exist in the codebase.
 
 ### Password Storage
 

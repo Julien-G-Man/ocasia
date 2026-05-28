@@ -5,6 +5,7 @@ from django.db import models as dm
 from django.db.models import Value, TextField
 from django.db.models.functions import TruncDate, Length, Cast, Coalesce
 from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -24,9 +25,18 @@ logger = logging.getLogger(__name__)
 
 class IsAdminUser(BasePermission):
     """Permission class to check if user is an admin."""
-    
+
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and getattr(request.user, 'is_admin', False)
+
+
+class ContactThrottle(SimpleRateThrottle):
+    """10 contact/newsletter submissions per hour per IP."""
+    scope = 'contact'
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
+
 
 class DashboardStatsView(APIView):
     """GET /api/dashboard/stats/"""
@@ -618,6 +628,7 @@ class ContactMessageView(APIView):
     """POST /api/dashboard/contact/"""
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ContactThrottle]
 
     def post(self, request):
         serializer = ContactFormSerializer(data=request.data)
@@ -639,6 +650,7 @@ class NewsletterSubscribeView(APIView):
     """POST /api/dashboard/newsletter/"""
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ContactThrottle]
 
     def post(self, request):
         serializer = NewsletterSerializer(data=request.data)
