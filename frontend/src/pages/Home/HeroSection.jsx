@@ -6,17 +6,18 @@ export default function HeroSection({ user }) {
       <section className="hero-section">
         <div className="hero-content">
           <h1 className="hero-title">
-            <span className="title-line">Turn Your Notes Into</span>
+            <span className="title-line">The AI That</span>
             <span className="title-line">
-              Better Results with <span className="brand-highlight">Lamla AI</span>
+              Studies With <span className="brand-highlight">You</span>
             </span>
           </h1>
 
           <p className="hero-desc">
-            Upload your study materials to generate quizzes, flashcards, and
-            clear explanations in seconds.
+            Generate quizzes and flashcards from your notes, get instant
+            explanations from your AI tutor, and challenge friends in live quiz
+            battles.
             <br />
-            <strong className="highlight-text">Study smarter. Perform better.</strong>
+            <strong className="highlight-text">One platform. Every way to study.</strong>
           </p>
 
           <div className="hero-btns">

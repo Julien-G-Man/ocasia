@@ -11,30 +11,30 @@ export default function AboutSection({ visible }) {
                 src="/assets/highfive-with-teacher.jpg"
                 alt="About Lamla AI"
               />
-              <div className="principle-icon">Study tool for notes, quizzes, and flashcards</div>
+              <div className="principle-icon">AI-powered learning, built for students</div>
             </div>
 
             <div className="principle-card principle-text">
               <p className="about-label">ABOUT LAMLA AI</p>
               <h3>
-                Smarter Studying, {" "}
-                <span className="brand-highlight-text">Better Results</span>
+                Your Study Partner,{" "}
+                <span className="brand-highlight-text">Powered by AI</span>
               </h3>
               <p>
                 Lamla AI was built for students who want to study with
-                purpose. We combine cutting-edge AI with your own course
-                materials to create a personalised study experience that
-                actually works.
+                purpose. Upload your course materials and get quizzes,
+                flashcards, and clear explanations generated in seconds —
+                tailored to what you're actually studying.
               </p>
               <p>
-                Whether you're preparing for finals or just reviewing before
-                a test — Lamla AI turns your slides and notes into quizzes,
-                flashcards, and clear study explanations.
+                Stuck on a concept? Ask your AI tutor anytime. Want to make
+                it competitive? Challenge friends to a live Clash quiz battle
+                with a shared room code.
               </p>
               <p>
-                Built by students, for students. Our platform evolves with
-                your feedback so you can walk into every exam with
-                confidence.
+                Built by students at KNUST, for students everywhere. We know
+                what it takes to study well — and we built the tools we
+                wished we had.
               </p>
               <div className="hero-btns about-btns">
                 <a href="/quiz/create" className="hero-btn primary">
