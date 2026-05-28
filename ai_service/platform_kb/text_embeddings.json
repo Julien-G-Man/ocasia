@@ -3,7 +3,7 @@
     "heading": "What Lamla Is",
     "source_file": "platform_overview.md",
     "keywords": ["lamla", "platform", "overview", "purpose", "ai tutor", "learning app", "edtech", "study platform", "exam prep", "what is lamla", "about lamla"],
-    "text": "Lamla AI is an AI-powered learning platform that helps students study smarter and ace their exams. Upload your study materials and transform them into interactive quizzes and flashcards, or chat with an AI tutor available 24/7.\n\nCore features:\n- AI Tutor: Get instant explanations and personalized study guidance anytime\n- Quiz Generator: Create practice quizzes from your study materials with automatic scoring\n- Flashcards: Generate flashcard decks with built-in spaced repetition tracking\n- Materials Library: Share and download community study resources\n- Progress Dashboard: Track your learning activity and performance over time"
+    "text": "Lamla AI is an AI-powered learning platform that helps students study smarter and ace their exams. Upload your study materials and transform them into interactive quizzes and flashcards, or chat with an AI tutor available 24/7.\n\nCore features:\n- AI Tutor: Get instant explanations and personalized study guidance anytime\n- Quiz Generator: Create practice quizzes from your study materials with automatic scoring\n- Flashcards: Generate flashcard decks with built-in spaced repetition tracking\n- Clash: Real-time multiplayer quiz battles — challenge friends with a shared room code\n- Materials Library: Share and download community study resources\n- Progress Dashboard: Track your learning activity and performance over time"
   },
   "platform_overview.md::s2": {
     "heading": "Who Built Lamla",
@@ -15,7 +15,7 @@
     "heading": "Main Navigation",
     "source_file": "platform_overview.md",
     "keywords": ["navigation", "menu", "navbar", "where to find", "how to access", "main menu"],
-    "text": "The main navigation menu is at the top of every page:\n- Home: Landing page with platform information\n- AI Tutor: Chat interface to ask the AI study assistant questions\n- Quiz: Create and take practice quizzes\n- Flashcards: Manage and study your flashcard decks\n- Dashboard: View your study stats and activity\n- Login/Logout: Access your account\n\nClick any menu item to navigate to that feature."
+    "text": "The main navigation menu is at the top of every page:\n- Home: Landing page with platform information\n- AI Tutor: Chat interface to ask the AI study assistant questions\n- Quiz: Create and take practice quizzes\n- Flashcards: Manage and study your flashcard decks\n- Clash: Host or join a real-time multiplayer quiz battle\n- Dashboard: View your study stats and activity\n- Login/Logout: Access your account\n\nClick any menu item to navigate to that feature."
   },
   "platform_overview.md::s4": {
     "heading": "Who It Is For",
@@ -39,7 +39,7 @@
     "heading": "Quick Access URLs and Website",
     "source_file": "platform_overview.md",
     "keywords": ["urls", "web addresses", "links", "page urls", "direct links", "website", "site", "homepage", "url", "address", "lamla url", "platform url", "where is", "find lamla", "open lamla", "access lamla", "lamla website", "lamla link", "lamla.ai", "vercel"],
-    "text": "The Lamla AI platform is live at: https://lamla-ai.vercel.app\n\nFull page URLs:\n- Homepage: https://lamla-ai.vercel.app/\n- Login page: https://lamla-ai.vercel.app/auth/login\n- Signup page: https://lamla-ai.vercel.app/auth/signup\n- AI Tutor chat: https://lamla-ai.vercel.app/ai-tutor\n- Create Quiz: https://lamla-ai.vercel.app/quiz/create\n- Take Quiz: https://lamla-ai.vercel.app/quiz/play\n- Quiz Results: https://lamla-ai.vercel.app/quiz/results\n- Flashcard Decks: https://lamla-ai.vercel.app/flashcards\n- Create Flashcard Deck: https://lamla-ai.vercel.app/flashcards/create\n- Study a Deck: https://lamla-ai.vercel.app/flashcards/study/:id\n- Materials Library: https://lamla-ai.vercel.app/materials\n- Upload Material: https://lamla-ai.vercel.app/materials/upload\n- Dashboard: https://lamla-ai.vercel.app/dashboard\n- Profile settings: https://lamla-ai.vercel.app/profile"
+    "text": "The Lamla AI platform is live at: https://lamla-ai.vercel.app\n\nFull page URLs:\n- Homepage: https://lamla-ai.vercel.app/\n- Login page: https://lamla-ai.vercel.app/auth/login\n- Signup page: https://lamla-ai.vercel.app/auth/signup\n- AI Tutor chat: https://lamla-ai.vercel.app/ai-tutor\n- Create Quiz: https://lamla-ai.vercel.app/quiz/create\n- Take Quiz: https://lamla-ai.vercel.app/quiz/play\n- Quiz Results: https://lamla-ai.vercel.app/quiz/results\n- Flashcard Decks: https://lamla-ai.vercel.app/flashcards\n- Create Flashcard Deck: https://lamla-ai.vercel.app/flashcards/create\n- Study a Deck: https://lamla-ai.vercel.app/flashcards/study/:id\n- Materials Library: https://lamla-ai.vercel.app/materials\n- Upload Material: https://lamla-ai.vercel.app/materials/upload\n- Clash (Host or Join): https://lamla-ai.vercel.app/clash\n- Dashboard: https://lamla-ai.vercel.app/dashboard\n- Profile settings: https://lamla-ai.vercel.app/profile"
   },
   "learning_tools.md::s1": {
     "heading": "Quiz Generator",
@@ -220,5 +220,41 @@
     "source_file": "learning_tools.md",
     "keywords": ["ai tutor performance", "bot knows my progress", "personalized tutor", "study advice", "what should i study", "how am i doing", "tutor awareness", "ai knows my results", "personalized study", "chatbot performance", "ai tutor weak areas"],
     "text": "I am aware of your learning progress. When you are logged in and have taken at least one quiz, I automatically know:\n- How many quizzes you have taken and your average score\n- Your weakest topics (lowest accuracy across at least 3 questions)\n- Which topics are due for review based on spaced repetition scheduling\n\nBecause I have this context, you can ask me things like:\n- 'What should I study today?'\n- 'What are my weakest topics?'\n- 'Am I ready for my exam?'\n- 'Which topic should I focus on next?'\n- 'How am I doing overall?'\n\nI use your actual performance data to give you specific, relevant answers — not generic advice.\n\nThis builds automatically as you take more quizzes. No setup needed.\n\nIf you are a guest or have not taken any quizzes yet, I do not have performance data for you — but I can still help with any subject questions you have."
+  },
+  "clash.md::s1": {
+    "heading": "What Is Clash",
+    "source_file": "clash.md",
+    "keywords": ["clash", "multiplayer", "quiz battle", "real-time quiz", "quiz competition", "play with friends", "competitive quiz", "live quiz", "quiz game", "group quiz", "challenge friends", "what is clash", "about clash"],
+    "text": "Clash is Lamla's real-time multiplayer quiz battle feature. It lets you compete against friends or classmates in a live, timed quiz — all answering the same AI-generated questions at the same time.\n\nKey facts:\n- Up to 20 players can join a single Clash room\n- Questions are AI-generated from a file you upload/topic you choose\n- Every player sees questions simultaneously and answers against the clock\n- Points are awarded for correct answers — faster answers earn more points\n- A live leaderboard updates after each question\n- The player with the highest total score at the end wins\n\nClash is a great way to make revision competitive, study with a group, or challenge classmates before an exam.\n\nAccess Clash at: https://lamla-ai.vercel.app/clash"
+  },
+  "clash.md::s2": {
+    "heading": "How To Host A Clash Room",
+    "source_file": "clash.md",
+    "keywords": ["host clash", "create clash room", "start clash", "new clash", "clash setup", "clash host", "create room", "clash topic", "clash difficulty", "clash questions", "clash time", "clash settings"],
+    "text": "To host a Clash room:\n1. Go to https://lamla-ai.vercel.app/clash\n2. Click the Host tab\n3. Fill in the room settings:\n   - Topic / Subject: What the quiz is about (any subject)\n   - Content: Paste text or upload a file (PDF, DOCX, PPTX, TXT) to generate questions from, or leave it to the AI to use just the topic\n   - Difficulty: Beginner, Intermediate, or Exam\n   - Number of Questions: 5 to 20\n   - Time per Question: 10, 15, 20, or 30 seconds\n4. Click Create Room\n5. A 6-character room code is generated (e.g. KFGT2A)\n6. Share the room code with the players you want to invite\n7. Click Start Game when everyone has joined\n\nYou are automatically the host. The game does not begin until you click Start Game. Players can join while you wait in the lobby."
+  },
+  "clash.md::s3": {
+    "heading": "How To Join A Clash Room",
+    "source_file": "clash.md",
+    "keywords": ["join clash", "clash room code", "enter room code", "join game", "clash join", "join multiplayer", "clash code", "6 character code", "room code", "join friend"],
+    "text": "To join a Clash room created by someone else:\n1. Go to https://lamla-ai.vercel.app/clash\n2. Click the Join tab\n3. Enter the 6-character room code shared by the host (e.g. KFGT2A)\n4. Click Join Room\n5. You will enter the lobby and see other players who have joined\n6. Wait for the host to start the game\n\nRoom codes are not case-sensitive. The lobby shows the subject, difficulty, number of questions, and time per question so you know what to expect. The room can hold a maximum of 20 players including the host."
+  },
+  "clash.md::s4": {
+    "heading": "Playing A Clash Game",
+    "source_file": "clash.md",
+    "keywords": ["clash gameplay", "clash questions", "clash timer", "answering clash", "clash round", "clash answer", "clash reveal", "clash explanation", "how clash works", "clash game flow", "clash countdown"],
+    "text": "Once the host starts the game:\n\n1. Countdown: A 3-second countdown appears before the first question\n2. Question appears: All players see the same multiple-choice question at the same time\n3. Timer runs: A countdown timer shows how many seconds are left to answer (10, 15, 20, or 30 seconds depending on room settings)\n4. Select your answer: Click one of the four answer options before time runs out\n5. Feedback: After you answer (or time runs out), you immediately see whether you were correct and how many points you earned\n6. Answer reveal: A 10-second reveal phase shows the correct answer and a brief explanation\n7. Next question: The next question starts automatically after the reveal\n8. Leaderboard: After each question, a mini-leaderboard shows current standings\n\nThis cycle repeats for every question. After the last question, the final results screen is shown to all players."
+  },
+  "clash.md::s5": {
+    "heading": "Clash Scoring And Points",
+    "source_file": "clash.md",
+    "keywords": ["clash scoring", "clash points", "how points work", "speed bonus", "clash score", "points per question", "max points", "wrong answer points", "clash leaderboard score", "point calculation"],
+    "text": "Points are awarded per question based on correctness and speed:\n\n- Correct answer: 1000 base points + speed bonus\n- Speed bonus: Up to 500 extra points for answering quickly. The bonus scales linearly — the faster you answer relative to the time limit, the more bonus you get. Answer instantly and get the full 500; answer at the last second and get 0 bonus.\n- Maximum per question: 1500 points (1000 base + 500 speed bonus)\n- Wrong answer or no answer: 0 points\n\nExample:\n- 20-second time limit, answered in 5 seconds → time_ratio = 0.75 → speed bonus = 375 → total = 1375\n- 20-second time limit, answered in 18 seconds → time_ratio = 0.10 → speed bonus = 50 → total = 1050\n- Did not answer → 0 points\n\nFinal scores are the sum of all per-question points. The player with the highest total wins. Ties are possible."
+  },
+  "clash.md::s6": {
+    "heading": "Clash Results And Leaderboard",
+    "source_file": "clash.md",
+    "keywords": ["clash results", "clash leaderboard", "clash winner", "clash podium", "clash final score", "after clash", "clash end", "results screen", "clash ranking", "who won clash", "clash history"],
+    "text": "After the final question, all players are taken to the results screen.\n\nThe results screen shows:\n- Podium: Top 3 players highlighted with medal icons (gold, silver, bronze)\n- Full leaderboard: All players ranked by total score, showing score and rank\n- Room code: Displayed so you can remember which game this was\n- Accuracy: How many questions each player answered correctly out of the total\n\nYou can view past Clash games in your Dashboard under the Recent Activity section. Each entry shows:\n- The subject of the Clash\n- Your rank (e.g. #2 of 8 players)\n- Your total score in points\n- When the game ended\n\nAdmin users can view all Clash rooms and their full leaderboards in the admin dashboard at /admin-dashboard/clashes."
   }
 }
