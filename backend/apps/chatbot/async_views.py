@@ -15,6 +15,17 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from apps.core.async_client import call_fastapi, build_fastapi_headers
+
+
+async def _record_ai_latency(feature: str, duration_ms: int) -> None:
+    """Fire-and-forget: persist one AI response latency record."""
+    try:
+        from apps.dashboard.models import AIResponseLatency
+        await sync_to_async(AIResponseLatency.objects.create)(
+            feature=feature, duration_ms=duration_ms
+        )
+    except Exception:
+        pass
 from .file_extractor import extract_text_from_file, FileExtractionError
 from .helpers import (
     _resolve_authenticated_user,
@@ -62,6 +73,7 @@ async def chatbot_api_async(request):
         chat_prefill = None
         try:
             headers = build_fastapi_headers()
+            _t0 = perf_counter()
             fastapi_resp = await call_fastapi(
                 "POST",
                 "/agent/chat",
@@ -75,6 +87,9 @@ async def chatbot_api_async(request):
                 headers=headers,
                 timeout=120.0,
             )
+            _chat_ms = int((perf_counter() - _t0) * 1000)
+            import asyncio as _aio
+            _aio.create_task(_record_ai_latency('chat', _chat_ms))
 
             if fastapi_resp.status_code == 200:
                 resp_json = fastapi_resp.json()

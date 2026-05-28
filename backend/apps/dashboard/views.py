@@ -14,10 +14,10 @@ from apps.quiz.models import QuizSession
 from apps.chatbot.models import ChatSession, ChatMessage
 from apps.accounts.serializers import user_to_dict
 from apps.accounts.services import EmailDeliveryError
-from .models import QuizExperienceRating, AnonymousUsageEvent
+from .models import QuizExperienceRating, AnonymousUsageEvent, AIResponseLatency
 from .serializers import ContactFormSerializer, NewsletterSerializer, QuizFeedbackSerializer
 from .services import send_contact_emails, send_newsletter_emails
-from .helpers import _calculate_streak, _tokens_from_chars, _safe_char_sum, _collect_admin_activity
+from .helpers import _calculate_streak, _tokens_from_chars, _safe_char_sum, _collect_admin_activity, _cost_from_tokens
 
 
 logger = logging.getLogger(__name__)
@@ -191,6 +191,18 @@ class AdminDashboardStatsView(APIView):
         avg_quizzes_per_user = round((quiz_stats['total'] or 0) / max(total_users, 1), 2)
         avg_chats_per_user = round(total_chat_sessions / max(total_users, 1), 2)
 
+        # Estimated cost
+        estimated_cost_usd = _cost_from_tokens(estimated_tokens_total)
+
+        # Average AI response latency (7-day rolling window)
+        week_ago = timezone.now() - datetime.timedelta(days=7)
+        latency_agg = AIResponseLatency.objects.filter(created_at__gte=week_ago).aggregate(
+            avg_ms=dm.Avg('duration_ms'),
+            sample_count=dm.Count('id'),
+        )
+        avg_response_ms = round(float(latency_agg['avg_ms'] or 0), 1)
+        latency_sample_count = int(latency_agg['sample_count'] or 0)
+
         # Last-24h activity feed for dashboard overview only
         recent_activity_payload, _, _ = _collect_admin_activity(start_at=day_ago, limit=20, offset=0)
 
@@ -236,9 +248,12 @@ class AdminDashboardStatsView(APIView):
                 'flashcards': estimated_tokens_flashcards,
                 'clash': estimated_tokens_clash,
                 'total': estimated_tokens_total,
+                'estimated_cost_usd': estimated_cost_usd,
                 'method': 'chars_div_4_estimate',
                 'note': 'Approximation only. Provider billing tokens may differ.',
             },
+            'avg_response_ms': avg_response_ms,
+            'latency_sample_count': latency_sample_count,
         })
 
 
@@ -513,6 +528,8 @@ class AdminUserDeleteView(APIView):
 
         from apps.accounts.models import User
         from apps.flashcards.models import Deck, Flashcard
+        from apps.materials.models import Material
+        from apps.clash.models import ClashRoom, ClashParticipant
 
         try:
             target = User.objects.get(id=user_id)
@@ -524,6 +541,10 @@ class AdminUserDeleteView(APIView):
         flashcards_qs = Flashcard.objects.filter(deck__user=target)
         chat_sessions_qs = ChatSession.objects.filter(user=target)
         chat_messages_qs = ChatMessage.objects.filter(session__user=target)
+        materials_qs = Material.objects.filter(uploaded_by=target)
+        clash_parts_qs = ClashParticipant.objects.filter(
+            user=target, room__status=ClashRoom.FINISHED
+        ).select_related('room')
 
         quiz_count = quizzes_qs.count()
         flashcard_decks_count = decks_qs.count()
@@ -545,6 +566,20 @@ class AdminUserDeleteView(APIView):
         tokens_quiz = _tokens_from_chars(quiz_chars)
         tokens_flashcards = _tokens_from_chars(flashcard_chars)
         tokens_chat = _tokens_from_chars(chat_chars)
+
+        # Clash stats
+        total_clashes = clash_parts_qs.count()
+        clashes_as_host = clash_parts_qs.filter(is_host=True).count()
+        clash_wins = clash_parts_qs.filter(rank=1).count()
+        clash_avg_score = clash_parts_qs.aggregate(avg=dm.Avg('score'))['avg'] or 0
+
+        # Clash token estimate — only rooms this user hosted (host pays for question generation)
+        hosted_room_ids = list(clash_parts_qs.filter(is_host=True).values_list('room_id', flat=True))
+        clash_chars = _safe_char_sum(
+            ClashRoom.objects.filter(id__in=hosted_room_ids),
+            Length(Cast('questions', output_field=TextField()))
+        )
+        tokens_clash = _tokens_from_chars(clash_chars)
 
         quiz_stats = quizzes_qs.aggregate(
             avg=dm.Avg('score_percentage'),
@@ -579,12 +614,22 @@ class AdminUserDeleteView(APIView):
                 "created_at": s.created_at,
             })
 
+        for p in clash_parts_qs.order_by('-room__finished_at')[:10]:
+            role = 'hosted' if p.is_host else 'played'
+            player_count = ClashParticipant.objects.filter(room=p.room).count()
+            recent_activity.append({
+                "type": "clash",
+                "text": f"{role} a Clash on '{p.room.subject}' — #{p.rank} of {player_count} ({p.score} pts)",
+                "created_at": p.room.finished_at,
+            })
+
         recent_activity.sort(key=lambda item: item["created_at"], reverse=True)
         recent_activity = [
             {**item, "created_at": item["created_at"].isoformat()}
             for item in recent_activity[:20]
         ]
 
+        tokens_total = tokens_quiz + tokens_flashcards + tokens_chat + tokens_clash
         return Response({
             'user': user_to_dict(target),
             'summary': {
@@ -595,13 +640,20 @@ class AdminUserDeleteView(APIView):
                 'total_flashcards': flashcards_count,
                 'total_chat_sessions': chat_sessions_count,
                 'total_chat_messages': chat_messages_count,
+                'total_materials': materials_qs.count(),
+                'total_clashes': total_clashes,
+                'clashes_as_host': clashes_as_host,
+                'clash_wins': clash_wins,
+                'clash_avg_score': int(round(float(clash_avg_score))),
                 'user_rating': user_rating_value,
             },
             'estimated_tokens': {
                 'quiz': tokens_quiz,
                 'flashcards': tokens_flashcards,
                 'chat': tokens_chat,
-                'total': tokens_quiz + tokens_flashcards + tokens_chat,
+                'clash': tokens_clash,
+                'total': tokens_total,
+                'estimated_cost_usd': _cost_from_tokens(tokens_total),
                 'method': 'chars_div_4_estimate',
             },
             'recent_activity': recent_activity,

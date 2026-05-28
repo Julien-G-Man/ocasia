@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 import httpx
+from time import perf_counter
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
@@ -23,6 +25,16 @@ from .serializers import (
 from apps.core.async_client import call_fastapi, build_fastapi_headers
 
 logger = logging.getLogger(__name__)
+
+
+async def _record_ai_latency(feature: str, duration_ms: int) -> None:
+    try:
+        from apps.dashboard.models import AIResponseLatency
+        await sync_to_async(AIResponseLatency.objects.create)(
+            feature=feature, duration_ms=duration_ms
+        )
+    except Exception:
+        pass
 
 
 def _parse_json_body(request):
@@ -111,6 +123,7 @@ async def generate_flashcards(request):
 
         payload = serializer.validated_data
 
+        _t0 = perf_counter()
         resp = await call_fastapi(
             "POST",
             "/flashcards/generate",
@@ -124,6 +137,7 @@ async def generate_flashcards(request):
                 "difficulty": payload["difficulty"],
             },
         )
+        asyncio.create_task(_record_ai_latency('flashcards', int((perf_counter() - _t0) * 1000)))
         resp.raise_for_status()
         result = resp.json()
 

@@ -74,6 +74,18 @@ def _tokens_from_chars(char_count: int) -> int:
     return int(round(char_count / 4))
 
 
+# Conservative blended rate across DeepSeek / Claude / GPT-4 (~$2 per 1M tokens).
+# Update this constant when provider mix changes significantly.
+_BLENDED_COST_PER_1K_TOKENS = 0.002
+
+
+def _cost_from_tokens(tokens: int) -> float:
+    """Estimated USD cost from token count at blended provider rate."""
+    if not tokens:
+        return 0.0
+    return round((tokens / 1000) * _BLENDED_COST_PER_1K_TOKENS, 4)
+
+
 def _safe_char_sum(qs, expression):
     result = qs.aggregate(total=Coalesce(dm.Sum(expression), Value(0)))
     return int(result.get("total") or 0)

@@ -11,6 +11,7 @@ import {
   faTrophy,
   faBook,
   faBolt,
+  faStopwatch,
 } from '@fortawesome/free-solid-svg-icons';
 import AdminAppShell from '../../components/AppShell/AdminAppShell';
 import { useAuth } from '../../context/AuthContext';
@@ -235,9 +236,32 @@ export default function AdminOverview() {
             <div className="db-stat-card"><div className="db-stat-body"><p>Flashcards</p><h3>{nfmt(adminStats.estimated_tokens?.flashcards)}</h3></div></div>
             <div className="db-stat-card"><div className="db-stat-body"><p>Clash</p><h3>{nfmt(adminStats.estimated_tokens?.clash)}</h3></div></div>
             <div className="db-stat-card"><div className="db-stat-body"><p>Total</p><h3>{nfmt(adminStats.estimated_tokens?.total)}</h3></div></div>
+            <div className="db-stat-card"><div className="db-stat-body"><p>Est. Cost (USD)</p><h3>{loadingStats ? '-' : `$${adminStats.estimated_tokens?.estimated_cost_usd ?? '0.0000'}`}</h3></div></div>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 10 }}>
             {adminStats.estimated_tokens?.note || 'Approximation based on stored text volume.'}
+          </p>
+        </div>
+
+        <div className="db-card">
+          <div className="db-card-header"><h2>AI Response Time (7-Day Avg)</h2></div>
+          <div className="db-stats-grid db-stats-grid--two">
+            <div className="db-stat-card">
+              <div className="db-stat-icon"><FontAwesomeIcon icon={faStopwatch} /></div>
+              <div className="db-stat-body">
+                <p>Avg Response Time</p>
+                <h3>{loadingStats ? '-' : `${nfmt(adminStats.avg_response_ms)} ms`}</h3>
+              </div>
+            </div>
+            <div className="db-stat-card">
+              <div className="db-stat-body">
+                <p>Sample Size (7d)</p>
+                <h3>{loadingStats ? '-' : nfmt(adminStats.latency_sample_count)}</h3>
+              </div>
+            </div>
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 10 }}>
+            Measured across Chat, Quiz, and Flashcard AI calls. Zero means no data recorded yet.
           </p>
         </div>
 

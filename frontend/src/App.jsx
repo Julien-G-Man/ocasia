@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import "./App.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "./context/ThemeContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { DJANGO_WARMUP_ENDPOINT, FASTAPI_HEALTH_ENDPOINT } from "./services/api";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
@@ -47,6 +47,19 @@ const WAKE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+/**
+ * Blocks rendering until auth rehydration from localStorage completes.
+ * Prevents the "isAuthenticated: false" flash that redirects hard-refreshed
+ * users to the login page before the token is read.
+ */
+function ProtectedRoute({ children, requireAdmin = false }) {
+  const { isAuthenticated, isLoading, getUserRole } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
+  if (requireAdmin && getUserRole() !== "admin") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 function App() {
   useEffect(() => {
     const wakeServices = async () => {
@@ -80,29 +93,29 @@ function App() {
             <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
             <Route path="/verify-email" element={<Navigate to="/auth/verify-email" replace />} />
 
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin-dashboard" element={<Navigate to="/admin-dashboard/overview" replace />} />
-            <Route path="/admin-dashboard/overview" element={<AdminOverview />} />
-            <Route path="/admin-dashboard/users" element={<AdminUsers />} />
-            <Route path="/admin-dashboard/content" element={<AdminContent />} />
-            <Route path="/admin-dashboard/settings" element={<AdminSettings />} />
-            <Route path="/admin-dashboard/profile" element={<Profile ShellComponent={AdminAppShell} />} />
-            <Route path="/admin-dashboard/user/:id" element={<AdminUserDetails />} />
-            <Route path="/admin-dashboard/activity" element={<AdminActivity />} />
-            <Route path="/admin-dashboard/ratings" element={<AdminRatings />} />
-            <Route path="/admin-dashboard/clashes" element={<AdminClash />} />
-            <Route path="/admin-dashboard/clashes/:code" element={<AdminClashDetail />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin-dashboard/overview" element={<ProtectedRoute requireAdmin><AdminOverview /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/content" element={<ProtectedRoute requireAdmin><AdminContent /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/settings" element={<ProtectedRoute requireAdmin><AdminSettings /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/profile" element={<ProtectedRoute requireAdmin><Profile ShellComponent={AdminAppShell} /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/user/:id" element={<ProtectedRoute requireAdmin><AdminUserDetails /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/activity" element={<ProtectedRoute requireAdmin><AdminActivity /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/ratings" element={<ProtectedRoute requireAdmin><AdminRatings /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/clashes" element={<ProtectedRoute requireAdmin><AdminClash /></ProtectedRoute>} />
+            <Route path="/admin-dashboard/clashes/:code" element={<ProtectedRoute requireAdmin><AdminClashDetail /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-            <Route path="/quiz" element={<QuizHistory />} />
-            <Route path="/quiz/create" element={<CreateQuiz />} />
-            <Route path="/quiz/play" element={<Quiz />} />
-            <Route path="/quiz/results" element={<QuizResults />} />
+            <Route path="/quiz" element={<ProtectedRoute><QuizHistory /></ProtectedRoute>} />
+            <Route path="/quiz/create" element={<ProtectedRoute><CreateQuiz /></ProtectedRoute>} />
+            <Route path="/quiz/play" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+            <Route path="/quiz/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
 
-            <Route path="/flashcards" element={<FlashcardDecks />} />
-            <Route path="/flashcards/create" element={<FlashcardCreate />} />
-            <Route path="/flashcards/deck/:id" element={<FlashcardDeck />} />
-            <Route path="/flashcards/study/:id" element={<FlashcardStudy />} />
+            <Route path="/flashcards" element={<ProtectedRoute><FlashcardDecks /></ProtectedRoute>} />
+            <Route path="/flashcards/create" element={<ProtectedRoute><FlashcardCreate /></ProtectedRoute>} />
+            <Route path="/flashcards/deck/:id" element={<ProtectedRoute><FlashcardDeck /></ProtectedRoute>} />
+            <Route path="/flashcards/study/:id" element={<ProtectedRoute><FlashcardStudy /></ProtectedRoute>} />
             <Route path="/flashcard" element={<Navigate to="/flashcards" replace />} />
 
             <Route path="/donate" element={<Donate />} />
@@ -110,18 +123,18 @@ function App() {
 
             <Route path="/materials" element={<Navigate to="/materials/community" replace />} />
             <Route path="/materials/community" element={<Materials />} />
-            <Route path="/materials/mine" element={<MaterialsMine />} />
-            <Route path="/materials/upload" element={<MaterialUpload />} />
+            <Route path="/materials/mine" element={<ProtectedRoute><MaterialsMine /></ProtectedRoute>} />
+            <Route path="/materials/upload" element={<ProtectedRoute><MaterialUpload /></ProtectedRoute>} />
 
-            <Route path="/ai-tutor" element={<Chatbot />} />
+            <Route path="/ai-tutor" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
             <Route path="/ai" element={<Navigate to="/ai-tutor" replace />} />
             <Route path="/chat" element={<Navigate to="/ai-tutor" replace />} />
             <Route path="/chatbot" element={<Navigate to="/ai-tutor" replace />} />
 
-            <Route path="/clash" element={<ClashCreate />} />
-            <Route path="/clash/lobby/:code" element={<ClashLobby />} />
-            <Route path="/clash/play/:code" element={<ClashPlay />} />
-            <Route path="/clash/results/:code" element={<ClashResults />} />
+            <Route path="/clash" element={<ProtectedRoute><ClashCreate /></ProtectedRoute>} />
+            <Route path="/clash/lobby/:code" element={<ProtectedRoute><ClashLobby /></ProtectedRoute>} />
+            <Route path="/clash/play/:code" element={<ProtectedRoute><ClashPlay /></ProtectedRoute>} />
+            <Route path="/clash/results/:code" element={<ProtectedRoute><ClashResults /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

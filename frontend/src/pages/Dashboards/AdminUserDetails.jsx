@@ -63,9 +63,13 @@ export default function AdminUserDetails() {
     { label: 'Chat Sessions', value: nfmt(summary.total_chat_sessions) },
     { label: 'Chat Messages', value: nfmt(summary.total_chat_messages) },
     { label: 'Materials Uploaded', value: nfmt(summary.total_materials) },
-    { label: 'Average Score', value: `${summary.average_score ?? 0}%` },
-    { 
-      label: 'User Rating', 
+    { label: 'Total Clashes', value: nfmt(summary.total_clashes) },
+    { label: 'Clashes Hosted', value: nfmt(summary.clashes_as_host) },
+    { label: 'Clash Wins', value: nfmt(summary.clash_wins) },
+    { label: 'Clash Avg Score', value: summary.clash_avg_score != null ? `${summary.clash_avg_score}` : '—' },
+    { label: 'Average Quiz Score', value: `${summary.average_score ?? 0}%` },
+    {
+      label: 'User Rating',
       value: summary.user_rating ? `${summary.user_rating}/5 ★` : 'Not rated',
       highlight: !!summary.user_rating
     },
@@ -106,30 +110,39 @@ export default function AdminUserDetails() {
                 <div className="db-stat-card"><div className="db-stat-body"><p>Quiz</p><h3>{loading ? '-' : nfmt(tokens.quiz)}</h3></div></div>
                 <div className="db-stat-card"><div className="db-stat-body"><p>Flashcards</p><h3>{loading ? '-' : nfmt(tokens.flashcards)}</h3></div></div>
                 <div className="db-stat-card"><div className="db-stat-body"><p>Chat</p><h3>{loading ? '-' : nfmt(tokens.chat)}</h3></div></div>
+                <div className="db-stat-card"><div className="db-stat-body"><p>Clash (hosted)</p><h3>{loading ? '-' : nfmt(tokens.clash)}</h3></div></div>
                 <div className="db-stat-card"><div className="db-stat-body"><p>Total</p><h3>{loading ? '-' : nfmt(tokens.total)}</h3></div></div>
+                <div className="db-stat-card"><div className="db-stat-body"><p>Est. Cost (USD)</p><h3>{loading ? '-' : `$${tokens.estimated_cost_usd ?? '0.0000'}`}</h3></div></div>
               </div>
             </div>
 
             <div className="db-card">
-              <div className="db-card-header"><h2>Recent Activity (Quiz + Flashcards)</h2></div>
+              <div className="db-card-header"><h2>Recent Activity</h2></div>
               {loading ? (
                 <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading activity...</p>
               ) : recentActivity.length === 0 ? (
                 <p style={{ color: 'var(--text-secondary)', margin: 0 }}>No recent activity.</p>
               ) : (
                 <div className="db-timeline">
-                  {recentActivity.map((a, idx) => (
-                    <div className="db-timeline-item" key={`${a.type}-${a.created_at}-${idx}`}>
-                      <div className="db-timeline-dot" />
-                      <div className="db-timeline-body">
-                        <h4>{a.type === 'quiz' ? 'Quiz Activity' 
-                        : a.type === 'material' ? 'Material Uploaded'
-                        : 'Flashcard Activity'}</h4>
-                        <p>{a.text}</p>
-                        <span>{relTime(a.created_at)}</span>
+                  {recentActivity.map((a, idx) => {
+                    const typeLabel = {
+                      quiz: 'Quiz',
+                      flashcards: 'Flashcards',
+                      chat: 'Chat Session',
+                      material: 'Material Uploaded',
+                      clash: 'Clash',
+                    }[a.type] ?? a.type;
+                    return (
+                      <div className="db-timeline-item" key={`${a.type}-${a.created_at}-${idx}`}>
+                        <div className="db-timeline-dot" />
+                        <div className="db-timeline-body">
+                          <h4>{typeLabel}</h4>
+                          <p>{a.text}</p>
+                          <span>{relTime(a.created_at)}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

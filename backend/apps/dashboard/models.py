@@ -69,4 +69,31 @@ class AnonymousUsageEvent(models.Model):
         return int(deleted)
 
 
-__all__ = ["SystemSettings", "QuizExperienceRating", "AnonymousUsageEvent"]
+class AIResponseLatency(models.Model):
+    """Per-request AI latency log. Kept for 30 days; used for avg response time stats."""
+
+    CHAT = 'chat'
+    QUIZ = 'quiz'
+    FLASHCARDS = 'flashcards'
+    FEATURE_CHOICES = [
+        (CHAT, 'Chat'),
+        (QUIZ, 'Quiz'),
+        (FLASHCARDS, 'Flashcards'),
+    ]
+
+    feature = models.CharField(max_length=20, choices=FEATURE_CHOICES, db_index=True)
+    duration_ms = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['feature', 'created_at'])]
+
+    @classmethod
+    def purge_old(cls, days: int = 30) -> int:
+        cutoff = timezone.now() - timezone.timedelta(days=days)
+        deleted, _ = cls.objects.filter(created_at__lt=cutoff).delete()
+        return int(deleted)
+
+
+__all__ = ["SystemSettings", "QuizExperienceRating", "AnonymousUsageEvent", "AIResponseLatency"]

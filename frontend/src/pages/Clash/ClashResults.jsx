@@ -8,6 +8,23 @@ const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
 const MEDAL_EMOJI = { 1: "🥇", 2: "🥈", 3: "🥉" };
 const RANK_LABEL  = { 1: "1st place", 2: "2nd place", 3: "3rd place" };
 
+function PlayerAvatar({ entry, className = "" }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const name = entry.display_name || entry.username;
+  if (entry.profile_image && !imgFailed) {
+    return (
+      <img
+        src={entry.profile_image}
+        alt={name}
+        className={className}
+        style={{ objectFit: "cover", borderRadius: "50%" }}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+  return <div className={className}>{name[0].toUpperCase()}</div>;
+}
+
 function medalClass(rank) {
   if (rank === 1) return "gold";
   if (rank === 2) return "silver";
@@ -31,18 +48,22 @@ export default function ClashResults() {
 
   useEffect(() => {
     if (!token) { navigate("/auth/login"); return; }
-    if (rankings.length) { setLoading(false); return; }
     fetch(`${DJANGO_API_URL}/clash/${code}/results/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then(r => r.json())
       .then(data => {
         if (data.detail) { setError(data.detail); setLoading(false); return; }
-        setRankings(data.rankings ?? []);
+        // Prefer fresh rankings (include profile_image); fall back to state rankings
+        setRankings(data.rankings?.length ? data.rankings : rankings);
         setRoom(data);
         setLoading(false);
       })
-      .catch(() => { setError("Failed to load results."); setLoading(false); });
+      .catch(() => {
+        // If fetch fails but we already have rankings from state, show them
+        if (rankings.length) setLoading(false);
+        else { setError("Failed to load results."); setLoading(false); }
+      });
   }, []); // eslint-disable-line
 
   if (loading) {
@@ -110,9 +131,7 @@ export default function ClashResults() {
             return (
               <div key={entry.username} className="clash-podium-slot">
                 <div className="clash-podium-info">
-                  <div className={`clash-podium-avatar ${cls}`}>
-                    {(entry.display_name || entry.username)[0].toUpperCase()}
-                  </div>
+                  <PlayerAvatar entry={entry} className={`clash-podium-avatar ${cls}`} />
                   <div className="clash-podium-name">{entry.display_name || entry.username}</div>
                   <div className="clash-podium-pts">{entry.score} pts</div>
                 </div>
@@ -133,9 +152,7 @@ export default function ClashResults() {
               <div className={`clash-ranking-num ${entry.rank <= 3 ? "top" : ""}`}>
                 {MEDAL_EMOJI[entry.rank] ?? `#${entry.rank}`}
               </div>
-              <div className="clash-ranking-avatar">
-                {(entry.display_name || entry.username)[0].toUpperCase()}
-              </div>
+              <PlayerAvatar entry={entry} className="clash-ranking-avatar" />
               <div className="clash-ranking-info">
                 <div className="clash-ranking-name">
                   {entry.display_name || entry.username}

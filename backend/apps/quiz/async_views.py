@@ -4,10 +4,12 @@ High-Performance Async Proxy View for Quiz Generation
 Implements the Asynchronous Proxy Pattern for quiz endpoints.
 """
 
+import asyncio
 import json
 import logging
 import httpx
 from datetime import datetime
+from time import perf_counter
 from asgiref.sync import sync_to_async
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +24,16 @@ from rest_framework.response import Response
 from .models import QuizSession, TopicPerformance, QuizTopicSchedule
 
 logger = logging.getLogger(__name__)
+
+
+async def _record_ai_latency(feature: str, duration_ms: int) -> None:
+    try:
+        from apps.dashboard.models import AIResponseLatency
+        await sync_to_async(AIResponseLatency.objects.create)(
+            feature=feature, duration_ms=duration_ms
+        )
+    except Exception:
+        pass
 
 
 async def _get_authenticated_user_async(request):
@@ -141,6 +153,7 @@ async def generate_quiz_api_async(request):
         # Forward to FastAPI using async client
         headers = build_fastapi_headers()
         
+        _t0 = perf_counter()
         fastapi_resp = await call_fastapi(
             "POST",
             "/quiz/",
@@ -148,7 +161,8 @@ async def generate_quiz_api_async(request):
             headers=headers,
             timeout=120.0,
         )
-        
+        asyncio.create_task(_record_ai_latency('quiz', int((perf_counter() - _t0) * 1000)))
+
         if fastapi_resp.status_code != 200:
             logger.warning(f"FastAPI quiz call failed: {fastapi_resp.status_code} {fastapi_resp.text}")
             return JsonResponse(

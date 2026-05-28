@@ -390,6 +390,7 @@ class ClashConsumer(AsyncJsonWebsocketConsumer):
                     'username': p.user.username,
                     'display_name': p.display_name,
                     'is_host': p.is_host,
+                    'profile_image': p.user.profile_image or '',
                 }
                 for p in participants
             ],
@@ -407,6 +408,7 @@ class ClashConsumer(AsyncJsonWebsocketConsumer):
                     'username': p.user.username,
                     'display_name': p.display_name,
                     'score': scores.get(str(p.user.id), 0),
+                    'profile_image': p.user.profile_image or '',
                 }
                 for p in participants
             ],

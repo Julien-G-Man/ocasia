@@ -6,6 +6,23 @@ import "./Clash.css";
 const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
 const DJANGO_ROOT_URL = DJANGO_API_URL.replace(/\/api\/?$/, "");
 
+function PlayerAvatar({ participant, className = "" }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const name = participant.display_name || participant.username;
+  if (participant.profile_image && !imgFailed) {
+    return (
+      <img
+        src={participant.profile_image}
+        alt={name}
+        className={className}
+        style={{ objectFit: "cover", borderRadius: "50%" }}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+  return <div className={className}>{name[0].toUpperCase()}</div>;
+}
+
 function buildWsUrl(code, token) {
   const proto = DJANGO_ROOT_URL.startsWith("https") ? "wss" : "ws";
   const host = DJANGO_ROOT_URL.replace(/^https?:\/\//, "");
@@ -110,14 +127,15 @@ export default function ClashLobby() {
   }
 
   function handleShare() {
-    const url = `${window.location.origin}/clash?join=${code}`;
+    // Use the Django share-preview URL so bots see the Clash OG image
+    const shareUrl = `${DJANGO_ROOT_URL}/clash/share/${code}/`;
     const hostName = currentUser?.display_name || currentUser?.username || "Someone";
     const subject = room?.subject ? ` on "${room.subject}"` : "";
     const text = `${hostName} is inviting you to a Clash quiz battle${subject}! Join with code ${code} — tap the link to enter directly.`;
     if (navigator.share) {
-      navigator.share({ title: `${hostName} invited you to Clash`, text, url });
+      navigator.share({ title: `${hostName} invited you to Clash`, text, url: shareUrl });
     } else {
-      navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`).then(() => {
         setShared(true);
         setTimeout(() => setShared(false), 2000);
       });
@@ -186,9 +204,7 @@ export default function ClashLobby() {
           )}
           {participants.map(p => (
             <div key={p.username} className="clash-participant-row">
-              <div className="clash-participant-avatar">
-                {(p.display_name || p.username)[0].toUpperCase()}
-              </div>
+              <PlayerAvatar participant={p} className="clash-participant-avatar" />
               <span className="clash-participant-name">
                 {p.display_name || p.username}
                 {p.username === currentUser?.username && (

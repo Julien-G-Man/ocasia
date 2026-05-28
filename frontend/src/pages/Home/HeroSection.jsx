@@ -26,8 +26,8 @@ export default function HeroSection({ user }) {
                 Get Started Free
               </a>
             ) : (
-              <a href="/quiz/create" className="hero-btn primary">
-                Start Practicing
+              <a href="/dashboard" className="hero-btn primary">
+                Go to Dashboard
               </a>
             )}
             <a href="#features" className="hero-btn secondary">

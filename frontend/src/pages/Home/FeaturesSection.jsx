@@ -2,11 +2,11 @@ import React, { useRef, useEffect, useState } from "react";
 
 const FEATURES = [
   {
-    href: "/quiz/create",
-    image: "/assets/quizzes.jpg",
-    alt: "Quiz Mode",
-    title: "Quiz Mode",
-    description: "Automatically generates multiple-choice questions from your materials.",
+    href: "/clash",
+    image: "/assets/clash-vs.jpg",
+    alt: "Clash",
+    title: "Clash",
+    description: "Challenge friends to real-time multiplayer quiz battles. One room code, up to 20 players, live leaderboard.",
   },
   {
     href: "/ai-tutor",
@@ -16,18 +16,18 @@ const FEATURES = [
     description: "Get instant answers to your questions and deeper explanations.",
   },
   {
+    href: "/quiz/create",
+    image: "/assets/quizzes.jpg",
+    alt: "Quiz Mode",
+    title: "Quiz Mode",
+    description: "Automatically generates multiple-choice questions from your materials.",
+  },
+  {
     href: "/flashcards",
     image: "/assets/flashcards.jpeg",
     alt: "Flashcards",
     title: "Flashcards",
     description: "Create and study with AI-generated flashcards for quick review.",
-  },
-  {
-    href: "/clash",
-    image: "/assets/clash-vs.jpg",
-    alt: "Clash",
-    title: "Clash",
-    description: "Challenge friends to real-time multiplayer quiz battles. One room code, up to 20 players, live leaderboard.",
   },
   {
     href: "/#exam-analyzer",
@@ -37,18 +37,18 @@ const FEATURES = [
     description: "Analyze uploaded exams or slides for instant feedback and topic breakdowns.",
   },
   {
-    href: "/dashboard",
-    image: "/assets/improve-performance.jpg",
-    alt: "Performance Analytics",
-    title: "Performance Analytics",
-    description: "Track your progress and identify weak points to focus your efforts.",
-  },
-  {
     href: "/materials/community",
     image: "/assets/steam.jpg",
     alt: "Uploaded Materials",
     title: "Materials",
     description: "Don't have slides? Select from a wide range of material uploaded by our students community.",
+  },
+  {
+    href: "/dashboard",
+    image: "/assets/improve-performance.jpg",
+    alt: "Performance Analytics",
+    title: "Performance Analytics",
+    description: "Track your progress and identify weak points to focus your efforts.",
   },
 ];
 

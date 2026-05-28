@@ -19,9 +19,11 @@ from django.conf import settings
 from django.urls import path, include
 from django.conf.urls.static import static
 from apps.core.views import HealthCheckView, warmup
+from apps.clash.views import clash_share_preview
 
 urlpatterns = [
     path('warmup/', warmup),
+    path('clash/share/<str:room_code>/', clash_share_preview, name='clash_share_preview'),
     path('health/', HealthCheckView.as_view(), name="health"),
     path('admin/', admin.site.urls),
     

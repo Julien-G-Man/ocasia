@@ -15,16 +15,6 @@ In Lamla this means:
 - The loop repeats until `stop_reason == end_turn` or `max_iterations` is hit.
 
 ---
-TO DO:
-
-1. Add a /metrics endpoint to Lamla's FastAPI service that returns:
-- Total conversations
-- Average response time
-- Cost per request (tracked via token usage)
-
-2. Add it to the dashboard in the frontend (a simple /admin/metrics page).
-
----
 ## 2. Architecture
 
 ```

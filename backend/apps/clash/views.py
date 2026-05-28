@@ -2,7 +2,9 @@ import json
 import logging
 
 from asgiref.sync import sync_to_async
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
+from django.utils.html import escape as html_escape
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from rest_framework.authentication import TokenAuthentication
@@ -216,6 +218,7 @@ async def room_info(request, room_code):
                 "username": p.user.username,
                 "display_name": p.display_name,
                 "is_host": p.is_host,
+                "profile_image": p.user.profile_image or "",
             }
             for p in participants
         ],
@@ -386,7 +389,71 @@ async def clash_results(request, room_code):
                 "score": p.score,
                 "is_host": p.is_host,
                 "correct": sum(1 for a in p.answers if a.get("correct")),
+                "profile_image": p.user.profile_image or "",
             }
             for idx, p in enumerate(participants)
         ],
     })
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+async def clash_share_preview(request, room_code):
+    """
+    Open Graph preview page for Clash invite links.
+
+    Bots (WhatsApp, iMessage, Twitter, etc.) crawl this URL and see the
+    Clash-specific OG tags with clash-fist.jpg. Real users are instantly
+    redirected to the SPA via meta-refresh.
+    """
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    room_code = room_code.upper()
+    redirect_url = f"{frontend_url}/clash?join={room_code}"
+    image_url = f"{frontend_url}/assets/clash-fist.jpg"
+
+    # Try to enrich the title/description with the actual subject
+    og_title = "Join a Clash on Lamla AI!"
+    og_desc = (
+        f"You've been invited to a live quiz battle on Lamla AI. "
+        f"Join room {room_code} and compete now!"
+    )
+    try:
+        room = await sync_to_async(ClashRoom.objects.get)(room_code=room_code)
+        if room.subject:
+            og_title = f"Clash: {room.subject} — Join the battle!"
+            og_desc = (
+                f"You've been challenged to a live {room.subject} quiz battle "
+                f"on Lamla AI. Join room {room_code} and compete!"
+            )
+    except ClashRoom.DoesNotExist:
+        pass
+
+    t = html_escape(og_title)
+    d = html_escape(og_desc)
+    share_url = html_escape(request.build_absolute_uri())
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Lamla AI">
+  <meta property="og:title" content="{t}">
+  <meta property="og:description" content="{d}">
+  <meta property="og:image" content="{image_url}">
+  <meta property="og:image:alt" content="Lamla AI Clash — Live Quiz Battle">
+  <meta property="og:url" content="{share_url}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{t}">
+  <meta name="twitter:description" content="{d}">
+  <meta name="twitter:image" content="{image_url}">
+  <meta http-equiv="refresh" content="0;url={redirect_url}">
+  <title>{t}</title>
+</head>
+<body>
+  <p>Redirecting to Lamla AI Clash…</p>
+  <a href="{redirect_url}">Click here if not redirected</a>
+</body>
+</html>"""
+
+    return HttpResponse(html, content_type="text/html")
