@@ -11,10 +11,18 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "The AI Tutor explains concepts in a way I actually understand. My grades improved significantly after using Lamla.",
-    name: "Ama B",
-    title: "Engineering Student @ UG",
-    initials: "AB",
+      "We did a Clash before our midterms and it got so competitive — people were trash talking in the group chat over quiz scores. Best study session we've ever had.",
+    name: "Kwame A",
+    title: "Computer Science Student @ KNUST",
+    initials: "KA",
+    image: null,
+  },
+  {
+    quote:
+      "A platform that encourages competitive learning while supporting continuous improvement. I really enjoyed Clash with my friends.",
+    name: "Jude Fiadzawoo",
+    title: "Computer Science @ KNUST",
+    initials: "JF",
     image: null,
   },
 ];
