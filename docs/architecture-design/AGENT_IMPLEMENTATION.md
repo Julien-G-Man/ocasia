@@ -58,18 +58,22 @@ Django never builds prompts. FastAPI never writes to the DB.
 ```
 ai_service/
   core/
-    ai_client.py         # generate_content() + generate_with_tools()
+    ai_client.py         # generate_content() + generate_with_tools() + generate_with_tools_stream()
+    upstash.py           # Upstash Vector async client: upsert_document_chunks(), search_document_chunks()
+    config.py            # All settings (ANTHROPIC_API_KEY, UPSTASH_VECTOR_URL, etc.)
   agent/
     prompts.py           # All system prompt construction (build_chat_system_prompt, etc.)
-    schemas.py           # ToolDefinition, ToolCall, ToolResult, OrchestratorRequest/Response, ChatRequest
+    schemas.py           # ToolDefinition, ToolCall, ToolResult, ChatRequest, IndexDocumentRequest
     registry.py          # TOOL_REGISTRY, get_definitions(), get_handler()
     executor.py          # execute_tool() — 5 error classes, per-tool timeouts, never raises
-    router.py            # Route handlers only: /tools, /call, /orchestrate, /chat
+    helpers.py           # _run_agent_loop() + _run_agent_loop_stream() — extra_tool_handlers pattern
+    router.py            # Route handlers: /tools, /call, /orchestrate, /chat, /chat/stream, /document/index
     tools/
       youtube.py         # extract_youtube_transcript()
       evaluate.py        # evaluate_answer()
       summarize.py       # summarize_text()
-      search.py          # search_web() via Tavily
+      search.py          # search_web() via Tavily / SerpAPI
+      document.py        # make_search_document_handler(session_id) — RAG query tool factory
   kb_config/
     base.py              # KBSearchProvider ABC
     tfidf_provider.py    # Default — token overlap + keyword/heading boost
@@ -83,35 +87,41 @@ ai_service/
     flashcards/          # POST /flashcards/ — standalone flashcard generation
 
 backend/apps/chatbot/
-  async_views.py         # Proxy views: fetch stats, forward to /agent/chat, persist response
-  helpers.py             # Session/auth/DB helpers and _fetch_user_performance_sync()
+  async_views.py         # Proxy views: fetch stats, chunk+index file, forward to /agent/chat, persist response
+  helpers.py             # Session/auth/DB helpers, chunk_text(), _fetch_user_performance_sync()
+  models.py              # ChatSession (has_document flag), ChatMessage
 ```
 
 ---
 
 ## 5. Registered Tools
 
-All tools live in `ai_service/agent/registry.py`.
+All static tools live in `ai_service/agent/registry.py`.
 Handlers run in-process — no internal HTTP round-trips.
 
 | Tool | Handler | Notes | Timeout |
 |---|---|---|---|
 | `kb_search` | `kb/loader.py` singleton | Platform knowledge retrieval | 5s |
-| `search_web` | `tools/search.py` | Tavily — agent decides when to call | 12s |
+| `search_web` | `tools/search.py` | Tavily/SerpAPI — agent decides when to call | 12s |
 | `extract_youtube_transcript` | `tools/youtube.py` | Deterministic API call | 30s |
 | `summarize_text` | `tools/summarize.py` | LLM — truncation fallback on failure | 30s |
 | `evaluate_answer` | `tools/evaluate.py` | LLM + string-match fallback | 25s |
 | `generate_quiz` | inline in registry.py | LLM via quiz service | 90s |
 | `generate_flashcards` | inline in registry.py | LLM via flashcards service | 45s |
 | `explain_concept` | inline in registry.py | LLM | 20s |
+| `request_quiz_form` | inline in registry.py | No-op signal tool (sets side_data) | 2s |
+| `search_document` | `tools/document.py` (per-request) | RAG — queries Upstash Vector for session | 15s |
 
 ### Chatbot tool subset
 
-`POST /agent/chat` exposes exactly these three tools (`_CHAT_TOOLS`):
+`POST /agent/chat` always exposes these three tools (`_CHAT_TOOLS`):
 
 ```python
 _CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]
 ```
+
+When `has_document=True`, `search_document` is **additionally** injected via
+`extra_tool_defs` / `extra_tool_handlers` (not added to `_CHAT_TOOLS` — see §18).
 
 All other tools (YouTube, summarize, evaluate, generate_quiz, generate_flashcards, explain_concept)
 are available via `POST /agent/orchestrate` when called with the appropriate whitelist.
@@ -221,7 +231,8 @@ async def generate_with_tools(
 ### POST /agent/chat — Primary chatbot endpoint
 
 Accepts the structured payload from Django. Builds the system prompt internally, runs the
-agent loop restricted to `kb_search` + `web_search`, falls back to one-shot on failure.
+agent loop restricted to `kb_search` + `web_search` + `request_quiz_form` (+ `search_document`
+when `has_document=True`), falls back to one-shot on failure.
 
 ```json
 {
@@ -230,11 +241,27 @@ agent loop restricted to `kb_search` + `web_search`, falls back to one-shot on f
   "tutor_mode": "direct | socratic",
   "user_stats": { ... } | null,
   "file_text": "string" | null,
-  "user_id": int | null
+  "user_id": int | null,
+  "session_id": "string" | null,
+  "has_document": false
 }
 ```
 
-Returns `{ "response": str }`.
+Returns `{ "response": str }`, optionally with `"action"` and `"prefill"`.
+
+### POST /agent/document/index — Document RAG indexing
+
+Called fire-and-forget by Django after file text extraction.
+FastAPI embeds all chunks via `text-embedding-3-small` and upserts them into
+Upstash Vector under `namespace=session_id`.
+
+```json
+Request:
+{ "session_id": "string", "chunks": ["string", ...], "filename": "string" }
+
+Response:
+{ "indexed": 23, "session_id": "string" }
+```
 
 ### POST /agent/orchestrate — Generic tool-loop endpoint
 
@@ -376,8 +403,87 @@ Django chatbot_api_async:
 - Do not add auth, scoring, or DB writes to any tool.
 - Do not put prompt construction in Django — it belongs in FastAPI `prompts.py`.
 - Do not let tools call each other. The AI composes them; tools do not.
-- Do not expose all tools to the chatbot. Use `_CHAT_TOOLS = ["kb_search", "web_search", "request_quiz_form"]`.
+- Do not expose all tools to the chatbot. Use `_CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]`.
 - Do not remove the direct quiz/flashcard endpoints. The quiz page calls them directly.
+- Do not add `search_document` to `_CHAT_TOOLS` — this causes it to be registered twice
+  (once from `get_definitions(_CHAT_TOOLS)` and once from `extra_tool_defs`), which makes
+  Claude reject the request with `tools: Tool names must be unique`.
+
+---
+
+## 18. Document RAG — Per-Request Tool Injection
+
+### Problem
+
+`search_document` needs a `session_id` pre-bound into its handler so it can query the
+correct Upstash Vector namespace. The global `TOOL_REGISTRY` cannot hold this because
+`session_id` varies per request. Passing it as a tool input would expose internal state
+to the AI and risk namespace leakage.
+
+### Solution: extra_tool_handlers
+
+`_run_agent_loop` and `_run_agent_loop_stream` accept two optional parameters:
+
+```python
+extra_tool_handlers: dict[str, async callable] | None
+extra_tool_defs:     list[ToolDefinition] | None
+```
+
+`extra_tool_handlers` are dispatched **before** the global registry in the tool execution
+loop. `extra_tool_defs` are appended to the tools list sent to the AI.
+
+The registry stores the `search_document` ToolDefinition (so `get_definitions()` can
+return its schema for the `/agent/tools` debug endpoint), but its `handler` key is `None`
+— it is never called from `execute_tool()`.
+
+### Handler factory
+
+```python
+# agent/tools/document.py
+def make_search_document_handler(session_id: str) -> Callable:
+    async def handler(query: str, top_k: int = 5) -> dict:
+        embedding = await _embed_query(query)
+        results = await search_document_chunks(session_id, embedding, top_k)
+        return {"chunks": [{"text": r["text"], "score": r["score"]} for r in results]}
+    return handler
+```
+
+### Injection in the router
+
+```python
+# agent/router.py  (POST /agent/chat)
+extra_handlers = None
+extra_defs = None
+if request.has_document and request.session_id:
+    from agent.tools.document import make_search_document_handler
+    extra_handlers = {"search_document": make_search_document_handler(request.session_id)}
+    extra_defs = [TOOL_REGISTRY["search_document"]["definition"]]
+```
+
+### Django side
+
+`chatbot_file_api_async` (`backend/apps/chatbot/async_views.py`):
+
+1. Extracts file text in-process (sync, wrapped in `sync_to_async`).
+2. Chunks text with `chunk_text(text, size=500, overlap=100)` (word-based sliding window).
+3. Fires `asyncio.create_task(_index_document())` — the POST to `/agent/document/index`
+   runs concurrently while Django continues processing the initial message.
+4. Sets `session.has_document = True` (saved with `update_fields=["has_document"]`).
+5. Forwards the full `file_text` to `/agent/chat` for the first analysis turn.
+
+All subsequent messages in the session include `has_document=True` and `session_id` in
+the payload so FastAPI injects `search_document` automatically.
+
+### Upstash Vector details
+
+| Setting | Value |
+|---|---|
+| SDK | `upstash-vector` (`AsyncIndex`) |
+| Embedding model | `text-embedding-3-small` (OpenAI, 1536 dims) |
+| Distance metric | Cosine |
+| Namespace | `session_id` (one per chat session) |
+| Metadata | `text`, `chunk_index`, `filename`, `session_id` |
+| Cleanup | Manual via `delete_session_namespace(session_id)` in `core/upstash.py` |
 
 ---
 

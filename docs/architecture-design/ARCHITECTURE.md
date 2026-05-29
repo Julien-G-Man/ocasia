@@ -1,10 +1,14 @@
-﻿# Architecture
+# Architecture
 
 ## Stack
 
-- Frontend: React (`frontend/src`)
-- API gateway + persistence: Django (`backend/apps/*`)
-- Async AI worker: FastAPI (`ai_service/*`)
+- Frontend: React + Vite (`frontend/src`) — Vercel
+- API gateway + persistence: Django (`backend/apps/*`) — Render
+- Async AI worker: FastAPI (`ai_service/*`) — Render
+- Database: PostgreSQL (Neon)
+- Vector database: Upstash Vector (document RAG)
+- Cache / channel layer: Redis (Upstash Redis)
+- Embeddings: OpenAI `text-embedding-3-small`
 
 ## Core Pattern
 
@@ -12,17 +16,18 @@
 2. Django performs auth, validation, and database work.
 3. For AI work, Django proxies to FastAPI with `X-Internal-Secret`.
 4. FastAPI calls AI provider(s) and returns normalized output.
-5. Django returns response to React.
+5. Django persists the result and returns it to React.
 
 ## Why This Split
 
 - Django owns business logic, auth token checks, and models.
-- FastAPI stays stateless and focused on async AI tasks
-- Internal shared-secret protection keeps worker endpoints private by default.
+- FastAPI stays stateless and focused on async AI tasks.
+- Internal shared-secret protection keeps worker endpoints private.
+- Upstash Vector is owned entirely by FastAPI — Django never touches it.
 
 ## Service Communication
 
-- Django -> FastAPI base URL: `FASTAPI_BASE_URL`
+- Django → FastAPI base URL: `FASTAPI_BASE_URL`
 - Internal auth header: `X-Internal-Secret`
 - Shared value: `FASTAPI_SECRET` in both services
 
@@ -39,6 +44,7 @@
 |---|---|---|
 | `POST /agent/chat` | Django `chatbot_api_async` | Non-streaming chatbot — agent loop, returns complete JSON |
 | `POST /agent/chat/stream` | Django `chatbot_stream_api_async` | SSE streaming chatbot — yields `tool_start`, `tool_done`, `token`, `done`, `error` events |
+| `POST /agent/document/index` | Django `chatbot_file_api_async` (fire-and-forget) | Embed + store document chunks in Upstash Vector |
 | `POST /agent/quiz/generate/` | Django `create_quiz_from_agent` | Standalone quiz generation from chatbot (no agent loop) |
 | `POST /agent/orchestrate` | Internal / future features | Generic tool-loop endpoint |
 | `GET /agent/tools` | Debug | List registered tools |
@@ -46,12 +52,10 @@
 
 ## Warmup Model
 
-React wakes both services:
+React wakes both services on page load and every 10 minutes (`App.jsx`):
 
 - Django: `GET {DJANGO_ROOT}/warmup/`
 - FastAPI: `GET {FASTAPI_URL}/health`
-
-Executed on page load and every 10 minutes (`App.jsx`).
 
 ## Main Django Route Mounts
 
@@ -64,11 +68,8 @@ From `backend/config/urls.py`:
 - `/api/` + `apps.dashboard.urls`
 - `/api/` + `apps.subscriptions.urls`
 - `/api/` + `apps.clash.urls`
-
-Also:
-
-- `/health/`
-- `/warmup/`
+- `/clash/share/<room_code>/` → `clash_share_preview` (OG preview page)
+- `/health/`, `/warmup/`
 
 WebSocket routes (ASGI, `backend/config/asgi.py`):
 
@@ -82,6 +83,7 @@ WebSocket routes (ASGI, `backend/config/asgi.py`):
 - Users/auth: `apps.accounts.models.User`
 - Payments: `apps.subscriptions.models.Donation`, `Subscription`, `PaymentHistory`
 - Clash rooms: `apps.clash.models.ClashRoom`, `ClashParticipant`
+- Document vectors: Upstash Vector (namespaced by `session_id`, not in PostgreSQL)
 
 ### Special ChatMessage Formats
 
@@ -90,6 +92,73 @@ an inline quiz generated via the AI Tutor — the frontend detects this and rend
 Start Quiz card. The raw JSON is never forwarded to the LLM (summarised to a single line
 in `_get_conversation_history`). The sidebar preview strips the JSON and shows
 "Quiz generated: \<topic\>" via `dashboard_views._preview`.
+
+### ChatSession Flags
+
+| Field | Type | Purpose |
+|---|---|---|
+| `has_document` | `BooleanField` | Set to `True` after a file upload is indexed. Tells FastAPI to inject the `search_document` tool for all subsequent messages in this session. |
+
+---
+
+## Document RAG Architecture
+
+When a user uploads a file in the chatbot:
+
+```
+React (FormData)
+  │  POST /api/chat/file/
+  ▼
+Django chatbot_file_api_async
+  ├── Extract text from file (PDF/DOCX/PPTX/TXT) — synchronous, in Django
+  ├── chunk_text(text, size=500, overlap=100) → list[str]
+  ├── asyncio.create_task(_index_document())  ← fire-and-forget
+  │     └── POST /agent/document/index (FastAPI)
+  │           └── OpenAI text-embedding-3-small (batch embed all chunks)
+  │                 └── Upstash AsyncIndex.upsert(namespace=session_id)
+  ├── ChatSession.has_document = True  ← mark session
+  └── POST /agent/chat (FastAPI) with file_text=... for the initial analysis turn
+```
+
+On all subsequent messages in the same session:
+
+```
+Django chatbot_api_async
+  ├── Reads session_obj.has_document == True
+  └── POST /agent/chat { session_id, has_document: true, ... }
+        ▼
+     FastAPI /agent/chat
+       ├── make_search_document_handler(session_id)  ← per-request handler factory
+       ├── extra_tool_defs = [search_document ToolDefinition]
+       └── _run_agent_loop(..., extra_tool_handlers={"search_document": handler})
+             AI calls search_document(query="...")
+               └── OpenAI embed(query) → Upstash AsyncIndex.query(namespace=session_id)
+                     → top-5 relevant chunks returned to AI
+```
+
+### Upstash Vector namespacing
+
+Each session gets its own namespace (`namespace=session_id`). Vectors from different
+users never mix. The index uses:
+
+- **Model:** `text-embedding-3-small` (1536 dimensions)
+- **Distance metric:** Cosine
+- **Metadata stored per vector:** `text`, `chunk_index`, `filename`, `session_id`
+
+### RAG tool injection pattern
+
+`search_document` is **not** in the global `TOOL_REGISTRY` handler — its handler is
+built per-request with `make_search_document_handler(session_id)` which pre-binds the
+session ID into the closure. This avoids any shared mutable state between sessions.
+
+`_run_agent_loop` and `_run_agent_loop_stream` accept:
+- `extra_tool_handlers: dict[str, async callable]` — dispatched before the global registry
+- `extra_tool_defs: list[ToolDefinition]` — appended to the tools list sent to the AI
+
+The definition exists in `TOOL_REGISTRY["search_document"]` for `get_definitions()` to
+return its schema, but its `handler` key is `None` — it is never called from there.
+
+---
 
 ## Authentication Architecture
 
@@ -109,7 +178,7 @@ in `_get_conversation_history`). The sidebar preview strips the JSON and shows
 
 #### 2. Google OAuth 2.0
 - **Custom implementation** (no django-allauth dependency)
-- Backend: `apps.accounts.google_auth.py` - `GoogleAuthView` at `POST /api/auth/google/`
+- Backend: `apps.accounts.google_auth.py` — `GoogleAuthView` at `POST /api/auth/google/`
 - Frontend: `@react-oauth/google` package
 - **Token exchange flow:**
   1. Frontend: Google Sign-In SDK obtains Google ID token
@@ -130,7 +199,8 @@ in `_get_conversation_history`). The sidebar preview strips the JSON and shows
 - Wraps app with auth state (`user`, `isAuthenticated`, `isLoading`)
 - Methods: `login()`, `signup()`, `googleAuth()`, `logout()`
 - Rehydrates auth from localStorage on page load
-- All auth methods update context state before navigation (no page reload needed)
+- `ProtectedRoute` component holds render until `isLoading=false` to prevent
+  premature redirects on hard refresh
 
 ---
 
@@ -146,7 +216,7 @@ Django Channels ASGI router  (backend/config/asgi.py)
     ↓
 ClashConsumer  (AsyncJsonWebsocketConsumer)
     ↓
-Redis Channel Layer  (channels_redis — one group per room)
+Redis Channel Layer  (channels_redis — one group per room, Upstash Redis)
     ↓
 Django cache  (live game state per room, TTL 2h)
     ↓
@@ -235,3 +305,41 @@ max per question → 1500 pts
 
 `elapsed` is computed server-side from `question_start_time` stored in Redis when the
 question is broadcast. The client never supplies timing — `elapsed_ms` is not accepted.
+
+---
+
+## Clash Share Link (OG Preview)
+
+Invitees receive a **frontend URL**: `https://lamla-ai.vercel.app/clash/share/<code>/`
+
+When a social media bot crawls that URL, Vercel rewrites it to the Django backend which
+returns an HTML page with Clash-specific Open Graph tags (`clash-fist.jpg` as the preview
+image) and a `<meta http-equiv="refresh">` that immediately redirects real users to the
+lobby (`/clash/lobby/<code>`).
+
+```
+Vercel vercel.json rewrite:
+  /clash/share/:code/ → https://lamla-api.onrender.com/clash/share/:code/
+
+Django clash_share_preview view:
+  → Returns HTML with og:title, og:image (clash-fist.jpg), og:description
+  → meta-refresh to frontend /clash/lobby/<code>
+
+Bot:  reads OG tags → rich preview with fist image
+User: meta-refresh → /clash/lobby/<code> → ClashLobby component
+```
+
+---
+
+## Logging
+
+### Django
+
+Configured via `LOGGING` dict in `settings.py`. All `apps.*` loggers show `INFO+`; Django
+internals stay at `WARNING`. Format: `[LEVEL] logger.name — message`.
+
+### FastAPI
+
+Configured via `logging.config.dictConfig` in `main.py`. The `agent`, `services`, and
+`core` logger namespaces show `INFO+`. Third-party SDKs (`httpx`, `anthropic`, `openai`)
+are suppressed to `WARNING`. Uvicorn is separately configured with `log_level="info"`.

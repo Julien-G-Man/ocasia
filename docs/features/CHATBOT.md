@@ -95,8 +95,10 @@ Django (API Gateway)
     ],
     "due_topics": ["Mechanics"]
   } | None,
-  "file_text": str | None,
-  "user_id": int | None
+  "file_text": str | None,         # only on the first file-upload message
+  "user_id": int | None,
+  "session_id": str | None,        # used by FastAPI to scope search_document to the right namespace
+  "has_document": bool             # True after a file has been indexed for this session
 }
 ```
 
@@ -243,6 +245,7 @@ human-readable label. `TOOL_LABELS` (module-level constant in `Chatbot.jsx`):
 | `kb_search` | "Searching knowledge base…" |
 | `search_web` | "Searching the web…" |
 | `request_quiz_form` | "Preparing quiz…" |
+| `search_document` | "Searching your document…" |
 
 ### Fallback
 
@@ -264,11 +267,35 @@ A toggle in the UI switches modes. Mode is not persisted server-side.
 
 ---
 
-## File Upload
+## File Upload + Document RAG
 
-- `POST /api/chat/file/` accepts a file (PDF, DOCX, PPTX, TXT; max 10 MB).
-- Text is extracted in Django and forwarded to FastAPI with the message.
-- File text is not persisted beyond the request.
+`POST /api/chat/file/` accepts a file (PDF, DOCX, PPTX, TXT; max 10 MB).
+
+### What happens on upload
+
+1. Django extracts text from the file in-process.
+2. Text is chunked into 500-word overlapping segments (`chunk_text`, overlap=100).
+3. A background task POSTs chunks to `POST /agent/document/index` (FastAPI) — runs
+   concurrently while Django processes the first message. FastAPI embeds all chunks
+   with `text-embedding-3-small` and stores them in Upstash Vector under
+   `namespace=session_id`.
+4. `ChatSession.has_document` is set to `True`.
+5. The full extracted text is still forwarded to FastAPI for the **first** AI response
+   (so the AI can give an immediate summary/analysis without waiting for indexing).
+
+### Subsequent messages in the same session
+
+Every follow-up message includes `has_document=True` and `session_id` in the FastAPI
+payload. FastAPI injects the `search_document` tool into the agent loop. When the AI
+decides the document is relevant, it calls `search_document(query="...")` which embeds
+the query and retrieves the top-5 most similar chunks from Upstash Vector.
+
+The user sees **"Searching your document…"** in the thinking bubble while this runs.
+
+### Key design choice
+
+The file text is **not** re-sent on every follow-up message. Only the query-relevant
+chunks are retrieved, keeping context windows small and responses fast.
 
 ---
 
