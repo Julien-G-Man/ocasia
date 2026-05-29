@@ -64,6 +64,18 @@ class ChatRequest(BaseModel):
     user_stats: dict | None = None
     file_text: str | None = None
     user_id: int | None = None
+    session_id: str | None = None
+    has_document: bool = False
+
+
+class IndexDocumentRequest(BaseModel):
+    """
+    Sent by Django to POST /agent/document/index after file extraction.
+    FastAPI embeds + stores chunks in Upstash Vector under the session namespace.
+    """
+    session_id: str
+    chunks: list[str]
+    filename: str = ""
 
 
 class AgentQuizGenerateRequest(BaseModel):

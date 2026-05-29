@@ -10,7 +10,7 @@ from agent.registry import get_definitions, _generate_quiz_handler
 from agent.helpers import _to_anthropic_tool, _serialize_raw_content, _run_agent_loop, _run_agent_loop_stream
 from agent.schemas import (
     OrchestratorRequest, OrchestratorResponse, ToolCall, ToolResult,
-    ChatRequest, AgentQuizGenerateRequest,
+    ChatRequest, AgentQuizGenerateRequest, IndexDocumentRequest,
 )
 from core.ai_client import ai_client
 
@@ -129,11 +129,23 @@ async def agent_chat(request: ChatRequest):
     )
     messages.append({"role": "user", "content": user_content})
 
+    # Inject search_document tool when this session has a document indexed.
+    # Only via extra_defs — NOT added to tool_names, which would cause the
+    # registry to include it AND extra_defs to add it again → duplicate error.
+    extra_handlers: dict | None = None
+    extra_defs: list | None = None
+    if request.has_document and request.session_id:
+        from agent.tools.document import make_search_document_handler
+        from agent.registry import TOOL_REGISTRY
+        extra_handlers = {"search_document": make_search_document_handler(request.session_id)}
+        extra_defs = [TOOL_REGISTRY["search_document"]["definition"]]
+
     logger.info(
-        "[agent:chat] start mode=%s stats=%s file=%s history=%d",
+        "[agent:chat] start mode=%s stats=%s file=%s doc=%s history=%d",
         request.tutor_mode,
         "yes" if request.user_stats else "no",
         "yes" if request.file_text else "no",
+        "yes" if request.has_document else "no",
         len(request.conversation_history),
     )
 
@@ -143,6 +155,8 @@ async def agent_chat(request: ChatRequest):
         tool_names=_CHAT_TOOLS,
         max_iterations=_CHAT_MAX_ITERATIONS,
         max_tokens=_CHAT_MAX_TOKENS,
+        extra_tool_handlers=extra_handlers,
+        extra_tool_defs=extra_defs,
     )
 
     if not response_text:
@@ -201,11 +215,22 @@ async def agent_chat_stream(request: ChatRequest):
     )
     messages.append({"role": "user", "content": user_content})
 
+    # Inject search_document tool when this session has a document indexed.
+    # Only via extra_defs — NOT added to stream_tool_names for the same reason.
+    stream_extra_handlers: dict | None = None
+    stream_extra_defs: list | None = None
+    if request.has_document and request.session_id:
+        from agent.tools.document import make_search_document_handler
+        from agent.registry import TOOL_REGISTRY
+        stream_extra_handlers = {"search_document": make_search_document_handler(request.session_id)}
+        stream_extra_defs = [TOOL_REGISTRY["search_document"]["definition"]]
+
     logger.info(
-        "[agent:chat:stream] start mode=%s stats=%s file=%s history=%d",
+        "[agent:chat:stream] start mode=%s stats=%s file=%s doc=%s history=%d",
         request.tutor_mode,
         "yes" if request.user_stats else "no",
         "yes" if request.file_text else "no",
+        "yes" if request.has_document else "no",
         len(request.conversation_history),
     )
 
@@ -217,6 +242,8 @@ async def agent_chat_stream(request: ChatRequest):
                 tool_names=_CHAT_TOOLS,
                 max_iterations=_CHAT_MAX_ITERATIONS,
                 max_tokens=_CHAT_MAX_TOKENS,
+                extra_tool_handlers=stream_extra_handlers,
+                extra_tool_defs=stream_extra_defs,
             ):
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as exc:
@@ -289,3 +316,34 @@ async def generate_quiz_for_chat(request: AgentQuizGenerateRequest):
     quiz_data["id"] = f"agent-{uuid.uuid4().hex[:8]}"
     quiz_data["time_limit"] = request.time_limit
     return {"quiz_data": quiz_data}
+
+
+# ---------------------------------------------------------------------------
+# Document indexing endpoint (RAG)
+# ---------------------------------------------------------------------------
+
+@agent_router.post("/document/index")
+async def index_document(request: IndexDocumentRequest):
+    """
+    Embed and store document chunks in Upstash Vector for a chat session.
+    Called fire-and-forget by Django after file extraction.
+    """
+    if not request.chunks:
+        return {"indexed": 0, "session_id": request.session_id}
+
+    logger.info(
+        "[agent:document/index] session=%s chunks=%d file=%r",
+        request.session_id, len(request.chunks), request.filename,
+    )
+
+    try:
+        from core.upstash import upsert_document_chunks
+        count = await upsert_document_chunks(
+            session_id=request.session_id,
+            chunks=request.chunks,
+            filename=request.filename,
+        )
+        return {"indexed": count, "session_id": request.session_id}
+    except Exception as exc:
+        logger.exception("[agent:document/index] failed: %s", exc)
+        raise HTTPException(status_code=503, detail=f"Document indexing failed: {exc}")

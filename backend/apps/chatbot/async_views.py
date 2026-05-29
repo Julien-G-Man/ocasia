@@ -35,6 +35,7 @@ from .helpers import (
     _get_conversation_history,
     _fetch_user_performance_sync,
     fallback_response,
+    chunk_text,
 )
 from .models import ChatSession
 
@@ -83,6 +84,8 @@ async def chatbot_api_async(request):
                     "tutor_mode": tutor_mode,
                     "user_stats": user_stats,
                     "user_id": getattr(user, "id", None),
+                    "session_id": session_obj.session_id if session_obj else None,
+                    "has_document": bool(session_obj and getattr(session_obj, "has_document", False)),
                 },
                 headers=headers,
                 timeout=120.0,
@@ -174,7 +177,38 @@ async def chatbot_file_api_async(request):
             if user else None
         )
 
-        # Forward to FastAPI
+        # Fire-and-forget: chunk + index into Upstash Vector for RAG
+        import asyncio as _aio
+        chunks = chunk_text(file_text, size=500, overlap=100)
+        if chunks:
+            async def _index_document():
+                try:
+                    await call_fastapi(
+                        "POST",
+                        "/agent/document/index",
+                        json={
+                            "session_id": session_obj.session_id,
+                            "chunks": chunks,
+                            "filename": filename,
+                        },
+                        headers=build_fastapi_headers(),
+                        timeout=60.0,
+                    )
+                    logger.info(
+                        "[chatbot:file] indexed %d chunks for session %s",
+                        len(chunks), session_obj.session_id,
+                    )
+                except Exception as exc:
+                    logger.warning("[chatbot:file] document indexing failed: %s", exc)
+
+            _aio.create_task(_index_document())
+
+            # Mark session as having a document so future turns inject search_document tool
+            if not session_obj.has_document:
+                session_obj.has_document = True
+                await sync_to_async(session_obj.save, thread_sensitive=True)(update_fields=["has_document"])
+
+        # Forward to FastAPI — pass file_text for the initial analysis turn
         try:
             headers = build_fastapi_headers()
             fastapi_resp = await call_fastapi(
@@ -187,6 +221,8 @@ async def chatbot_file_api_async(request):
                     "user_stats": user_stats,
                     "file_text": file_text,
                     "user_id": getattr(user, "id", None),
+                    "session_id": session_obj.session_id,
+                    "has_document": True,
                 },
                 headers=headers,
                 timeout=120.0,
@@ -337,6 +373,8 @@ async def chatbot_stream_api_async(request):
                     "tutor_mode": tutor_mode,
                     "user_stats": user_stats,
                     "user_id": getattr(user, "id", None),
+                    "session_id": real_session_id,
+                    "has_document": bool(session_obj and getattr(session_obj, "has_document", False)),
                 }
 
                 async with httpx.AsyncClient(timeout=120.0) as client:

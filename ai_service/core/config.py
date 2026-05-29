@@ -214,6 +214,11 @@ if _PYDANTIC_SETTINGS:
             ),
         )
 
+        # Upstash Vector (RAG for chat document uploads)
+        UPSTASH_VECTOR_URL: str = Field("")
+        UPSTASH_VECTOR_TOKEN: str = Field("")
+        UPSTASH_VECTOR_NAMESPACE_TTL_SECONDS: int = Field(86400)  # 24 h
+
         # Knowledge base
         KB_SEARCH_PROVIDER: str = Field("tfidf")  # "tfidf" | "openai"
         KB_FILE_PATH: str = Field("")              # explicit override; loader auto-resolves if empty
@@ -315,6 +320,10 @@ else:  # pragma: no cover
             ["FASTAPI_OUTBOUND_POOL_TIMEOUT", "FASTAPI_OUTBOUND_TIMEOUT_POOL"],
             10.0,
         )
+
+        UPSTASH_VECTOR_URL: str = _env("UPSTASH_VECTOR_URL", "")
+        UPSTASH_VECTOR_TOKEN: str = _env("UPSTASH_VECTOR_TOKEN", "")
+        UPSTASH_VECTOR_NAMESPACE_TTL_SECONDS: int = _env_int("UPSTASH_VECTOR_NAMESPACE_TTL_SECONDS", 86400)
 
         KB_SEARCH_PROVIDER: str = _env("KB_SEARCH_PROVIDER", "tfidf")
         KB_FILE_PATH: str = _env("KB_FILE_PATH", "")

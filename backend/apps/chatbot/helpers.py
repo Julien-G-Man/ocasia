@@ -146,6 +146,23 @@ async def _get_conversation_history(session_obj, limit: int = 10):
     ]
 
 
+def chunk_text(text: str, size: int = 500, overlap: int = 100) -> list[str]:
+    """
+    Split text into overlapping word-based chunks for vector indexing.
+    Returns a list of string chunks.
+    """
+    words = text.split()
+    if not words:
+        return []
+    chunks = []
+    start = 0
+    while start < len(words):
+        end = start + size
+        chunks.append(" ".join(words[start:end]))
+        start += size - overlap
+    return chunks
+
+
 def fallback_response(user_message: str) -> str:
     """Static fallback when the AI service is unavailable."""
     msg = user_message.lower()

@@ -214,6 +214,7 @@ const TOOL_LABELS = {
     kb_search:         'Searching knowledge base…',
     search_web:        'Searching the web…',
     request_quiz_form: 'Preparing quiz…',
+    search_document:   'Searching your document…',
 };
 
 const toUiMessage = (msg) => {
@@ -470,6 +471,7 @@ const Chatbot = ({ user: userProp }) => {
                 setHistory(prev => prev.map(m =>
                     m.id === placeholderId ? { ...m, text: aiText, isThinking: false } : m
                 ));
+                fetchChatHistory();
                 scrollToBottom();
             } else {
                 // SSE streaming path
@@ -518,7 +520,6 @@ const Chatbot = ({ user: userProp }) => {
                             if (type === 'session') {
                                 if (event.session_id && event.session_id !== currentSessionId) {
                                     setCurrentSessionId(event.session_id);
-                                    fetchChatHistory();
                                 }
                             } else if (type === 'tool_start') {
                                 // Show which tool is running; label stays until response arrives
@@ -541,6 +542,7 @@ const Chatbot = ({ user: userProp }) => {
                                         : m
                                 ));
                                 setIsProcessing(false);
+                                fetchChatHistory();
                             } else if (type === 'error') {
                                 const msg = event.message || 'An unknown error occurred.';
                                 setHistory(prev => prev.map(m =>

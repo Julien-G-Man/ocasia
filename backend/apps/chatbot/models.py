@@ -36,6 +36,7 @@ class ChatSession(models.Model):
     )
     session_id = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=120, blank=True, default="")
+    has_document = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

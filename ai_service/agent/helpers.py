@@ -39,13 +39,21 @@ async def _run_agent_loop(
     tool_names: list[str],
     max_iterations: int,
     max_tokens: int,
+    extra_tool_handlers: dict | None = None,
+    extra_tool_defs: list | None = None,
 ) -> tuple[str, str | None, dict]:
     """
     Run an agent loop. Returns (response_text, error_or_None, side_data).
     side_data carries out-of-band signals (e.g. action='show_quiz_form').
     Never raises — errors surface as the second tuple element.
+
+    extra_tool_handlers: {tool_name: async_callable(**input)} for per-request
+                         tools (e.g. search_document with pre-bound session_id).
+    extra_tool_defs: list[ToolDefinition] matching each extra handler.
     """
     tool_defs = get_definitions(tool_names)
+    if extra_tool_defs:
+        tool_defs = list(tool_defs) + list(extra_tool_defs)
     anthropic_tools = [_to_anthropic_tool(d) for d in tool_defs]
     msgs = list(messages)
     calls_made: list[str] = []
@@ -84,22 +92,39 @@ async def _run_agent_loop(
                 name=tool_name,
                 input=tc.get("input", {}),
             )
-            tool_result = await execute_tool(call_obj)
-            if tool_result.error:
-                content = f"[Tool error: {tool_result.error}]"
-                logger.warning("[agent] tool error tool=%s iter=%d: %s", tool_name, iteration, tool_result.error)
+
+            # Extra (per-request) handlers take priority over the global registry
+            if extra_tool_handlers and tool_name in extra_tool_handlers:
+                import time as _time
+                _t = _time.monotonic()
+                try:
+                    output = await extra_tool_handlers[tool_name](**call_obj.input)
+                    duration_ms = (_time.monotonic() - _t) * 1000
+                    content = (json.dumps(output, ensure_ascii=False)
+                               if isinstance(output, (dict, list)) else str(output))
+                    logger.info("[agent] extra tool=%s iter=%d len=%d ms=%.1f",
+                                tool_name, iteration, len(content), duration_ms)
+                except Exception as exc:
+                    content = f"[Tool error: {exc}]"
+                    logger.warning("[agent] extra tool error tool=%s iter=%d: %s", tool_name, iteration, exc)
             else:
-                output = tool_result.output
-                content = (json.dumps(output, ensure_ascii=False)
-                           if isinstance(output, (dict, list)) else str(output))
-                # Capture quiz form signal from no-op tool
-                if tool_name == "request_quiz_form" and isinstance(output, dict):
-                    side_data["action"] = "show_quiz_form"
-                    prefill_topic = output.get("topic", "")
-                    if prefill_topic:
-                        side_data["prefill"] = {"topic": prefill_topic}
-                logger.info("[agent] result tool=%s iter=%d len=%d ms=%.1f",
-                            tool_name, iteration, len(content), tool_result.duration_ms)
+                tool_result = await execute_tool(call_obj)
+                if tool_result.error:
+                    content = f"[Tool error: {tool_result.error}]"
+                    logger.warning("[agent] tool error tool=%s iter=%d: %s", tool_name, iteration, tool_result.error)
+                else:
+                    output = tool_result.output
+                    content = (json.dumps(output, ensure_ascii=False)
+                               if isinstance(output, (dict, list)) else str(output))
+                    # Capture quiz form signal from no-op tool
+                    if tool_name == "request_quiz_form" and isinstance(output, dict):
+                        side_data["action"] = "show_quiz_form"
+                        prefill_topic = output.get("topic", "")
+                        if prefill_topic:
+                            side_data["prefill"] = {"topic": prefill_topic}
+                    logger.info("[agent] result tool=%s iter=%d len=%d ms=%.1f",
+                                tool_name, iteration, len(content), tool_result.duration_ms)
+
             tool_result_blocks.append({
                 "type": "tool_result",
                 "tool_use_id": call_obj.tool_use_id,
@@ -116,6 +141,8 @@ async def _run_agent_loop_stream(
     tool_names: list[str],
     max_iterations: int,
     max_tokens: int,
+    extra_tool_handlers: dict | None = None,
+    extra_tool_defs: list | None = None,
 ) -> AsyncGenerator[dict, None]:
     """
     Streaming version of _run_agent_loop. Async generator.
@@ -128,8 +155,14 @@ async def _run_agent_loop_stream(
         {"type": "error",      "message": str}  unrecoverable error
 
     Never raises — errors are surfaced as "error" events.
+
+    extra_tool_handlers: {tool_name: async_callable(**input)} for per-request
+                         tools (e.g. search_document with pre-bound session_id).
+    extra_tool_defs: list[ToolDefinition] matching each extra handler.
     """
     tool_defs = get_definitions(tool_names)
+    if extra_tool_defs:
+        tool_defs = list(tool_defs) + list(extra_tool_defs)
     anthropic_tools = [_to_anthropic_tool(d) for d in tool_defs]
     msgs = list(messages)
     side_data: dict = {}
@@ -189,29 +222,45 @@ async def _run_agent_loop_stream(
                 name=tool_name,
                 input=tc.get("input", {}),
             )
-            tool_result = await execute_tool(call_obj)
 
-            if tool_result.error:
-                content = f"[Tool error: {tool_result.error}]"
-                logger.warning(
-                    "[agent:stream] tool error tool=%s iter=%d: %s",
-                    tool_name, iteration, tool_result.error,
-                )
+            # Extra (per-request) handlers take priority over the global registry
+            if extra_tool_handlers and tool_name in extra_tool_handlers:
+                import time as _time
+                _t = _time.monotonic()
+                try:
+                    output = await extra_tool_handlers[tool_name](**call_obj.input)
+                    duration_ms = (_time.monotonic() - _t) * 1000
+                    content = (json.dumps(output, ensure_ascii=False)
+                               if isinstance(output, (dict, list)) else str(output))
+                    logger.info("[agent:stream] extra tool=%s iter=%d len=%d ms=%.1f",
+                                tool_name, iteration, len(content), duration_ms)
+                except Exception as exc:
+                    content = f"[Tool error: {exc}]"
+                    logger.warning("[agent:stream] extra tool error tool=%s iter=%d: %s",
+                                   tool_name, iteration, exc)
             else:
-                output = tool_result.output
-                content = (
-                    json.dumps(output, ensure_ascii=False)
-                    if isinstance(output, (dict, list)) else str(output)
-                )
-                if tool_name == "request_quiz_form" and isinstance(output, dict):
-                    side_data["action"] = "show_quiz_form"
-                    prefill_topic = output.get("topic", "")
-                    if prefill_topic:
-                        side_data["prefill"] = {"topic": prefill_topic}
-                logger.info(
-                    "[agent:stream] tool=%s iter=%d done ms=%.1f",
-                    tool_name, iteration, tool_result.duration_ms,
-                )
+                tool_result = await execute_tool(call_obj)
+                if tool_result.error:
+                    content = f"[Tool error: {tool_result.error}]"
+                    logger.warning(
+                        "[agent:stream] tool error tool=%s iter=%d: %s",
+                        tool_name, iteration, tool_result.error,
+                    )
+                else:
+                    output = tool_result.output
+                    content = (
+                        json.dumps(output, ensure_ascii=False)
+                        if isinstance(output, (dict, list)) else str(output)
+                    )
+                    if tool_name == "request_quiz_form" and isinstance(output, dict):
+                        side_data["action"] = "show_quiz_form"
+                        prefill_topic = output.get("topic", "")
+                        if prefill_topic:
+                            side_data["prefill"] = {"topic": prefill_topic}
+                    logger.info(
+                        "[agent:stream] tool=%s iter=%d done ms=%.1f",
+                        tool_name, iteration, tool_result.duration_ms,
+                    )
 
             yield {"type": "tool_done", "tool": tool_name}
             tool_result_blocks.append({

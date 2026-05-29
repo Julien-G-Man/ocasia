@@ -269,6 +269,38 @@ TOOL_REGISTRY: dict[str, dict] = {
         "handler": _explain_concept_handler,
         "timeout": 20.0,
     },
+
+    # search_document has no static handler — the handler is injected per-request
+    # via extra_tool_handlers in _run_agent_loop / _run_agent_loop_stream.
+    # The definition is stored here so get_definitions() can return the schema.
+    "search_document": {
+        "definition": ToolDefinition(
+            name="search_document",
+            description=(
+                "Search the document the user uploaded in this chat session. "
+                "Use this when the user asks about the file content, or when answering "
+                "a question that the uploaded document might address. "
+                "Returns the most relevant passages from the document."
+            ),
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "What to look up in the uploaded document.",
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Number of passages to return (default 5).",
+                        "default": 5,
+                    },
+                },
+                "required": ["query"],
+            },
+        ),
+        "handler": None,   # injected per-request; never called from global registry
+        "timeout": 15.0,
+    },
 }
 
 
