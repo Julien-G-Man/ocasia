@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/clash/share/:code/",
+      "destination": "https://lamla-api.onrender.com/clash/share/:code/"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

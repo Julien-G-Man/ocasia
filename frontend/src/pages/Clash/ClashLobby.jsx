@@ -42,12 +42,31 @@ export default function ClashLobby() {
   const [countdown, setCountdown] = useState(null);
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
+  const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
   const [startError, setStartError] = useState("");
+  const [joinError, setJoinError] = useState("");
 
   const wsRef = useRef(null);
   const countdownRef = useRef(null);
   const roomRef = useRef(null);
+
+  async function loadRoomInfo() {
+    const response = await fetch(`${DJANGO_API_URL}/clash/${code}/`, {
+      headers: { Authorization: `Token ${token}` },
+    });
+    const data = await response.json();
+    if (data.detail) {
+      setError(data.detail);
+      return null;
+    }
+    setRoom(data);
+    roomRef.current = data;
+    setParticipants(data.participants || []);
+    if (data.status === "active") navigate(`/clash/play/${code}`);
+    if (data.status === "finished") navigate(`/clash/results/${code}`);
+    return data;
+  }
 
   useEffect(() => {
     if (!token) navigate("/auth/login");
@@ -56,19 +75,7 @@ export default function ClashLobby() {
   // Fetch room info
   useEffect(() => {
     if (!token) return;
-    fetch(`${DJANGO_API_URL}/clash/${code}/`, {
-      headers: { Authorization: `Token ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.detail) { setError(data.detail); return; }
-        setRoom(data);
-        roomRef.current = data;
-        setParticipants(data.participants || []);
-        if (data.status === "active")   navigate(`/clash/play/${code}`);
-        if (data.status === "finished") navigate(`/clash/results/${code}`);
-      })
-      .catch(() => setError("Failed to load room info."));
+    loadRoomInfo().catch(() => setError("Failed to load room info."));
   }, []); // eslint-disable-line
 
   // WebSocket
@@ -113,7 +120,6 @@ export default function ClashLobby() {
   }, [token, code]); // eslint-disable-line
 
   function handleStart() {
-    setStartError("");
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "start_game" }));
     }
@@ -126,9 +132,33 @@ export default function ClashLobby() {
     });
   }
 
+  async function handleJoin() {
+    setJoinError("");
+    setJoining(true);
+    try {
+      const response = await fetch(`${DJANGO_API_URL}/clash/join/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({ room_code: code }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setJoinError(data.detail || "Failed to join room.");
+        return;
+      }
+      await loadRoomInfo();
+    } catch {
+      setJoinError("Network error. Please try again.");
+    } finally {
+      setJoining(false);
+    }
+  }
+
   function handleShare() {
-    // Use the Django share-preview URL so bots see the Clash OG image
-    const shareUrl = `${DJANGO_ROOT_URL}/clash/share/${code}/`;
+    const shareUrl = `${window.location.origin}/clash/share/${code}/`;
     const hostName = currentUser?.display_name || currentUser?.username || "Someone";
     const subject = room?.subject ? ` on "${room.subject}"` : "";
     const text = `${hostName} is inviting you to a Clash quiz battle${subject}! Join with code ${code} — tap the link to enter directly.`;
@@ -145,6 +175,10 @@ export default function ClashLobby() {
   const isHost = participants.some(
     p => p.username === currentUser?.username && p.is_host
   );
+  const isParticipant = participants.some(
+    p => p.username === currentUser?.username
+  );
+  const canJoin = room?.status === "waiting" && !isParticipant;
 
   return (
     <>
@@ -232,8 +266,17 @@ export default function ClashLobby() {
             {startError && <p className="clash-error">{startError}</p>}
           </>
         ) : (
-          <p className="clash-lobby-status">Waiting for the host to start the game…</p>
+          <>
+            {canJoin ? (
+              <button className="clash-btn-primary" onClick={handleJoin} disabled={joining}>
+                {joining ? "Joining…" : "Join Clash"}
+              </button>
+            ) : (
+              <p className="clash-lobby-status">Waiting for the host to start the game…</p>
+            )}
+          </>
         )}
+        {joinError && <p className="clash-error">{joinError}</p>}
       </div>
 
       {error && <p className="clash-error">{error}</p>}

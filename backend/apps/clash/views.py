@@ -408,8 +408,9 @@ async def clash_share_preview(request, room_code):
     """
     frontend_url = settings.FRONTEND_URL.rstrip("/")
     room_code = room_code.upper()
-    redirect_url = f"{frontend_url}/clash?join={room_code}"
+    redirect_url = f"{frontend_url}/clash/lobby/{room_code}"
     image_url = f"{frontend_url}/assets/clash-fist.jpg"
+    share_url = f"{frontend_url}/clash/share/{room_code}/"
 
     # Try to enrich the title/description with the actual subject
     og_title = "Join a Clash on Lamla AI!"
@@ -430,7 +431,7 @@ async def clash_share_preview(request, room_code):
 
     t = html_escape(og_title)
     d = html_escape(og_desc)
-    share_url = html_escape(request.build_absolute_uri())
+    share_url = html_escape(share_url)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
