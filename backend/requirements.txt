@@ -68,3 +68,6 @@ tzdata==2025.2
 packaging==25.0
 click==8.2.1
 youtube-transcript-api
+
+# --- Observability ---
+sentry-sdk[django]

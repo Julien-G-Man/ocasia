@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from services.quiz.routes import quiz_router
@@ -7,6 +8,45 @@ from services.flashcards.routes import flashcards_router
 from agent.router import agent_router
 from core.middleware import InternalAuthMiddleware
 from core.config import settings
+
+app = FastAPI(title="Lamla AI Engine")
+logger = logging.getLogger(__name__)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(InternalAuthMiddleware)
+
+app.include_router(quiz_router, prefix="/quiz")
+app.include_router(flashcards_router, prefix="/flashcards")
+app.include_router(agent_router, prefix="/agent")
+
+logger.info("FastAPI CORS allowed origins: %s", settings.allowed_origins_list)
+
+# ---------------------------------------------------------------------------
+# Sentry — error tracking and performance monitoring
+# ---------------------------------------------------------------------------
+_sentry_dsn = os.getenv("SENTRY_DSN", "")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[StarletteIntegration(), FastApiIntegration()],
+            environment=os.getenv("ENVIRONMENT", "development"),
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            send_default_pii=False,
+        )
+    except ImportError:
+        pass
 
 # ---------------------------------------------------------------------------
 # Logging — INFO+ for all Lamla app code; keep noisy libraries quieter
@@ -41,26 +81,6 @@ logging.config.dictConfig({
         "level": "WARNING",
     },
 })
-
-app = FastAPI(title="Lamla AI Engine")
-logger = logging.getLogger(__name__)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
-)
-
-app.add_middleware(InternalAuthMiddleware)
-
-app.include_router(quiz_router, prefix="/quiz")
-app.include_router(flashcards_router, prefix="/flashcards")
-app.include_router(agent_router, prefix="/agent")
-
-logger.info("FastAPI CORS allowed origins: %s", settings.allowed_origins_list)
-
 
 @app.get("/")
 def check_root():

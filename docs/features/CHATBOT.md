@@ -147,11 +147,14 @@ The router never constructs strings. Sections:
 
 `_CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]`
 
+`search_document` is injected additionally when `has_document=True` (see §18 in AGENT_IMPLEMENTATION.md).
+
 | Tool | Trigger | Returns |
 |---|---|---|
 | `kb_search(query)` | Any platform question | Top-k KB chunks |
 | `search_web(query)` | Agent decides — non-platform factual questions | Tavily snippets |
 | `request_quiz_form(topic)` | User expresses quiz intent | `{status, topic}` (no-op; router sets `action`) |
+| `search_document(query)` | Agent decides document is relevant *(injected when has_document=True)* | Top-5 Upstash Vector chunks for the session |
 
 ### Three-Layer Fallback
 

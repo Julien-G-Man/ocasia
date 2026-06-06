@@ -343,3 +343,25 @@ internals stay at `WARNING`. Format: `[LEVEL] logger.name — message`.
 Configured via `logging.config.dictConfig` in `main.py`. The `agent`, `services`, and
 `core` logger namespaces show `INFO+`. Third-party SDKs (`httpx`, `anthropic`, `openai`)
 are suppressed to `WARNING`. Uvicorn is separately configured with `log_level="info"`.
+
+---
+
+## Observability (Sentry)
+
+Both services initialise Sentry at startup when `SENTRY_DSN` is set.
+
+| Service | Integration | Config location |
+|---|---|---|
+| Django | `DjangoIntegration()` | top of `settings.py` |
+| FastAPI | `StarletteIntegration()` + `FastApiIntegration()` | top of `main.py` |
+
+**Environment variables (both services):**
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SENTRY_DSN` | *(unset — disables Sentry)* | Project DSN from Sentry dashboard |
+| `ENVIRONMENT` | `"development"` | Tags events as `production`, `staging`, etc. |
+| `SENTRY_TRACES_SAMPLE_RATE` | `"0.1"` | Fraction of transactions sent as performance traces |
+
+Setting `SENTRY_DSN` to an empty string (or omitting it) is safe — Sentry will not initialise
+and no exceptions are thrown. This keeps local dev unaffected.

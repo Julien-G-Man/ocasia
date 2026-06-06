@@ -19,6 +19,25 @@ from corsheaders.defaults import default_headers
 
 load_dotenv()
 
+# ---------------------------------------------------------------------------
+# Sentry — error tracking and performance monitoring
+# ---------------------------------------------------------------------------
+_sentry_dsn = os.getenv("SENTRY_DSN", "")
+if _sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            integrations=[DjangoIntegration()],
+            environment=os.getenv("ENVIRONMENT", "development"),
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            send_default_pii=False,
+        )
+    except ImportError:
+        pass
+
 # django-environ setup
 env = environ.Env()
 env.read_env()
