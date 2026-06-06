@@ -84,8 +84,8 @@ const Login = () => {
         <div className="brand-glow" aria-hidden="true" />
 
         <div className="auth-brand-logo">
-          <img src="/assets/lamla_logo.png" alt="Lamla AI logo" />
-          <span>Lamla AI</span>
+          <img src="/assets/logo.png" alt="Ocasia logo" />
+          <span>Ocasia</span>
         </div>
 
         <div className="auth-brand-headline">
@@ -94,7 +94,7 @@ const Login = () => {
             not <em>harder</em>.
           </h2>
           <p>
-            Join thousands of students who use Lamla AI to ace their exams
+            Join thousands of students who use Ocasia to ace their exams
             with personalised quizzes, flashcards, and an always-on AI tutor.
           </p>
         </div>

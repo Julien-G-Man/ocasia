@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lamla-ai.vercel.app",
+  "homepage": "https://ocasia.vercel.app",
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",

@@ -85,7 +85,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="footer-bottom">
-        <p>&copy; 2026 Lamla AI. All rights reserved.</p>
+        <p>&copy; 2026 Ocasia. All rights reserved.</p>
         <div className="legal-links">
           <Link to="#/privacy-policy">Privacy Policy</Link>
           <Link to="#/terms-of-service">Terms of Service</Link>

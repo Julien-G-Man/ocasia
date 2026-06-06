@@ -70,8 +70,8 @@ const ResetPassword = () => {
         <div className="brand-glow" aria-hidden="true" />
 
         <div className="auth-brand-logo">
-          <img src="/assets/lamla_logo.png" alt="Lamla AI logo" />
-          <span>Lamla AI</span>
+          <img src="/assets/logo.png" alt="Ocasia logo" />
+          <span>Ocasia</span>
         </div>
 
         <div className="auth-brand-headline">

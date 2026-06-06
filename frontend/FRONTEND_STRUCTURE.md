@@ -1,4 +1,4 @@
-# Lamla AI — Frontend Structure
+# Ocasia — Frontend Structure
 
 > **Updated:** 2026-05-23
 > **Framework:** React 19.2.3 + Vite 6.3.5

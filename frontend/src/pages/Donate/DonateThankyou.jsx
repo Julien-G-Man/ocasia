@@ -47,7 +47,7 @@ const DonateThankyou = () => {
               </h1>
               <p className="ty-body">
                 Your donation{amount ? ` of GHS ${amount}` : ""} was received.
-                You're helping keep Lamla AI free for every student — that means
+                You're helping keep Ocasia free for every student — that means
                 everything to us.
               </p>
               <div className="ty-actions">
@@ -66,7 +66,7 @@ const DonateThankyou = () => {
                 {amount && <p className="ty-badge-amount">GHS {amount}</p>}
               </div>
               <ul className="ty-perks">
-                <li>You're now a Lamla AI supporter</li>
+                <li>You're now an Ocasia supporter</li>
                 <li>Donor status permanently on your profile</li>
                 <li>Platform stays free because of you</li>
               </ul>

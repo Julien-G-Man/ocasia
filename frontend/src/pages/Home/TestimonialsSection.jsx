@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 const TESTIMONIALS = [
   {
     quote:
-      "Lamla AI helped me turn my lecture slides into practice quizzes in seconds. It's an amazing tool!",
+      "Ocasia helped me turn my lecture slides into practice quizzes in seconds. It's an amazing tool!",
     name: "Christopher N",
     title: "Student @ KNUST",
     initials: "CN",

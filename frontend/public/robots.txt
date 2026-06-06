@@ -14,4 +14,4 @@ Disallow:
 Crawl-delay: 1
 
 # Sitemap location (submit this to Google Search Console & Bing Webmaster Tools)
-Sitemap: https://lamla-ai.vercel.app/sitemap.xml
+Sitemap: https://ocasia.vercel.app/sitemap.xml

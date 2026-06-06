@@ -1,6 +1,6 @@
 {
-  "short_name": "Lamla AI",
-  "name": "Lamla AI | Personalized Learning Platform - Powered By AI",
+  "short_name": "Ocasia",
+  "name": "Ocasia | Personalized Learning Platform - Powered By AI",
   "description": "Your intelligent learning companion powered by AI. Generate quizzes, flashcards, and chat with an AI tutor to master any subject faster.",
   "icons": [
     {
@@ -9,13 +9,13 @@
       "type": "image/x-icon"
     },
     {
-      "src": "assets/lamla_logo.png",
+      "src": "assets/ocasia-blue.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/lamla_logo.png",
+      "src": "assets/ocasia-blue.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -26,7 +26,7 @@
       "src": "assets/og-image.png",
       "sizes": "1200x630",
       "type": "image/png",
-      "label": "Lamla AI – Quiz, flashcards and AI tutor dashboard"
+      "label": "Ocasia – Quiz, flashcards and AI tutor dashboard"
     }
   ],
   "start_url": "/",
@@ -45,14 +45,14 @@
       "short_name": "Quiz",
       "description": "Generate an AI-powered quiz instantly",
       "url": "/quiz/create",
-      "icons": [{ "src": "assets/lamla_logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "assets/ocasia-blue.png", "sizes": "192x192" }]
     },
     {
       "name": "AI Tutor Chat",
       "short_name": "Chat",
       "description": "Chat with your AI tutor",
       "url": "/chat",
-      "icons": [{ "src": "assets/lamla_logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "assets/ocasia-blue.png", "sizes": "192x192" }]
     }
   ]
 }

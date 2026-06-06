@@ -51,8 +51,17 @@ const Navbar = ({ user, brandOnly = false }) => {
       <header className={`main-header ${isScrolled ? "scrolled" : ""}`}>
         <div className="container header-container">
           <Link to="/" className="logo" onClick={handleHomeClick}>
-            <img src="/assets/lamla_logo.png" alt="Lamla AI Logo" className="logo-img" />
-            <span className="brand-highlight">Lamla.ai</span>
+            <img
+              src={isScrolled ? "/assets/logo-blue.png" : "/assets/logo.png"}
+              alt="Ocasia"
+              className="logo-img"
+            />
+            <span
+              className="brand-highlight"
+              style={isScrolled ? { color: "#2563eb" } : undefined}
+            >
+              Ocasia
+            </span>
           </Link>
 
           {!brandOnly && (

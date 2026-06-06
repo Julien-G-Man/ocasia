@@ -129,8 +129,8 @@ const Signup = () => {
         <div className="brand-glow" aria-hidden="true" />
 
         <div className="auth-brand-logo">
-          <img src="/assets/lamla_logo.png" alt="Lamla AI logo" />
-          <span>Lamla AI</span>
+          <img src="/assets/logo.png" alt="Ocasia logo" />
+          <span>Ocasia</span>
         </div>
 
         <div className="auth-brand-headline">
@@ -139,7 +139,7 @@ const Signup = () => {
             <em>smarter today</em>.
           </h2>
           <p>
-            Join hundreds of students who use Lamla AI to ace their exams
+            Join hundreds of students who use Ocasia to ace their exams
             with personalised quizzes, flashcards, and an always-on AI tutor.
           </p>
         </div>
@@ -159,7 +159,7 @@ const Signup = () => {
         <div className="auth-form-inner">
           <div className="auth-form-header">
             <h1>Create your account</h1>
-            <p>Join thousands of students studying smarter with Lamla AI.</p>
+            <p>Join thousands of students studying smarter with Ocasia.</p>
           </div>
 
           {/* Guest upsell banner */}

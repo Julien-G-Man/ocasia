@@ -10,7 +10,7 @@ export default function GetInTouchSection({ onSubmit, contactStatus, contactIsEr
               <p className="section-label">GET IN TOUCH</p>
               <h3>Need help with your studies?</h3>
               <p>
-                Tell us what you need and the Lamla team will respond as
+                Tell us what you need and the Ocasia team will respond as
                 soon as possible.
               </p>
             </div>

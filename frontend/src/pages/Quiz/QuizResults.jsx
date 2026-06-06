@@ -140,7 +140,7 @@ const QuizResults = ({ user }) => {
 
     const handleShare = () => {
         const shareData = {
-            title: 'Lamla AI Quiz',
+            title: 'Ocasia Quiz',
             text: `I scored ${score}/${total} on the ${subject} quiz!`,
             url: window.location.origin,
         };

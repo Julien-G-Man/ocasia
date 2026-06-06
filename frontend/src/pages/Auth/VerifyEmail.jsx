@@ -69,7 +69,7 @@ const VerifyEmail = () => {
   return (
     <div className="verify-container">
       <div className="verify-wrapper">
-        <img src="/assets/lamla_logo.png" alt="Lamla AI" className="verify-logo" />
+        <img src="/assets/logo-blue.png" alt="Ocasia" className="verify-logo" />
 
         {status === 'verifying' && (
           <>

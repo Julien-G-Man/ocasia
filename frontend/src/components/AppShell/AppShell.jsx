@@ -54,8 +54,8 @@ export default function AppShell({
       {/* ── Top navbar ─────────────────────────────────────── */}
       <header className="app-shell__topbar">
         <Link to="/" className="app-shell__topbar-brand">
-          <img src="/assets/lamla_logo.png" alt="Lamla" className="app-shell__topbar-logo-img" />
-          <span className="app-shell__topbar-logo-name">Lamla.ai</span>
+          <img src="/assets/logo-blue.png" alt="Ocasia" className="app-shell__topbar-logo-img" />
+          <span className="app-shell__topbar-logo-name" style={{ color: "#2563eb" }}>Ocasia</span>
         </Link>
 
         {showTopbarNav && (

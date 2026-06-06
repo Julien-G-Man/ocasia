@@ -9,19 +9,19 @@ export default function AboutSection({ visible }) {
             <div className="principle-card">
               <img
                 src="/assets/highfive-with-teacher.jpg"
-                alt="About Lamla AI"
+                alt="About Ocasia"
               />
               <div className="principle-icon">AI-powered learning, built for students</div>
             </div>
 
             <div className="principle-card principle-text">
-              <p className="about-label">ABOUT LAMLA AI</p>
+              <p className="about-label">ABOUT OCASIA</p>
               <h3>
                 Your Study Partner,{" "}
                 <span className="brand-highlight-text">Powered by AI</span>
               </h3>
               <p>
-                Lamla AI was built for students who want to study with
+                Ocasia was built for students who want to study with
                 purpose. Upload your course materials and get quizzes,
                 flashcards, and clear explanations generated in seconds —
                 tailored to what you're actually studying.

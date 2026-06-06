@@ -50,11 +50,11 @@ const About = ({ user }) => {
                     <div className="hero-bg-overlay"></div>
                     <div className="about-hero-content container">
                         <h1 className="about-hero-title">
-                            About <span className="highlight">Lamla-AI</span>
+                            About <span className="highlight">Ocasia</span>
                         </h1>
                         <p className="about-hero-desc">
-                            <strong>Lamla-AI</strong> is a smart exam preparation platform designed to help you study with intention, not panic.<br></br>
-                            Lamla AI replaces guesswork with guided, personalized study by combining AI-generated quizzes, real-time feedback, and performance insights.<br></br>
+                            <strong>Ocasia</strong> (formerly <strong>Lamla AI</strong>) is a smart exam preparation platform designed to help you study with intention, not panic.<br></br>
+                            Ocasia replaces guesswork with guided, personalized study by combining AI-generated quizzes, real-time feedback, and performance insights.<br></br>
                             <b>Study Smarter. Perform Better.</b>
                         </p>
                     </div>                    
@@ -111,14 +111,14 @@ const About = ({ user }) => {
                                             <li><i className="fas fa-check-circle"></i> Clarity over confusion: Guided, purposeful study</li>
                                             <li><i className="fas fa-check-circle"></i> Growth over shortcuts: Mastery through active recall</li>
                                             <li><i className="fas fa-check-circle"></i> Focus over panic: Tools to support real learning</li>
-                                            <li><i className="fas fa-check-circle"></i> Integrity: Lamla is not a cramming or cheat tool</li>
+                                            <li><i className="fas fa-check-circle"></i> Integrity: Ocasia is not a cramming or cheat tool</li>
                                         </ul>
                                     </div>
                                 </div>
 
                                 <div className="about-tab-content" id="offers-tab-content">
                                     <div className="content-list-group">
-                                        <h3><span className="emoji">💡</span> What Lamla-AI Offers</h3>
+                                        <h3><span className="emoji">💡</span> What Ocasia Offers</h3>
                                         <ul>
                                             <li><i className="fas fa-check-circle"></i> Upload study materials (PDF/text) for quiz generation</li>
                                             <li><i className="fas fa-check-circle"></i> AI-generated quizzes with instant feedback</li>
@@ -126,7 +126,7 @@ const About = ({ user }) => {
                                             <li><i className="fas fa-check-circle"></i> Subject and topic selection for focused study</li>
                                             <li><i className="fas fa-check-circle"></i> A multilingual assistant copilot to support you on your journey to success</li>
                                         </ul>
-                                        <p>Lamla-AI is not a shortcut or a cheat—it's a smart compass for students who want to prepare better, not later.</p>
+                                        <p>Ocasia is not a shortcut or a cheat—it's a smart compass for students who want to prepare better, not later.</p>
                                     </div>
                                 </div>
                             </section>
@@ -134,7 +134,7 @@ const About = ({ user }) => {
 
                         <section id="cta-section" className="section-header" data-aos="fade-up" data-aos-delay="300">
                             <h2>🤝 <span className="highlight"> Join the </span>Journey</h2>
-                            <p>If you want to prepare with purpose, not panic—Lamla-AI was built for you.</p>
+                            <p>If you want to prepare with purpose, not panic—Ocasia was built for you.</p>
                             <p>This is more than a platform. It's a toolset. A mindset. A movement.</p>
                             <p><strong className="highlight-text">Study Smarter. Perform Better.</strong></p>
                             {isVisible.cta && (
