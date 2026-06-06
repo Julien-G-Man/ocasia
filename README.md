@@ -1,4 +1,4 @@
-# Lamla AI
+# Ocasia
 
 An AI-powered academic learning platform — quiz generation, spaced-repetition flashcards,
 a tool-calling AI tutor with document RAG, live multiplayer quiz battles (Clash), and
