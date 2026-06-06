@@ -2,6 +2,10 @@
 
 Ocasia is an AI-powered learning platform for students. Upload study materials to generate quizzes and flashcards automatically, or chat with an AI tutor anytime. Features: AI Tutor, Quiz Generator, Flashcards, Clash (multiplayer quiz battles), Materials Library, and a progress Dashboard.
 
+## The Name Ocasia
+
+The name Ocasia is inspired by the Acacia tree — a symbol of resilience, deep roots, and community. It reflects what the platform stands for: growth (academic growth for every student), deep roots (strong knowledge foundations), community (collaborative learning through Clash and shared materials), and resilience (pushing through tough topics together). A platform built to help students grow, not just survive.
+
 ## Who Built Ocasia
 
 Built by Computer Science and IT students from KNUST (Kwame Nkrumah University of Science and Technology), Ghana. The goal is to make studying more intentional and effective with practical AI tools.
