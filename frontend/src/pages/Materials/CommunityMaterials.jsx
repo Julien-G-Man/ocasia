@@ -12,119 +12,69 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import './Materials.css';
 
-// ── Subject metadata: emoji + gradient + Unsplash photo ─────────
+// ── Subject metadata — keys match SUBJECTS in MaterialUpload.jsx ──
 const SUBJECT_META = {
     mathematics: {
         emoji: '📐',
         gradient: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-        image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904',
+        image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     },
-    math: {
-        emoji: '📐',
-        gradient: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-        image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904',
-    },
-    physics: {
-        emoji: '⚛️',
+    sciences: {
+        emoji: '🔬',
         gradient: 'linear-gradient(135deg, #0369a1, #38bdf8)',
-        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb',
-    },
-    chemistry: {
-        emoji: '⚗️',
-        gradient: 'linear-gradient(135deg, #059669, #34d399)',
-        image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69',
-    },
-    biology: {
-        emoji: '🧬',
-        gradient: 'linear-gradient(135deg, #16a34a, #4ade80)',
-        image: 'https://images.unsplash.com/photo-1576086213369-97a306d36557',
-    },
-    history: {
-        emoji: '📜',
-        gradient: 'linear-gradient(135deg, #92400e, #fb923c)',
-        image: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1',
-    },
-    literature: {
-        emoji: '📚',
-        gradient: 'linear-gradient(135deg, #be185d, #fb7185)',
-        image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570',
-    },
-    english: {
-        emoji: '✍️',
-        gradient: 'linear-gradient(135deg, #be185d, #fb7185)',
-        image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a',
-    },
-    geography: {
-        emoji: '🌍',
-        gradient: 'linear-gradient(135deg, #0f766e, #2dd4bf)',
-        image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa',
-    },
-    economics: {
-        emoji: '📊',
-        gradient: 'linear-gradient(135deg, #b45309, #fbbf24)',
-        image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3',
-    },
-    computer_science: {
-        emoji: '💻',
-        gradient: 'linear-gradient(135deg, #1d4ed8, #60a5fa)',
-        image: 'https://www.istockphoto.com/nl/video/hispanic-latin-american-couple-software-engineer-developer-use-computer-work-on-gm2156675608-577423336?searchscope=image%2Cfilm',
-    },
-    psychology: {
-        emoji: '🧠',
-        gradient: 'linear-gradient(135deg, #7e22ce, #c084fc)',
-        image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56',
+        image: 'https://plus.unsplash.com/premium_photo-1681426676206-0f2c02b48aff?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHBoeXNpY3N8ZW58MHx8MHx8fDA%3D',
     },
     engineering: {
         emoji: '⚙️',
         gradient: 'linear-gradient(135deg, #374151, #9ca3af)',
-        image: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780',
+        image: 'https://images.unsplash.com/photo-1769147339214-076740872485?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fG1lY2hhbmljYSUyMGVuZ2luZWVyaW5nfGVufDB8fDB8fHww',
+    },
+    computing: {
+        emoji: '💻',
+        gradient: 'linear-gradient(135deg, #1d4ed8, #60a5fa)',
+        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGNvbXB1dGVyJTIwZW5naW5lZXJpbmd8ZW58MHx8MHx8fDA%3D',
+    },
+    humanities: {
+        emoji: '📜',
+        gradient: 'linear-gradient(135deg, #92400e, #fb923c)',
+        image: 'https://images.unsplash.com/photo-1604549944235-3e5579b15cc2?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aHVtYW5pdGllc3xlbnwwfHwwfHx8MA%3D%3D',
+    },
+    business: {
+        emoji: '📊',
+        gradient: 'linear-gradient(135deg, #b45309, #fbbf24)',
+        image: 'https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fGJ1c2luZXNzfGVufDB8fDB8fHww',
+    },
+    languages: {
+        emoji: '🗣️',
+        gradient: 'linear-gradient(135deg, #be185d, #fb7185)',
+        image: 'https://images.unsplash.com/photo-1706403615881-d83dc2067c5d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bGFuZ3VhZ2VzfGVufDB8fDB8fHww',
     },
     medicine: {
         emoji: '🩺',
         gradient: 'linear-gradient(135deg, #dc2626, #f87171)',
-        image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d',
+        image: 'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2NpZW5jZXxlbnwwfHwwfHx8MA%3D%3D',
     },
     law: {
         emoji: '⚖️',
         gradient: 'linear-gradient(135deg, #1e3a5f, #3b82f6)',
-        image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f',
+        image: 'https://plus.unsplash.com/premium_photo-1661769577787-9811af17f98d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8bGF3fGVufDB8fDB8fHww',
     },
-    finance: {
-        emoji: '💰',
-        gradient: 'linear-gradient(135deg, #047857, #34d399)',
-        image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f',
+    arts: {
+        emoji: '🎨',
+        gradient: 'linear-gradient(135deg, #be185d, #f472b6)',
+        image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8YXJ0c3xlbnwwfHwwfHx8MA%3D%3D',
     },
-    accounting: {
-        emoji: '🧾',
-        gradient: 'linear-gradient(135deg, #065f46, #6ee7b7)',
-        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
-    },
-    statistics: {
-        emoji: '📉',
-        gradient: 'linear-gradient(135deg, #4c1d95, #8b5cf6)',
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71',
-    },
-    philosophy: {
-        emoji: '🏛️',
-        gradient: 'linear-gradient(135deg, #1c1917, #78716c)',
-        image: 'https://images.unsplash.com/photo-1519791883288-dc8bd696e667',
-    },
-    sociology: {
-        emoji: '👥',
-        gradient: 'linear-gradient(135deg, #0c4a6e, #7dd3fc)',
-        image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac',
-    },
-    political_science: {
-        emoji: '🗳️',
-        gradient: 'linear-gradient(135deg, #1e3a5f, #60a5fa)',
-        image: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620',
+    other: {
+        emoji: '📄',
+        gradient: 'linear-gradient(135deg, #2563eb, #60a5fa)',
+        image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGxpYnJhcnl8ZW58MHx8MHx8fDA%3D',
     },
 };
 
 const DEFAULT_META = {
     emoji: '📄',
     gradient: 'linear-gradient(135deg, #2563eb, #60a5fa)',
-    image: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66',
+    image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGxpYnJhcnl8ZW58MHx8MHx8fDA%3D',
 };
 
 function getSubjectMeta(value) {

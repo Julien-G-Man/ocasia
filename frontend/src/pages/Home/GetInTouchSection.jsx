@@ -43,20 +43,20 @@ export default function GetInTouchSection({ onSubmit, contactStatus, contactIsEr
             <div className="home-contact-form">
               <div className="home-contact-field-grid">
                 <label className="home-contact-field">
-                  <span className="home-contact-label">Full Name *</span>
+                  <span className="home-contact-label">Full Name</span>
                   <input type="text" name="name" placeholder="John Doe" required />
                 </label>
                 <label className="home-contact-field">
-                  <span className="home-contact-label">Email Address *</span>
+                  <span className="home-contact-label">Email Address</span>
                   <input type="email" name="email" placeholder="john@example.com" required />
                 </label>
               </div>
               <label className="home-contact-field">
-                <span className="home-contact-label">Subject *</span>
+                <span className="home-contact-label">Subject</span>
                 <input type="text" name="title" placeholder="General inquiry, feature request..." required />
               </label>
               <label className="home-contact-field">
-                <span className="home-contact-label">Message *</span>
+                <span className="home-contact-label">Message</span>
                 <textarea name="message" rows="6" placeholder="How can we help you?" required />
               </label>
               <button type="submit" disabled={isSendingContact}>
