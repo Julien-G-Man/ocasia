@@ -69,10 +69,10 @@ const Footer = () => {
         <div className="footer-col">
           <h3>Connect With Us</h3>
           <div className="social-icons">
-            <a href="https://www.instagram.com/lamla.io" className="social-icon" aria-label="Instagram">
+            <a href="https://www.instagram.com/ocasia.app" className="social-icon" aria-label="Instagram">
               <img src="https://staticassets.netlify.app/public/icons/social/instagram.png" alt="Instagram" />
             </a>
-            <a href="https://www.linkedin.com/company/lamla-ai" className="social-icon" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/company/ocasia-app" className="social-icon" aria-label="LinkedIn">
               <img src="https://staticassets.netlify.app/public/icons/social/linkedin.png" alt="LinkedIn" />
             </a>
             <a href="https://www.facebook.com/people/LamlaAI/61578006032583/" className="social-icon" aria-label="Facebook">

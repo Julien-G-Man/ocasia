@@ -127,9 +127,9 @@
 /* ---------- Right panel (form) ---------- */
 .auth-form-panel {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 40px 32px;
+  padding: 28px 24px 40px;
   background: var(--background-gray);
   height: 100vh;
   overflow-y: auto;
@@ -137,7 +137,9 @@
 
 .auth-form-inner {
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
+  margin-top: auto;
+  margin-bottom: auto;
   animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -148,19 +150,19 @@
 
 /* ---------- Form header ---------- */
 .auth-form-header {
-  margin-bottom: 36px;
+  margin-bottom: 18px;
 }
 
 .auth-form-header h1 {
-  font-size: 1.9rem;
+  font-size: 1.45rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   letter-spacing: -0.5px;
 }
 
 .auth-form-header p {
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
@@ -193,14 +195,14 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 28px;
+  gap: 11px;
+  margin-bottom: 16px;
 }
 
 .auth-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .auth-field label {
@@ -234,9 +236,9 @@
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  padding: 13px 16px 13px 42px;
+  padding: 10px 14px 10px 40px;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-family: inherit;
   outline: none;
   transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
@@ -313,7 +315,7 @@
 /* ---------- Submit button ---------- */
 .auth-submit-btn {
   width: 100%;
-  padding: 14px 24px;
+  padding: 11px 22px;
   background: var(--primary-color);
   color: #ffffff;
   border: none;
@@ -362,7 +364,7 @@
 /* ---------- Footer links ---------- */
 .auth-form-footer {
   border-top: 1px solid var(--border);
-  padding-top: 24px;
+  padding-top: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
