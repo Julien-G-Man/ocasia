@@ -6,6 +6,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { DJANGO_WARMUP_ENDPOINT, FASTAPI_HEALTH_ENDPOINT } from "./services/api";
 import Home from "./pages/Home/Home";
+import About from "./pages/About/About";
 import Login from "./pages/Login/Login";
 import Signup from "./pages/Signup/Signup";
 import VerifyEmail from "./pages/Auth/VerifyEmail";
@@ -86,6 +87,7 @@ function App() {
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Home />} />
+            {/* <Route path="/about" element={<About />} /> */}
 
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/signup" element={<Signup />} />

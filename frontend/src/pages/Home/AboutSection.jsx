@@ -6,42 +6,40 @@ export default function AboutSection({ visible }) {
       <div className="container">
         {visible && (
           <div className="principles-grid">
-            <div className="principle-card">
+            <div className="principle-card anim-left">
               <img
                 src="/assets/highfive-with-teacher.jpg"
                 alt="About Ocasia"
               />
-              <div className="principle-icon">AI-powered learning, built for students</div>
+              <div className="principle-icon">Born at KNUST · Built for the world</div>
             </div>
 
-            <div className="principle-card principle-text">
+            <div className="principle-card principle-text anim-right anim-d2">
               <p className="about-label">ABOUT OCASIA</p>
               <h3>
-                Your Study Partner,{" "}
-                <span className="brand-highlight-text">Powered by AI</span>
+                Built for students who want to{" "}
+                <span className="brand-highlight-text">actually learn</span>
               </h3>
               <p>
-                Ocasia was built for students who want to study with
-                purpose. Upload your course materials and get quizzes,
-                flashcards, and clear explanations generated in seconds —
-                tailored to what you're actually studying.
+                Ocasia was built by students at KNUST who lived the pressure —
+                guesswork, late nights, the fear of not being ready. We built
+                the tools we wished we had.
               </p>
               <p>
-                Stuck on a concept? Ask your AI tutor anytime. Want to make
-                it competitive? Challenge friends to a live Clash quiz battle
-                with a shared room code.
+                We believe studying should be intentional, not panicked.
+                Not about cramming and hoping — about knowing your material
+                and walking into every exam confident.
               </p>
-              <p>
-                Built by students at KNUST, for students everywhere. We know
-                what it takes to study well — and we built the tools we
-                wished we had.
+              <p className="brand-tagline-line">
+                Starting from Africa.{" "}
+                <span className="brand-highlight-text">Built for every student, everywhere.</span>
               </p>
               <div className="hero-btns about-btns">
-                <a href="/quiz/create" className="hero-btn primary">
-                  Start Studying →
+                <a href="/auth/signup" className="hero-btn primary">
+                  Start for Free →
                 </a>
                 <a href="#features" className="hero-btn secondary">
-                  Our Features
+                  See What We Offer
                 </a>
               </div>
             </div>

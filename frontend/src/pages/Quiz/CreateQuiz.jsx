@@ -218,8 +218,10 @@ const CreateQuiz = () => {
             <main className="db-main">
               <div className="db-tab">
                 <div className="db-page-header">
-                    <h1>Quiz Mode</h1>
-                    <p>Upload your study material, enter a YouTube video link, or paste text to create customised quiz questions with AI.</p>
+                    <div>
+                        <h1>Quiz Mode</h1>
+                        <p>Upload your study material, enter a YouTube video link, or paste text to create customised quiz questions with AI.</p>
+                    </div>
                 </div>
 
                 <div className="quiz-card-container">

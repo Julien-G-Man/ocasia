@@ -97,7 +97,7 @@ const MessageBubble = ({
         return (
             <div className="message-row ai-row">
                 <div className="ai-avatar-wrap">
-                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                    <img src="/assets/logo.png" alt="AI Tutor" className="ai-avatar-img" />
                 </div>
                 <div className="message-bubble ai-message">
                     <QuizFormCard
@@ -114,7 +114,7 @@ const MessageBubble = ({
         return (
             <div className="message-row ai-row">
                 <div className="ai-avatar-wrap">
-                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                    <img src="/assets/logo.png" alt="AI Tutor" className="ai-avatar-img" />
                 </div>
                 <div className="message-bubble ai-message">
                     <StartQuizCard
@@ -130,7 +130,7 @@ const MessageBubble = ({
         <div className={`message-row ${isAI ? 'ai-row' : 'user-row'}`}>
             {isAI && (
                 <div className="ai-avatar-wrap">
-                    <img src="/assets/lamla_logo.png" alt="AI Tutor" className="ai-avatar-img" />
+                    <img src="/assets/logo.png" alt="AI Tutor" className="ai-avatar-img" />
                 </div>
             )}
             <div className={`message-bubble ${message.type}-message`}>

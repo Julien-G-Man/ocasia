@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to Lamla AI</title>
+<title>Welcome to Ocasia</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   body {
@@ -20,14 +20,17 @@
   }
   .header {
     text-align: center;
-    padding-bottom: 20px;
+    background: #2563EB;
+    border-radius: 8px 8px 0 0;
+    padding: 28px 24px;
+    margin-bottom: 0;
   }
   .header img {
-    max-width: 80px;
+    max-width: 220px;
   }
   .divider {
     height: 4px;
-    background: #FFD600;
+    background: #2563EB;
     margin: 24px 0;
   }
   .content h1 {
@@ -43,31 +46,35 @@
   }
   /* ── Dual CTA ── */
   .cta-row {
-    text-align: center;
     margin: 32px 0;
   }
+  .cta-row td {
+    padding: 0 6px;
+  }
   .cta-row a.btn-primary {
-    background-color: #FFD600;
-    color: #000;
+    background-color: #2563EB;
+    color: #fff;
     text-decoration: none;
-    padding: 13px 26px;
+    padding: 13px 20px;
     font-size: 15px;
     font-weight: 700;
     border-radius: 4px;
-    display: inline-block;
-    margin: 6px 8px;
+    display: block;
+    text-align: center;
+    white-space: nowrap;
   }
   .cta-row a.btn-secondary {
     background-color: #fff;
-    color: #000;
+    color: #2563EB;
     text-decoration: none;
-    padding: 12px 26px;
+    padding: 11px 20px;
     font-size: 15px;
     font-weight: 700;
     border-radius: 4px;
-    border: 2px solid #000;
-    display: inline-block;
-    margin: 6px 8px;
+    border: 2px solid #2563EB;
+    display: block;
+    text-align: center;
+    white-space: nowrap;
   }
   /* ── Features section ── */
   .features {
@@ -85,7 +92,7 @@
   }
   .feature-card {
     background: #fff;
-    border-left: 4px solid #FFD600;
+    border-left: 4px solid #2563EB;
     border-radius: 0 6px 6px 0;
     padding: 16px 18px;
     margin-bottom: 14px;
@@ -105,9 +112,9 @@
   .feature-card a.try-link {
     font-size: 13px;
     font-weight: 700;
-    color: #000;
+    color: #2563EB;
     text-decoration: none;
-    border-bottom: 2px solid #FFD600;
+    border-bottom: 2px solid #2563EB;
     padding-bottom: 1px;
   }
   /* ── Footer ── */
@@ -134,9 +141,9 @@
 <body>
 <div class="container">
 
-  <!-- Logo -->
+  <!-- Logo — white logo on blue header -->
   <div class="header">
-    <img src="https://staticassets.netlify.app/public/logos/lamla_logo.png" alt="Lamla AI">
+    <img src="https://staticassets.netlify.app/public/logos/ocasia-white.png" alt="Ocasia">
   </div>
 
   <div class="divider"></div>
@@ -145,7 +152,7 @@
   <div class="content">
     <h1>You're in, {{user_name}} 🎉</h1>
     <p>
-      Welcome to <strong>Lamla AI</strong> — your personal study powerhouse. You signed in with
+      Welcome to <strong>Ocasia</strong> — your personal study powerhouse. You signed in with
       Google, so your account is fully activated and ready to go. No extra steps needed.
     </p>
     <p>
@@ -154,19 +161,21 @@
     </p>
 
     <!-- Dual CTA -->
-    <div class="cta-row">
-      <a href="https://ocasia.vercel.app/dashboard" class="btn-primary">Go to Dashboard</a>
-      <a href="https://ocasia.vercel.app/#features" class="btn-secondary">Explore Features</a>
-    </div>
+    <table class="cta-row" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="50%"><a href="https://ocasia.vercel.app/dashboard" class="btn-primary">Go to Dashboard</a></td>
+        <td width="50%"><a href="https://ocasia.vercel.app/#features" class="btn-secondary">Explore Features</a></td>
+      </tr>
+    </table>
 
     <!-- Feature cards -->
     <div class="features">
-      <p class="label">What you can do on Lamla AI</p>
+      <p class="label">What you can do on Ocasia</p>
 
       <div class="feature-card">
         <p class="feature-title">⚡ AI Quiz Mode</p>
         <p class="feature-desc">
-          Upload a PDF, paste your notes, or drop in a topic — Lamla AI generates a full
+          Upload a PDF, paste your notes, or drop in a topic — Ocasia generates a full
           multiple-choice quiz in seconds. Customise the number of questions, difficulty,
           and focus area, then play it directly in your browser or share it with classmates.
         </p>
@@ -208,7 +217,7 @@
     <p>
       If you ever have questions or feedback, just reply to this email — we read every one.<br><br>
       Happy studying,<br><br>
-      <strong>The Lamla AI Team</strong>
+      <strong>The Ocasia Team</strong>
     </p>
   </div>
 
@@ -235,7 +244,7 @@
     </div>
     <div>
       Study smarter, Perform better.<br><br>
-      © 2025 Lamla AI. All Rights Reserved.
+      © 2026 Ocasia. All Rights Reserved.
     </div>
   </div>
 

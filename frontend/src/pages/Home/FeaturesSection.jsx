@@ -52,6 +52,23 @@ const FEATURES = [
   },
 ];
 
+const handleCardMouseMove = (e) => {
+  const card = e.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width - 0.5;
+  const y = (e.clientY - rect.top) / rect.height - 0.5;
+  card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+  card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+  card.style.transform = `perspective(900px) translateY(-6px) rotateY(${x * 10}deg) rotateX(${-y * 7}deg)`;
+  card.style.transition = 'box-shadow 0.15s ease';
+};
+
+const handleCardMouseLeave = (e) => {
+  const card = e.currentTarget;
+  card.style.transform = '';
+  card.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease';
+};
+
 export default function FeaturesSection({ visible }) {
   const railRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -80,7 +97,6 @@ export default function FeaturesSection({ visible }) {
     }
   };
 
-  // Track active dot via scroll position
   useEffect(() => {
     if (!visible) return;
     const rail = railRef.current;
@@ -104,7 +120,6 @@ export default function FeaturesSection({ visible }) {
     return () => rail.removeEventListener("scroll", handleScroll);
   }, [visible]);
 
-  // Auto-advance every 5 seconds
   useEffect(() => {
     if (!visible) return;
     const timer = setInterval(() => {
@@ -123,7 +138,7 @@ export default function FeaturesSection({ visible }) {
   return (
     <section id="features" className="features-section">
       <div className="container">
-        <div className="section-header section-header--center">
+        <div className="section-header section-header--center reveal reveal-up">
           <p className="section-label">FEATURES</p>
           <h2>
             Smart Features for{" "}
@@ -132,7 +147,7 @@ export default function FeaturesSection({ visible }) {
         </div>
 
         {visible && (
-          <div className="features-rail-shell">
+          <div className="features-rail-shell anim-up anim-d2">
             <div className="features-rail-controls" aria-label="Scroll feature cards">
               <button
                 type="button"
@@ -162,6 +177,8 @@ export default function FeaturesSection({ visible }) {
                     key={feature.title}
                     href={feature.href}
                     className={`feature-card${isFirst ? " feature-card--start" : ""}${isLast ? " feature-card--end" : ""}`}
+                    onMouseMove={handleCardMouseMove}
+                    onMouseLeave={handleCardMouseLeave}
                   >
                     <div className="feature-image">
                       <img src={feature.image} alt={feature.alt} />

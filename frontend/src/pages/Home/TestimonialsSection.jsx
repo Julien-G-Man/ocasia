@@ -43,7 +43,7 @@ export default function TestimonialsSection({ visible }) {
   return (
     <section id="testimonials" className="testimonials-section">
       <div className="container">
-        <div className="section-header section-header--left">
+        <div className="section-header section-header--left reveal reveal-up">
           <p className="section-label">TESTIMONIALS</p>
           <h2>
             What Our Users{" "}
@@ -51,7 +51,7 @@ export default function TestimonialsSection({ visible }) {
           </h2>
         </div>
         {visible && (
-          <div className="testimonials-carousel">
+          <div className="testimonials-carousel anim-left anim-d1">
             <div className="testimonial-wrapper">
               <div className="testimonial-card">
                 <div className="avatar-decor" aria-hidden="true"></div>

@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import RichTextRenderer from '../../utils/richTextRenderer';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faListUl } from '@fortawesome/free-solid-svg-icons';
 import './Quiz.css';
 import djangoApi, { DJANGO_HEALTH_ENDPOINT, FASTAPI_HEALTH_ENDPOINT } from '../../services/api';
 
@@ -27,6 +29,8 @@ const Quiz = () => {
     const [isTimeHidden, setIsTimeHidden] = useState(false);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+    const [timeUpBanner, setTimeUpBanner] = useState(false);
 
     const allQuestions = quizData
         ? [...(quizData.mcq_questions || []), ...(quizData.short_questions || [])]
@@ -51,7 +55,7 @@ const Quiz = () => {
         } catch (err) {
             console.error('Submission failed', err);
             setIsSubmitting(false);
-            alert(err.response?.data?.error || 'Failed to submit quiz. Please check your connection.');
+            setSubmitError(err.response?.data?.error || 'Failed to submit quiz. Please check your connection.');
         }
     }, [isSubmitting, quizData, userAnswers, allQuestions.length, storageKey, navigate]);
 
@@ -105,7 +109,7 @@ const Quiz = () => {
     useEffect(() => {
         if (timerInitialized && timeRemaining <= 0 && !autoSubmittedRef.current && !isSubmitting) {
             autoSubmittedRef.current = true;
-            alert("Time's up! Submitting your answers.");
+            setTimeUpBanner(true);
             submitQuiz();
         }
     }, [timeRemaining, timerInitialized, isSubmitting, submitQuiz]);
@@ -162,6 +166,9 @@ const Quiz = () => {
     const currentQ = allQuestions[currentIndex];
     const isAnswered = !!userAnswers[currentIndex];
     const hasOptions = Array.isArray(currentQ.options) && currentQ.options.length > 0;
+    const timerClass = timeRemaining <= 60 ? 'quiz-timer-pill--danger'
+        : timeRemaining <= 300 ? 'quiz-timer-pill--warn'
+        : '';
 
     return (
         <>
@@ -175,7 +182,7 @@ const Quiz = () => {
                 </header>
 
                 <section className="quiz-top-shell">
-                    <div className="quiz-timer-pill">
+                    <div className={`quiz-timer-pill ${timerClass}`}>
                         <span className="quiz-timer-label">Time Left</span>
                         <span className={`quiz-timer-value ${isTimeHidden ? 'invisible' : ''}`}>{formatTime(timeRemaining)}</span>
                     </div>
@@ -255,13 +262,20 @@ const Quiz = () => {
                     )}
                 </section>
 
+                {timeUpBanner && (
+                    <div className="quiz-timesup-banner">Time's up! Submitting your answers…</div>
+                )}
+                {submitError && (
+                    <div className="quiz-error-banner">{submitError}</div>
+                )}
+
                 <button
                     className="quiz-float-toggle"
                     onClick={() => setIsPanelOpen((prev) => !prev)}
                     aria-label={isPanelOpen ? 'Close question navigator' : 'Open question navigator'}
                     aria-expanded={isPanelOpen}
                 >
-                    List
+                    <FontAwesomeIcon icon={faListUl} />
                 </button>
 
                 <aside className={`quiz-navigator ${isPanelOpen ? 'open' : ''}`}>

@@ -3,7 +3,7 @@ import AppShell from '../../components/AppShell/AppShell';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faClipboardList, faRedo, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faClipboardList, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { dashboardService } from '../../services/dashboard';
 import '../Dashboards/Dashboard.css';
 
@@ -73,14 +73,14 @@ const QuizHistory = () => {
                     </div>
                     <div className="db-quiz-score">{q.score_percent}%</div>
                     <button
-                      className="db-btn db-btn-ghost db-btn-sm"
+                      className="db-btn db-btn-primary db-btn-sm"
                       onClick={() => handleTryAgain(q.id)}
                       disabled={!!replaying}
                       title="Retake this quiz with the same questions"
                     >
                       {replaying === q.id
                         ? <FontAwesomeIcon icon={faSpinner} spin />
-                        : <><FontAwesomeIcon icon={faRedo} style={{ marginRight: 5 }} />Try Again</>}
+                        : 'Try Again'}
                     </button>
                   </div>
                 ))

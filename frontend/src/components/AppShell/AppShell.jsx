@@ -18,7 +18,13 @@ const NAV_ITEMS = [
   { label: 'Profile',    icon: faUser,       path: '/profile'         },
 ];
 
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter(({ path }) => path !== '/materials/mine');
+const MOBILE_NAV_ITEMS = [
+  { label: 'Home',     icon: faHome,   path: '/dashboard'  },
+  { label: 'Quiz',     icon: faBook,   path: '/quiz'       },
+  { label: 'AI Tutor', icon: faRobot,  path: '/ai-tutor',   center: true },
+  { label: 'Clash',    icon: faBolt,   path: '/clash'      },
+  { label: 'Profile',  icon: faUser,   path: '/profile'    },
+];
 
 export default function AppShell({
   children,
@@ -139,14 +145,18 @@ export default function AppShell({
       {/* ── Mobile bottom nav ───────────────────────────────── */}
       {showMobileNav && (
         <nav className="app-shell__mobile-nav" aria-label="Mobile navigation">
-          {mobileNavItems.map(({ label, icon, path }) => (
+          {mobileNavItems.map(({ label, icon, path, center }) => (
             <Link
               key={path}
               to={path}
-              className={`app-shell__mobile-item${isActive(path) ? ' active' : ''}`}
+              className={[
+                'app-shell__mobile-item',
+                center ? 'app-shell__mobile-item--center' : '',
+                isActive(path) ? 'active' : '',
+              ].filter(Boolean).join(' ')}
             >
               <FontAwesomeIcon icon={icon} />
-              <span>{label}</span>
+              {!center && <span>{label}</span>}
             </Link>
           ))}
         </nav>

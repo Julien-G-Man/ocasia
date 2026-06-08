@@ -5,7 +5,7 @@
 
 /* ---------- Layout ---------- */
 .auth-page {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
   background: var(--background-gray);
@@ -131,6 +131,7 @@
   justify-content: center;
   padding: 40px 32px;
   background: var(--background-gray);
+  height: 100vh;
   overflow-y: auto;
 }
 
@@ -400,41 +401,112 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
+  /* Lock the whole page to screen height — each half manages its own scroll */
   .auth-page {
-    grid-template-columns: 1fr;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
+  /* Brand image: exactly 1/3 of screen, never scrolls */
   .auth-brand-panel {
+    display: flex;
+    height: 33dvh;
+    flex-shrink: 0;
+    min-height: unset;
+    max-height: unset;
+    padding: 28px 24px 50px;
+    justify-content: flex-start;
+    gap: 0;
+  }
+
+  /* Hide description text and feature list — logo + headline only */
+  .auth-brand-headline p,
+  .auth-features {
     display: none;
   }
 
+  .auth-brand-logo {
+    margin-bottom: 12px;
+  }
+
+  .auth-brand-logo img { width: 36px; height: 36px; }
+  .auth-brand-logo span { font-size: 1.25rem; }
+
+  .auth-brand-headline {
+    margin-bottom: 0;
+  }
+
+  .auth-brand-headline h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0;
+  }
+
+  /* Form card: slides up over image, takes remaining 2/3, scrolls independently */
   .auth-form-panel {
-    min-height: 100vh;
+    flex: 1;
+    height: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--surface);
+    border-radius: 22px 22px 0 0;
+    margin-top: -28px;
+    position: relative;
+    z-index: 1;
+    padding: 26px 20px 40px;
     align-items: flex-start;
-    padding: 48px 24px;
+    justify-content: flex-start;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   }
 
   .auth-form-inner {
     max-width: 100%;
-    padding-top: 12px;
+    padding-top: 0;
+    width: 100%;
   }
-}
 
-@media (max-width: 480px) {
-  .auth-form-panel {
-    padding: 36px 20px;
+  /* Compact form */
+  .auth-form-header {
+    margin-bottom: 18px;
   }
 
   .auth-form-header h1 {
-    font-size: 1.6rem;
+    font-size: 1.45rem;
+    margin-bottom: 4px;
+  }
+
+  .auth-form-header p {
+    font-size: 0.88rem;
+  }
+
+  .auth-form {
+    gap: 13px;
+    margin-bottom: 16px;
+  }
+
+  .auth-field label {
+    font-size: 0.82rem;
   }
 
   .auth-input-wrap input {
+    padding: 11px 14px 11px 40px;
     font-size: 0.9rem;
-    padding: 12px 14px 12px 40px;
+    border-radius: 10px;
   }
 
   .auth-submit-btn {
-    padding: 13px 20px;
+    padding: 12px 20px;
+    font-size: 0.92rem;
+    border-radius: 10px;
+  }
+
+  .auth-divider {
+    margin: 14px 0;
+  }
+
+  .auth-form-footer {
+    padding-top: 18px;
+    gap: 8px;
   }
 }

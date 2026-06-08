@@ -1,6 +1,6 @@
 :root {
-  --quiz-yellow: #1e3a8a;
-  --quiz-yellow-dark: #172554;
+  --quiz-accent: #2563eb;
+  --quiz-accent-dark: #1d4ed8;
   --quiz-black: #ffffff;
   --quiz-surface: #ffffff;
   --quiz-surface-elevated: #f0f6fb;
@@ -21,6 +21,7 @@
   min-height: 100vh;
   background: var(--quiz-black);
   color: var(--quiz-text-secondary);
+  font-family: 'Outfit', sans-serif;
 }
 
 .quiz-state-text {
@@ -39,7 +40,7 @@
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--quiz-yellow);
+  color: var(--quiz-accent);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -53,8 +54,8 @@
 
 .quiz-progress-copy {
   margin: 0;
-  color: var(--quiz-yellow);
-  border: 1px solid var(--quiz-yellow);
+  color: var(--quiz-accent);
+  border: 1px solid var(--quiz-accent);
   border-radius: 999px;
   padding: 8px 12px;
   font-weight: 700;
@@ -78,7 +79,7 @@
   gap: 14px;
   min-height: 62px;
   padding: 10px 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
 }
 
 .quiz-timer-label {
@@ -138,7 +139,7 @@
 .quiz-flag-link {
   border: none;
   background: transparent;
-  color: var(--quiz-yellow);
+  color: var(--quiz-green);
   cursor: pointer;
   padding: 0;
   font-weight: 700;
@@ -207,11 +208,11 @@
 }
 
 .quiz-option-row:hover {
-  border-color: var(--quiz-yellow);
+  border-color: var(--quiz-accent);
 }
 
 .quiz-option-row.selected {
-  border-color: var(--quiz-yellow);
+  border-color: var(--quiz-accent);
   background: rgba(37, 99, 235, 0.07);
 }
 
@@ -225,8 +226,8 @@
 }
 
 .quiz-option-row.selected .quiz-option-dot {
-  background: var(--quiz-yellow);
-  border-color: var(--quiz-yellow);
+  background: var(--quiz-accent);
+  border-color: var(--quiz-accent);
 }
 
 .quiz-option-letter {
@@ -254,7 +255,7 @@
 }
 
 .quiz-short-answer-label {
-  color: var(--quiz-yellow);
+  color: var(--quiz-accent);
   font-weight: 700;
 }
 
@@ -270,8 +271,8 @@
 }
 
 .quiz-short-answer-input:focus {
-  outline: 2px solid rgba(37, 99, 235, 0.25);
-  border-color: var(--quiz-yellow);
+  outline: 2px solid rgba(37, 99, 235, 0.2);
+  border-color: var(--quiz-accent);
 }
 
 .quiz-actions-shell {
@@ -297,28 +298,55 @@
 }
 
 .quiz-btn.quiz-btn-primary {
-  background: var(--quiz-yellow);
+  background: var(--quiz-accent);
   color: #ffffff;
 }
 
 .quiz-btn.quiz-btn-primary:hover {
-  background: var(--quiz-yellow-dark);
+  background: var(--quiz-accent-dark);
+}
+
+.quiz-error-banner {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--quiz-red);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.quiz-timesup-banner {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #1e40af;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 12px;
+  text-align: center;
 }
 
 .quiz-float-toggle {
   position: fixed;
-  left: 18px;
+  right: 18px;
   bottom: 18px;
   width: 54px;
   height: 54px;
   border-radius: 999px;
   border: none;
-  background: var(--quiz-yellow);
+  background: var(--quiz-accent);
   color: #ffffff;
-  font-weight: 800;
+  font-size: 1.1rem;
   cursor: pointer;
   z-index: 1002;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .quiz-navigator {
@@ -350,7 +378,7 @@
 
 .quiz-navigator-head h3 {
   margin: 0;
-  color: var(--quiz-yellow);
+  color: var(--quiz-accent);
 }
 
 .quiz-navigator-head button {
@@ -398,8 +426,8 @@
 
 .quiz-navigator-close-btn:hover,
 .quiz-navigator-close:hover {
-  border-color: var(--quiz-yellow);
-  color: var(--quiz-yellow);
+  border-color: var(--quiz-accent);
+  color: var(--quiz-accent);
 }
 
 .quiz-nav-cell {
@@ -413,8 +441,8 @@
 }
 
 .quiz-nav-cell.current {
-  border-color: var(--quiz-yellow);
-  background: var(--quiz-yellow);
+  border-color: var(--quiz-accent);
+  background: var(--quiz-accent);
   color: #ffffff;
 }
 

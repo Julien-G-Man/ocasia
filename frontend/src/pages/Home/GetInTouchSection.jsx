@@ -5,7 +5,7 @@ export default function GetInTouchSection({ onSubmit, contactStatus, contactIsEr
     <section className="home-engagement-section">
       <div className="container">
         <div className="home-engagement-grid">
-          <aside className="home-contact-aside">
+          <aside className="home-contact-aside reveal reveal-left">
             <div>
               <p className="section-label">GET IN TOUCH</p>
               <h3>Need help with your studies?</h3>
@@ -39,7 +39,7 @@ export default function GetInTouchSection({ onSubmit, contactStatus, contactIsEr
             </div>
           </aside>
 
-          <form className="home-contact-shell" onSubmit={onSubmit}>
+          <form className="home-contact-shell reveal reveal-right reveal-d2" onSubmit={onSubmit}>
             <div className="home-contact-form">
               <div className="home-contact-field-grid">
                 <label className="home-contact-field">
@@ -53,7 +53,7 @@ export default function GetInTouchSection({ onSubmit, contactStatus, contactIsEr
               </div>
               <label className="home-contact-field">
                 <span className="home-contact-label">Subject *</span>
-                <input type="text" name="title" placeholder="Prayer Request, Inquiry..." required />
+                <input type="text" name="title" placeholder="General inquiry, feature request..." required />
               </label>
               <label className="home-contact-field">
                 <span className="home-contact-label">Message *</span>

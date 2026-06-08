@@ -1,6 +1,6 @@
 :root {
-  --results-yellow: #1e3a8a;
-  --results-yellow-dark: #172554;
+  --results-accent: #2563eb;
+  --results-accent-dark: #1d4ed8;
   --results-black: #ffffff;
   --results-surface: #ffffff;
   --results-surface-alt: #f0f6fb;
@@ -20,6 +20,7 @@
   min-height: 100vh;
   background: var(--results-black);
   color: var(--results-text-secondary);
+  font-family: 'Outfit', sans-serif;
 }
 
 .results-page-header {
@@ -34,7 +35,7 @@
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--results-yellow);
+  color: var(--results-accent);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -47,16 +48,16 @@
 
 .results-score-pill {
   margin: 0;
-  border: 1px solid var(--results-yellow);
+  border: 1px solid var(--results-accent);
   border-radius: 999px;
-  color: var(--results-yellow);
+  color: var(--results-accent);
   padding: 8px 14px;
   font-weight: 800;
 }
 
 .results-summary-card {
-  background: var(--results-content-card);
-  border: 1px solid #b8d9f0;
+  background: var(--results-surface-alt);
+  border: 1px solid var(--results-border);
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 16px;
@@ -82,7 +83,7 @@
 }
 
 .results-summary-card strong {
-  color: var(--results-yellow);
+  color: var(--results-accent);
 }
 
 .results-metrics-grid {
@@ -124,7 +125,7 @@
 
 .results-progress-fill {
   height: 100%;
-  background: var(--results-yellow);
+  background: var(--results-accent);
 }
 
 .results-review-section h3 {
@@ -173,9 +174,9 @@
 
 .results-question-label {
   width: fit-content;
-  border: 1px solid var(--results-yellow);
+  border: 1px solid var(--results-accent);
   border-radius: 999px;
-  color: var(--results-yellow);
+  color: var(--results-accent);
   padding: 4px 10px;
   font-size: 0.78rem;
   font-weight: 800;
@@ -220,7 +221,7 @@
 }
 
 .results-answer-row .label {
-  color: var(--results-yellow);
+  color: var(--results-accent);
   text-transform: uppercase;
   font-size: 0.78rem;
   letter-spacing: 0.5px;
@@ -245,9 +246,9 @@
 }
 
 .results-inline-btn {
-  border: 1px solid var(--results-yellow);
+  border: 1px solid var(--results-accent);
   background: transparent;
-  color: var(--results-yellow);
+  color: var(--results-accent);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.75rem;
@@ -342,8 +343,8 @@
 
 .results-action-btn:hover {
   background: var(--results-surface-alt);
-  border-color: var(--results-yellow);
-  color: var(--results-yellow);
+  border-color: var(--results-accent);
+  color: var(--results-accent);
 }
 
 .results-action-btn.download-btn,

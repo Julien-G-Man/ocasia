@@ -307,6 +307,63 @@
   justify-content: flex-start;
 }
 
+.brand-tagline-line {
+  font-size: var(--landing-body-md);
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+}
+
+/* ── Values section ───────────────────────────────── */
+.values-section {
+  padding: 80px 0 100px;
+  background: var(--surface);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+
+.value-card {
+  padding: 28px 24px;
+  background: var(--background-gray);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.value-num {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--primary-color);
+  margin-bottom: 14px;
+}
+
+.value-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.value-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
 .features-section {
   padding: 80px 0 100px;
   background: #e7ecf3;
@@ -822,6 +879,100 @@
   color: #ef4444;
 }
 
+/* ═══════════════════════════════════════════════════
+   ANIMATIONS & INTERACTIVITY
+   ═══════════════════════════════════════════════════ */
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(48px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-64px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(64px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* CSS-animation entrance — plays when element enters the DOM */
+.anim-up    { animation: slideUp      0.72s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-left  { animation: slideInLeft  0.72s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-right { animation: slideInRight 0.72s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade  { animation: fadeIn       0.60s ease both; }
+.anim-d1 { animation-delay: 0.08s; }
+.anim-d2 { animation-delay: 0.18s; }
+.anim-d3 { animation-delay: 0.28s; }
+.anim-d4 { animation-delay: 0.40s; }
+.anim-d5 { animation-delay: 0.52s; }
+
+/* Transition-based reveal — for always-in-DOM elements, triggered by JS adding .is-visible */
+.reveal {
+  opacity: 0;
+  transition: opacity 0.72s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal-up    { transform: translateY(48px); }
+.reveal-left  { transform: translateX(-64px); }
+.reveal-right { transform: translateX(64px); }
+.reveal.is-visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.10s; }
+.reveal-d2 { transition-delay: 0.22s; }
+.reveal-d3 { transition-delay: 0.34s; }
+
+/* Hero entrance — runs on page load in sequence */
+.hero-line-1 { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.10s both; }
+.hero-line-2 { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both; }
+.hero-desc-anim { animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.42s both; }
+.hero-btns-anim { animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.58s both; }
+
+/* Feature card — cursor glow overlay */
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    480px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(37, 99, 235, 0.18),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+.feature-card:hover::before { opacity: 1; }
+
+/* Stat items — hover lift */
+.stat-item {
+  transition: transform 0.25s ease;
+  cursor: default;
+}
+.stat-item:hover { transform: translateY(-3px); }
+
+/* Reduced motion — disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  .anim-up, .anim-left, .anim-right, .anim-fade,
+  .hero-line-1, .hero-line-2, .hero-desc-anim, .hero-btns-anim {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .reveal, .reveal-up, .reveal-left, .reveal-right {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .stat-item:hover { transform: none; }
+}
+
 @media (max-width: 1100px) {
   .feature-card {
     flex-basis: 78%;
@@ -942,6 +1093,14 @@
 
   .principle-text h3 {
     font-size: 1.6rem;
+  }
+
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr;
   }
 
   .features-section {

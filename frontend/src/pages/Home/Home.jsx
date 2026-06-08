@@ -6,6 +6,7 @@ import "./Home.css";
 import "../../App.css";
 import HeroSection from "./HeroSection";
 import AboutSection from "./AboutSection";
+import ValuesSection from "./ValuesSection";
 import FeaturesSection from "./FeaturesSection";
 import TestimonialsSection from "./TestimonialsSection";
 import GetInTouchSection from "./GetInTouchSection";
@@ -17,9 +18,25 @@ const Home = ({ user }) => {
 
   const [isVisible, setIsVisible] = useState({
     about: false,
+    values: false,
     features: false,
     testimonials: false,
   });
+
+  // Reveal observer — adds .is-visible to elements with .reveal class when they scroll into view
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-visible');
+          obs.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const createObserver = (id, key) => {
@@ -39,13 +56,15 @@ const Home = ({ user }) => {
     };
 
     const o1 = createObserver("about", "about");
-    const o2 = createObserver("features", "features");
-    const o3 = createObserver("testimonials", "testimonials");
+    const o2 = createObserver("values", "values");
+    const o3 = createObserver("features", "features");
+    const o4 = createObserver("testimonials", "testimonials");
 
     return () => {
       if (o1) o1.disconnect();
       if (o2) o2.disconnect();
       if (o3) o3.disconnect();
+      if (o4) o4.disconnect();
     };
   }, []);
 
@@ -110,6 +129,7 @@ const Home = ({ user }) => {
       <main className="main-content">
         <HeroSection user={user} />
         <AboutSection visible={isVisible.about} />
+        <ValuesSection visible={isVisible.values} />
         <FeaturesSection visible={isVisible.features} />
         <TestimonialsSection visible={isVisible.testimonials} />
         <GetInTouchSection

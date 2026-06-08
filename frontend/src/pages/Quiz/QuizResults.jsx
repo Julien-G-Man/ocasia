@@ -138,11 +138,12 @@ const QuizResults = ({ user }) => {
         }, 1500);
     };
 
+    const APP_URL = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, "");
     const handleShare = () => {
         const shareData = {
             title: 'Ocasia Quiz',
             text: `I scored ${score}/${total} on the ${subject} quiz!`,
-            url: window.location.origin,
+            url: APP_URL,
         };
 
         if (navigator.share) {
