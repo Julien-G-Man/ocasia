@@ -7,6 +7,7 @@ const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
 
 const MEDAL_EMOJI = { 1: "🥇", 2: "🥈", 3: "🥉" };
 const RANK_LABEL  = { 1: "1st place", 2: "2nd place", 3: "3rd place" };
+const LETTERS     = ["A", "B", "C", "D", "E"];
 
 function PlayerAvatar({ entry, className = "" }) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -32,6 +33,65 @@ function medalClass(rank) {
   return "";
 }
 
+function AnswerReview({ questions, myAnswers }) {
+  if (!questions || questions.length === 0) return null;
+
+  // Build a lookup: q_idx → {correct, points}
+  const answerMap = {};
+  (myAnswers || []).forEach(a => { answerMap[a.q_idx] = a; });
+
+  return (
+    <div className="clash-review-section">
+      <h3 className="clash-review-title">Answer Review</h3>
+      <div className="clash-review-list">
+        {questions.map((q, idx) => {
+          const myRecord = answerMap[idx];
+          const answered  = myRecord !== undefined;
+          const correct   = myRecord?.correct ?? false;
+          const pts       = myRecord?.points ?? 0;
+          const correctLetter = (q.answer || "").trim().toUpperCase();
+
+          return (
+            <div
+              key={idx}
+              className={`clash-review-item ${answered ? (correct ? "review-correct" : "review-incorrect") : "review-unanswered"}`}
+            >
+              <div className="clash-review-q-header">
+                <span className="clash-review-q-num">Q{idx + 1}</span>
+                <span className={`clash-review-verdict ${answered ? (correct ? "verdict-correct" : "verdict-wrong") : "verdict-skipped"}`}>
+                  {!answered ? "Not answered" : correct ? `Correct · +${pts} pts` : "Incorrect"}
+                </span>
+              </div>
+              <p className="clash-review-q-text">{q.question}</p>
+              <div className="clash-review-options">
+                {(q.options || []).map((opt, oi) => {
+                  const letter = LETTERS[oi];
+                  const isCorrect = letter === correctLetter;
+                  return (
+                    <div
+                      key={oi}
+                      className={`clash-review-option ${isCorrect ? "review-option-correct" : ""}`}
+                    >
+                      <span className="clash-review-option-letter">{letter}</span>
+                      {opt}
+                      {isCorrect && <span className="clash-review-correct-badge">✓ correct</span>}
+                    </div>
+                  );
+                })}
+              </div>
+              {q.explanation && (
+                <p className="clash-review-explanation">
+                  <strong>Explanation: </strong>{q.explanation}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ClashResults() {
   const { code } = useParams();
   const location = useLocation();
@@ -43,8 +103,11 @@ export default function ClashResults() {
 
   const [rankings, setRankings] = useState(location.state?.rankings ?? []);
   const [room, setRoom] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [myAnswers, setMyAnswers] = useState([]);
   const [loading, setLoading] = useState(!location.state?.rankings?.length);
   const [error, setError] = useState("");
+  const [showReview, setShowReview] = useState(false);
 
   useEffect(() => {
     if (!token) { navigate("/auth/login"); return; }
@@ -54,13 +117,13 @@ export default function ClashResults() {
       .then(r => r.json())
       .then(data => {
         if (data.detail) { setError(data.detail); setLoading(false); return; }
-        // Prefer fresh rankings (include profile_image); fall back to state rankings
         setRankings(data.rankings?.length ? data.rankings : rankings);
         setRoom(data);
+        setQuestions(data.questions || []);
+        setMyAnswers(data.my_answers || []);
         setLoading(false);
       })
       .catch(() => {
-        // If fetch fails but we already have rankings from state, show them
         if (rankings.length) setLoading(false);
         else { setError("Failed to load results."); setLoading(false); }
       });
@@ -94,7 +157,6 @@ export default function ClashResults() {
 
   const top3 = rankings.slice(0, 3);
   const myEntry = rankings.find(r => r.username === currentUser?.username);
-  // Podium order: 2nd (left) · 1st (centre, taller) · 3rd (right)
   const podiumOrder = [top3[1] ?? null, top3[0] ?? null, top3[2] ?? null];
 
   return (
@@ -117,7 +179,7 @@ export default function ClashResults() {
             <p className="clash-my-result-label">
               You finished {RANK_LABEL[myEntry.rank] ?? `#${myEntry.rank}`}
             </p>
-            <p className="clash-my-result-score">{myEntry.score} points</p>
+            <p className="clash-my-result-score">{myEntry.score} points · {myEntry.correct}/{room?.num_questions} correct</p>
           </div>
         </div>
       )}
@@ -159,7 +221,7 @@ export default function ClashResults() {
                   {isMe && <span className="clash-you-inline">you</span>}
                   {entry.is_host && <span className="clash-host-inline">host</span>}
                 </div>
-                <div className="clash-ranking-detail">{entry.score} points</div>
+                <div className="clash-ranking-detail">{entry.score} pts · {entry.correct}/{room?.num_questions} correct</div>
               </div>
               <div className="clash-ranking-score">{entry.score}</div>
             </div>
@@ -167,8 +229,23 @@ export default function ClashResults() {
         })}
       </div>
 
+      {/* ── Answer review toggle ── */}
+      {questions.length > 0 && (
+        <button
+          className="clash-btn-secondary"
+          style={{ marginBottom: "8px" }}
+          onClick={() => setShowReview(v => !v)}
+        >
+          {showReview ? "Hide Answer Review" : "Review Answers"}
+        </button>
+      )}
+      {showReview && <AnswerReview questions={questions} myAnswers={myAnswers} />}
+
       {/* ── Actions ── */}
       <div className="clash-results-actions">
+        <button className="clash-btn-secondary" onClick={() => navigate("/clash/history")}>
+          My History
+        </button>
         <button className="clash-btn-secondary" onClick={() => navigate("/clash")}>
           New Clash
         </button>

@@ -41,6 +41,8 @@ import ClashCreate from "./pages/Clash/ClashCreate";
 import ClashLobby from "./pages/Clash/ClashLobby";
 import ClashPlay from "./pages/Clash/ClashPlay";
 import ClashResults from "./pages/Clash/ClashResults";
+import ClashHistory from "./pages/Clash/ClashHistory";
+import ClashHistoryDetail from "./pages/Clash/ClashHistoryDetail";
 import AdminClash from "./pages/Dashboards/AdminClash";
 import AdminClashDetail from "./pages/Dashboards/AdminClashDetail";
 
@@ -140,6 +142,8 @@ function App() {
             <Route path="/chatbot" element={<Navigate to="/ai-tutor" replace />} />
 
             <Route path="/clash" element={<ProtectedRoute><ClashCreate /></ProtectedRoute>} />
+            <Route path="/clash/history" element={<ProtectedRoute><ClashHistory /></ProtectedRoute>} />
+            <Route path="/clash/history/:code" element={<ProtectedRoute><ClashHistoryDetail /></ProtectedRoute>} />
             <Route path="/clash/share/:code" element={<ClashShareRedirect />} />
             <Route path="/clash/lobby/:code" element={<ProtectedRoute><ClashLobby /></ProtectedRoute>} />
             <Route path="/clash/play/:code" element={<ProtectedRoute><ClashPlay /></ProtectedRoute>} />

@@ -1306,11 +1306,15 @@
 .clash-results-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
-.clash-results-actions .clash-btn-primary {
+.clash-results-actions .clash-btn-primary,
+.clash-results-actions .clash-btn-secondary {
   flex: 1;
   width: auto;
+  min-width: 120px;
 }
 
 /* ─────────────────────── Responsive ─────────────────────── */
@@ -1343,3 +1347,304 @@
 @media (max-width: 480px) {
   .clash-options-grid { grid-template-columns: 1fr; }
 }
+
+/* ─────────────────────── Hero history button ─────────────────────── */
+.clash-hero-history-btn {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 18px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.clash-hero-history-btn:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* ─────────────────────── Clash history page ─────────────────────── */
+.clash-history-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.clash-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.clash-history-new-btn {
+  padding: 10px 20px;
+  background: var(--clash-blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+.clash-history-new-btn:hover { background: #172554; }
+
+.clash-history-empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--clash-muted);
+}
+.clash-history-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.clash-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clash-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--clash-surface);
+  border: 1px solid var(--clash-border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+  color: var(--clash-text);
+}
+.clash-history-item:hover {
+  border-color: var(--clash-blue-mid);
+  box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+}
+
+.clash-history-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.clash-history-rank {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  min-width: 32px;
+}
+
+.clash-history-meta {
+  min-width: 0;
+}
+
+.clash-history-subject {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--clash-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.clash-history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clash-history-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--clash-border);
+  color: var(--clash-muted);
+  background: var(--clash-bg);
+}
+.clash-history-tag-host {
+  color: var(--clash-blue-mid);
+  border-color: var(--clash-blue-mid);
+}
+
+.clash-history-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.clash-history-score {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--clash-text);
+}
+
+.clash-history-date {
+  font-size: 0.78rem;
+  color: var(--clash-muted);
+}
+
+.clash-history-arrow {
+  font-size: 0.85rem;
+  color: var(--clash-subtle);
+}
+
+/* ─────────────────────── History detail back btn ─────────────────────── */
+.clash-history-back-btn {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--clash-muted);
+  border: 1px solid var(--clash-border);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.clash-history-back-btn:hover {
+  color: var(--clash-blue-mid);
+  border-color: var(--clash-blue-mid);
+}
+
+/* ─────────────────────── Answer review ─────────────────────── */
+.clash-review-section {
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
+
+.clash-review-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clash-text);
+  margin: 0 0 14px;
+}
+
+.clash-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clash-review-item {
+  background: var(--clash-surface);
+  border: 1.5px solid var(--clash-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.clash-review-item.review-correct  { border-color: #bbf7d0; background: #f0fdf4; }
+.clash-review-item.review-incorrect { border-color: #fecaca; background: #fef2f2; }
+.clash-review-item.review-unanswered { border-color: #e2e8f0; background: #f8fafc; }
+
+.clash-review-q-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.clash-review-q-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--clash-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clash-review-verdict {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.clash-review-verdict.verdict-correct  { background: #dcfce7; color: #15803d; }
+.clash-review-verdict.verdict-wrong    { background: #fee2e2; color: #b91c1c; }
+.clash-review-verdict.verdict-skipped  { background: #f1f5f9; color: #64748b; }
+
+.clash-review-q-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--clash-text);
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.clash-review-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clash-review-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--clash-bg);
+  border: 1px solid var(--clash-border);
+  font-size: 0.87rem;
+  color: var(--clash-text);
+}
+.clash-review-option.review-option-correct {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.clash-review-option-letter {
+  font-weight: 800;
+  font-size: 0.8rem;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+.review-option-correct .clash-review-option-letter {
+  background: #86efac;
+  color: #15803d;
+}
+
+.clash-review-correct-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #15803d;
+  flex-shrink: 0;
+}
+
+.clash-review-explanation {
+  margin: 10px 0 0;
+  font-size: 0.84rem;
+  color: var(--clash-muted);
+  line-height: 1.5;
+  padding-top: 10px;
+  border-top: 1px solid var(--clash-border);
+}
+

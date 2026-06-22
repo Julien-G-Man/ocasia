@@ -145,6 +145,13 @@ export default function ClashCreate() {
                 <span className="clash-hero-stat-label">Leaderboard</span>
               </div>
             </div>
+            <button
+              className="clash-hero-history-btn"
+              type="button"
+              onClick={() => navigate("/clash/history")}
+            >
+              My History →
+            </button>
           </div>
           <div className="clash-hero-visual">
             <div className="clash-hero-player">

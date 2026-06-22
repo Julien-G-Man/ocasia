@@ -361,7 +361,7 @@ async def admin_clash_detail(request, room_code):
 @csrf_exempt
 @require_http_methods(["GET"])
 async def clash_results(request, room_code):
-    """Final leaderboard for a finished Clash."""
+    """Final leaderboard for a finished Clash, including questions and caller's answers."""
     user, err = await _authenticate(request)
     if err:
         return err
@@ -375,12 +375,16 @@ async def clash_results(request, room_code):
         room.participants.select_related('user').order_by('-score', 'joined_at')
     )
 
+    my_participant = next((p for p in participants if p.user_id == user.id), None)
+
     return JsonResponse({
         "room_code": room.room_code,
         "subject": room.subject,
         "difficulty": room.difficulty,
         "num_questions": room.num_questions,
         "status": room.status,
+        "questions": room.questions or [],
+        "my_answers": my_participant.answers if my_participant else [],
         "rankings": [
             {
                 "rank": idx + 1,
@@ -392,6 +396,59 @@ async def clash_results(request, room_code):
                 "profile_image": p.user.profile_image or "",
             }
             for idx, p in enumerate(participants)
+        ],
+    })
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+async def my_clash_detail(request, room_code):
+    """User: full detail for a finished Clash the caller participated in."""
+    user, err = await _authenticate(request)
+    if err:
+        return err
+
+    try:
+        room = await sync_to_async(
+            ClashRoom.objects.select_related('host').get
+        )(room_code=room_code.upper(), status=ClashRoom.FINISHED)
+    except ClashRoom.DoesNotExist:
+        return JsonResponse({"detail": "Room not found."}, status=404)
+
+    my_participant = await sync_to_async(
+        ClashParticipant.objects.filter(room=room, user=user).first
+    )()
+    if not my_participant:
+        return JsonResponse({"detail": "You did not participate in this clash."}, status=403)
+
+    participants = await sync_to_async(list)(
+        room.participants.select_related('user').order_by('rank', '-score', 'joined_at')
+    )
+
+    return JsonResponse({
+        "room_code": room.room_code,
+        "subject": room.subject,
+        "difficulty": room.difficulty,
+        "num_questions": room.num_questions,
+        "time_per_question": room.time_per_question,
+        "host_username": room.host.username,
+        "finished_at": room.finished_at.isoformat() if room.finished_at else None,
+        "created_at": room.created_at.isoformat(),
+        "questions": room.questions or [],
+        "my_answers": my_participant.answers or [],
+        "my_rank": my_participant.rank,
+        "my_score": my_participant.score,
+        "participants": [
+            {
+                "rank": p.rank,
+                "username": p.user.username,
+                "display_name": p.display_name,
+                "score": p.score,
+                "is_host": p.is_host,
+                "correct": sum(1 for a in (p.answers or []) if a.get("correct")),
+                "profile_image": p.user.profile_image or "",
+            }
+            for p in participants
         ],
     })
 
