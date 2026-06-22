@@ -5,9 +5,6 @@ import "./Clash.css";
 
 const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
 const DJANGO_ROOT_URL = DJANGO_API_URL.replace(/\/api\/?$/, "");
-// Canonical frontend origin — set VITE_APP_URL=https://ocasia.vercel.app in Vercel env vars.
-// Falls back to the current origin so local dev still works without the var.
-const APP_URL = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, "");
 
 function PlayerAvatar({ participant, className = "" }) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -161,7 +158,7 @@ export default function ClashLobby() {
   }
 
   function handleShare() {
-    const shareUrl = `${APP_URL}/clash/share/${code}/`;
+    const shareUrl = `${DJANGO_ROOT_URL}/clash/share/${code}/`;
     const hostName = currentUser?.display_name || currentUser?.username || "Someone";
     const subject = room?.subject ? ` on "${room.subject}"` : "";
     const text = `${hostName} is inviting you to a Clash quiz battle${subject}! Join with code ${code} — tap the link to enter directly.`;

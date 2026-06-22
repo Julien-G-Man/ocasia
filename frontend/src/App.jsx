@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import "./App.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -55,8 +55,9 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
  */
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { isAuthenticated, isLoading, getUserRole } = useAuth();
+  const location = useLocation();
   if (isLoading) return null;
-  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth/login" state={{ from: location }} replace />;
   if (requireAdmin && getUserRole() !== "admin") return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -139,7 +140,7 @@ function App() {
             <Route path="/chatbot" element={<Navigate to="/ai-tutor" replace />} />
 
             <Route path="/clash" element={<ProtectedRoute><ClashCreate /></ProtectedRoute>} />
-            <Route path="/clash/share/:code" element={<ProtectedRoute><ClashShareRedirect /></ProtectedRoute>} />
+            <Route path="/clash/share/:code" element={<ClashShareRedirect />} />
             <Route path="/clash/lobby/:code" element={<ProtectedRoute><ClashLobby /></ProtectedRoute>} />
             <Route path="/clash/play/:code" element={<ProtectedRoute><ClashPlay /></ProtectedRoute>} />
             <Route path="/clash/results/:code" element={<ProtectedRoute><ClashResults /></ProtectedRoute>} />

@@ -243,7 +243,8 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SITE_NAME="Ocasia"
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+_frontend_url_default = "http://localhost:3000" if DEBUG else "https://ocasia.vercel.app"
+FRONTEND_URL = os.getenv("FRONTEND_URL", _frontend_url_default)
 
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://localhost:8001")
 FASTAPI_BASE_URLS = os.getenv("FASTAPI_BASE_URLS", "")

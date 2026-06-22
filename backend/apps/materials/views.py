@@ -1,4 +1,5 @@
 import logging
+from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -13,8 +14,18 @@ from .helpers import _upload_file, _extract_pdf_text, SUBJECT_CHOICES, _cloudina
 logger = logging.getLogger(__name__)
 
 PAGE_SIZE = 12
+MATERIALS_CACHE_TTL = 300  # 5 minutes
 
 SUBJECT_LABEL_MAP = {s['value']: s['label'] for s in SUBJECT_CHOICES}
+
+
+def _mat_cache_version():
+    return cache.get('mat:v') or 0
+
+
+def _bust_mat_cache():
+    cache.set('mat:v', _mat_cache_version() + 1, timeout=None)
+
 
 class MaterialListView(APIView):
     """GET /api/materials/ — public browse with search, subject filter, pagination."""
@@ -22,27 +33,29 @@ class MaterialListView(APIView):
     authentication_classes = []
 
     def get(self, request):
-        qs = Material.objects.filter(is_active=True).select_related('uploaded_by')
+        q       = request.query_params.get('q', '').strip()
+        subject = request.query_params.get('subject', '').strip()
+        try:
+            page = max(1, int(request.query_params.get('page', 1)))
+        except (TypeError, ValueError):
+            page = 1
 
-        q = request.query_params.get('q', '').strip()
+        cache_key = f'mat:{_mat_cache_version()}:{q}:{subject}:{page}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        qs = Material.objects.filter(is_active=True).select_related('uploaded_by')
         if q:
             qs = qs.filter(
                 Q(title__icontains=q) |
                 Q(description__icontains=q) |
                 Q(uploaded_by__username__icontains=q)
             )
-
-        subject = request.query_params.get('subject', '').strip()
         if subject:
             qs = qs.filter(subject__iexact=subject)
 
-        total = qs.count()
-
-        try:
-            page = max(1, int(request.query_params.get('page', 1)))
-        except (TypeError, ValueError):
-            page = 1
-
+        total     = qs.count()
         materials = qs[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
 
         used_subjects = (
@@ -53,12 +66,14 @@ class MaterialListView(APIView):
         )
         subjects = [s for s in SUBJECT_CHOICES if s['value'] in used_subjects]
 
-        return Response({
+        result = {
             'materials':   MaterialSerializer(materials, many=True).data,
             'count':       total,
             'total_pages': max(1, -(-total // PAGE_SIZE)),
             'subjects':    subjects,
-        })
+        }
+        cache.set(cache_key, result, timeout=MATERIALS_CACHE_TTL)
+        return Response(result)
 
 
 class MaterialUploadView(APIView):
@@ -90,6 +105,7 @@ class MaterialUploadView(APIView):
             file_size   = file.size,
         )
 
+        _bust_mat_cache()
         logger.info('Material "%s" uploaded by %s', material.title, request.user.email)
         return Response(MaterialSerializer(material).data, status=201)
 
@@ -107,6 +123,7 @@ class MaterialDeleteView(APIView):
             return Response({'detail': 'Permission denied.'}, status=403)
 
         material.delete()
+        _bust_mat_cache()
         logger.info('Material %s deleted by %s', material_id, request.user.email)
         return Response(status=204)
 

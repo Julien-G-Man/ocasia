@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { GoogleLogin} from '@react-oauth/google';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -30,15 +30,20 @@ const Login = () => {
   const [error, setError]               = useState('');
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, googleAuth } = useAuth();
+
+  const _redirectAfterAuth = (isAdmin) => {
+    const from = location.state?.from?.pathname;
+    navigate(from || (isAdmin ? '/admin-dashboard' : '/dashboard'), { replace: true });
+  };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setIsLoading(true);
     setError('');
     try {
       const { user } = await googleAuth(credentialResponse.credential);
-      const isAdmin = user?.is_admin;
-      navigate(isAdmin ? '/admin-dashboard' : '/dashboard', { replace: true });
+      _redirectAfterAuth(user?.is_admin);
     } catch (err) {
       setError(err?.message || 'Google sign-in failed. Please try again.');
     } finally {
@@ -62,8 +67,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       const response = await login(identifier.trim().toLowerCase(), password);
-      const isAdmin  = response?.user?.is_admin;
-      navigate(isAdmin ? '/admin-dashboard' : '/dashboard');
+      _redirectAfterAuth(response?.user?.is_admin);
     } catch (err) {
       // Normalise error message from various server response shapes
       const msg =

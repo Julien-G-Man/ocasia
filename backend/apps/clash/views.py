@@ -408,14 +408,21 @@ async def clash_share_preview(request, room_code):
     """
     frontend_url = settings.FRONTEND_URL.rstrip("/")
     room_code = room_code.upper()
-    redirect_url = f"{frontend_url}/clash/lobby/{room_code}"
-    image_url = f"{frontend_url}/assets/clash-fist.jpg"
-    share_url = f"{frontend_url}/clash/share/{room_code}/"
 
-    # Try to enrich the title/description with the actual subject
+    # Where real users land after the meta-refresh
+    redirect_url = f"{frontend_url}/clash/lobby/{room_code}"
+
+    # og:url must be THIS page's URL (the backend URL bots are actually scraping).
+    # Using the frontend URL here was the bug — bots generate the card link from og:url,
+    # so it must match the URL they crawled, not the SPA.
+    this_url = request.build_absolute_uri()
+
+    # Image is a Vercel static asset on the frontend
+    image_url = f"{frontend_url}/assets/clash-fist.jpg"
+
     og_title = "Join a Clash on Ocasia!"
     og_desc = (
-        f"You've been invited to a live quiz battle on Ocasia. "
+        f"You've been invited to a live Clash on Ocasia. "
         f"Join room {room_code} and compete now!"
     )
     try:
@@ -423,15 +430,16 @@ async def clash_share_preview(request, room_code):
         if room.subject:
             og_title = f"Clash: {room.subject} — Join the battle!"
             og_desc = (
-                f"You've been challenged to a live {room.subject} quiz battle "
+                f"You've been challenged to a live {room.subject} Clash "
                 f"on Ocasia. Join room {room_code} and compete!"
             )
     except ClashRoom.DoesNotExist:
         pass
 
-    t = html_escape(og_title)
-    d = html_escape(og_desc)
-    share_url = html_escape(share_url)
+    t          = html_escape(og_title)
+    d          = html_escape(og_desc)
+    safe_this  = html_escape(this_url)
+    safe_redir = html_escape(redirect_url)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -443,17 +451,17 @@ async def clash_share_preview(request, room_code):
   <meta property="og:description" content="{d}">
   <meta property="og:image" content="{image_url}">
   <meta property="og:image:alt" content="Ocasia Clash — Live Quiz Battle">
-  <meta property="og:url" content="{share_url}">
+  <meta property="og:url" content="{safe_this}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{t}">
   <meta name="twitter:description" content="{d}">
   <meta name="twitter:image" content="{image_url}">
-  <meta http-equiv="refresh" content="0;url={redirect_url}">
+  <meta http-equiv="refresh" content="0;url={safe_redir}">
   <title>{t}</title>
 </head>
 <body>
   <p>Redirecting to Ocasia Clash…</p>
-  <a href="{redirect_url}">Click here if not redirected</a>
+  <a href="{safe_redir}">Click here if not redirected</a>
 </body>
 </html>"""
 
