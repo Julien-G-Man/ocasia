@@ -198,7 +198,7 @@ async def call_fastapi(
         client = get_async_client(base)
         for attempt in range(1, retries_per_url + 1):
             try:
-                logger.info(
+                logger.debug(
                     "FastAPI request method=%s base=%s path=%s attempt=%s/%s",
                     method,
                     base,

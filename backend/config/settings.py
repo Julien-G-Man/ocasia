@@ -351,6 +351,11 @@ if not DEBUG:
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "silent_paths": {
+            "()": "config.log_filters.SilentPathsFilter",
+        },
+    },
     "formatters": {
         "verbose": {
             "format": "[{levelname}] {name} — {message}",
@@ -362,11 +367,22 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        "console_filtered": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "filters": ["silent_paths"],
+        },
     },
     "loggers": {
         # All Ocasia app code — INFO and above
         "apps": {
             "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Suppress /warmup/ and /health lines from uvicorn access log
+        "uvicorn.access": {
+            "handlers": ["console_filtered"],
             "level": "INFO",
             "propagate": False,
         },
