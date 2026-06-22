@@ -71,6 +71,38 @@
   margin-bottom: 16px;
 }
 
+.results-donate-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--results-surface);
+  border: 1px solid var(--results-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.results-donate-nudge p {
+  margin: 0;
+  color: var(--results-text-secondary, #64748b);
+  font-size: 0.9rem;
+}
+.results-donate-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  background: var(--primary-color);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.results-donate-btn:hover { background: var(--primary-dark); }
+
 .results-summary-card h2,
 .results-actions-card h3 {
   margin: 0 0 8px;

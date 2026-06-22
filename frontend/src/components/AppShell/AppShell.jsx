@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome, faRobot, faBook, faLayerGroup, faFolder,
-  faRightFromBracket, faUser, faBolt,
+  faRightFromBracket, faUser, faBolt, faHeart,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../context/AuthContext';
 import './AppShell.css';
@@ -111,6 +111,11 @@ export default function AppShell({
               </Link>
             ))}
           </nav>
+
+          <Link to="/donate" className="app-shell__donate-link">
+            <FontAwesomeIcon icon={faHeart} className="app-shell__nav-icon" />
+            <span>Support Ocasia</span>
+          </Link>
 
           <div className="app-shell__user">
             <Link to="/profile" className="app-shell__user-info">

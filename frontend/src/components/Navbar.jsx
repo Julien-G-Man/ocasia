@@ -88,8 +88,9 @@ const Navbar = ({ user, brandOnly = false }) => {
                         <li><Link to="/quiz/create">Quiz</Link></li>
                         <li><Link to="/flashcards">Flashcards</Link></li>
                         <li><Link to="/materials/community">Materials</Link></li>
+                        <li><Link to="/auth/login">Login</Link></li>
                         <li className="nav-item-cta">
-                          <Link to="/auth/login" className="btn btn-nav-secondary">Login</Link>
+                          <Link to="/donate" className="btn btn-nav-donate">Support Us</Link>
                         </li>
                       </>
                     )}
@@ -147,6 +148,9 @@ const Navbar = ({ user, brandOnly = false }) => {
                 <li><Link to="/flashcards" onClick={closeMenu}>Flashcards</Link></li>
                 <li><Link to="/materials/community" onClick={closeMenu}>Materials</Link></li>
                 <li><Link to="/auth/login" onClick={closeMenu}>Login</Link></li>
+                <li className="nav-item-cta">
+                  <Link to="/donate" className="btn btn-nav-donate" onClick={closeMenu}>Support Us</Link>
+                </li>
                 <li className="nav-item-cta">
                   <Link to="/auth/signup" className="btn btn-nav-secondary" onClick={closeMenu}>Sign Up</Link>
                 </li>

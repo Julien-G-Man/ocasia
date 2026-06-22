@@ -421,6 +421,45 @@ body {
 .nav-links li a.btn-nav-secondary::after,
 .nav-links li button.btn-nav-secondary::after { display: none; }
 
+.btn-nav-donate {
+  background: var(--primary-color);
+  color: #fff;
+  border: 1px solid var(--primary-color);
+  padding: 8px 22px;
+  min-width: 112px;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-nav-donate:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #fff;
+}
+.main-header:not(.scrolled) .btn-nav-donate {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+.main-header:not(.scrolled) .btn-nav-donate:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+.nav-links li a.btn-nav-donate::after { display: none; }
+
+/* Keep donate button text white in all navbar states (scrolled or not, hover or not) */
+.main-header .nav-links li a.btn-nav-donate,
+.main-header .nav-links li a.btn-nav-donate:hover {
+  color: #fff;
+  opacity: 1;
+}
+
 /* ── Footer ── */
 .main-footer {
   background: linear-gradient(180deg, #0f172a 0%, #111827 100%);

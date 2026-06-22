@@ -302,6 +302,11 @@ const QuizResults = ({ user }) => {
                         </div>
                     </div>
                 </section>
+
+                <section className="results-donate-nudge">
+                    <p>Enjoying Ocasia? Help keep it free for every student.</p>
+                    <Link to="/donate" className="results-donate-btn">Support Ocasia →</Link>
+                </section>
             </div>
             <Footer />
         </>

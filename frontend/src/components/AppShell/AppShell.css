@@ -198,6 +198,26 @@
 
 .app-shell__nav-item.active .app-shell__nav-icon { opacity: 1; }
 
+/* ── Donate link ──────────────────────────────────────────────── */
+.app-shell__donate-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e53e3e;
+  text-decoration: none;
+  background: rgba(229, 62, 62, 0.06);
+  transition: background 0.15s;
+}
+.app-shell__donate-link:hover {
+  background: rgba(229, 62, 62, 0.12);
+}
+.app-shell__donate-link .app-shell__nav-icon { opacity: 0.85; }
+
 /* ── User section ─────────────────────────────────────────────── */
 .app-shell__user {
   padding: 10px 8px 14px;

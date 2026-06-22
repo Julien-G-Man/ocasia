@@ -52,6 +52,7 @@ const Footer = () => {
             <li><Link to="/flashcards">Flashcards</Link></li>
             <li><Link to="/clash">Clash</Link></li>
             <li><Link to="/#exam-analyzer">Exam Analyzer</Link></li>
+            <li><Link to="/donate">Donate</Link></li>
           </ul>
         </div>
         <div className="footer-col footer-form-col">
