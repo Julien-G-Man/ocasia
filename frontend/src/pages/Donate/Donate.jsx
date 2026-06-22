@@ -82,7 +82,7 @@ const Donate = () => {
           {/* ── Right — form panel ── */}
           <div className="donate-right">
             <div className="donate-right-inner">
-              <p className="donate-eyebrow">SUPPORT LAMLA AI</p>
+              <p className="donate-eyebrow">SUPPORT OCASIA</p>
               <h1 className="donate-title">
                 Every <span className="brand-highlight-text">GHS</span> counts.
               </h1>

@@ -27,7 +27,7 @@ var TEST_EMAIL = "your-test-email@gmail.com";   // ← replace with your own add
 
 // ── Site ──────────────────────────────────────────────────────────────────────
 
-var SITE_NAME = "Lamla AI";
+var SITE_NAME = "Ocasia";
 var LOGO_URL  = "https://staticassets.netlify.app/public/logos/lamla_logo.png";
 
 var SITE_URL  = (ENV === "production")

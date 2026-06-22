@@ -81,7 +81,7 @@ function buildUserAcknowledgmentHtml(name, email, title) {
     '<p style="font-size:15px;line-height:1.6;">&#8212; The ' + SITE_NAME + ' Team</p>',
 
     _divider(),
-    _ctaButton('Visit Lamla AI', SITE_URL),
+    _ctaButton('Visit Ocasia', SITE_URL),
     _socials(),
     _copyright(),
     '<p style="font-size:11px;color:#888;text-align:center;margin-top:4px;">This email was sent to ' + esc(email) + ' for your security.</p>',

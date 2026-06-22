@@ -26,10 +26,10 @@ function buildVerificationHtml(userName, verifyLink, realEmail) {
     '<p style="font-size:15px;line-height:1.6;margin-bottom:16px;">Hello ' + esc(userName) + ',</p>',
     '<p style="font-size:15px;line-height:1.6;margin-bottom:16px;">',
     '  Welcome to <strong>' + SITE_NAME + '</strong>.',
-    '  Before you can start using Lamla, please confirm your email address.',
+    '  Before you can start using Ocasia, please confirm your email address.',
     '</p>',
 
-    _highlight('Activate your account to begin using Lamla AI.'),
+    _highlight('Activate your account to begin using Ocasia.'),
 
     _actionButton('Verify Email', verifyLink),
 
@@ -44,7 +44,7 @@ function buildVerificationHtml(userName, verifyLink, realEmail) {
     '<p style="font-size:15px;line-height:1.6;">&#8212; The ' + SITE_NAME + ' Team</p>',
 
     _divider(),
-    _ctaButton('Visit Lamla AI', SITE_URL),
+    _ctaButton('Visit Ocasia', SITE_URL),
     _socials(),
     _copyright(),
 
@@ -102,7 +102,7 @@ function buildPasswordResetHtml(userName, resetLink, realEmail) {
     '<p style="font-size:15px;line-height:1.6;margin-top:16px;">&#8212; The ' + SITE_NAME + ' Team</p>',
 
     _divider(),
-    _ctaButton('Visit Lamla AI', SITE_URL),
+    _ctaButton('Visit Ocasia', SITE_URL),
     _socials(),
     _copyright(),
 
@@ -151,7 +151,7 @@ function _actionButton(label, url) {
   ].join("\n");
 }
 
-/** Secondary yellow CTA — used for footer links (Visit Lamla AI). */
+/** Secondary yellow CTA — used for footer links (Visit Ocasia). */
 function _ctaButton(label, url) {
   return [
     '<div style="text-align:center;margin:16px 0;">',

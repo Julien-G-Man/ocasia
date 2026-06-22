@@ -1,4 +1,4 @@
-# robots.txt for Lamla AI
+# robots.txt for Ocasia
 # https://www.robotstxt.org/robotstxt.html
 
 # Allow all crawlers full access

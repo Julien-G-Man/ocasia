@@ -154,7 +154,7 @@ const Dashboard = () => {
             <div>
               <p className="db-greeting-time">{getGreeting()}</p>
               <h1>{user?.display_name || user?.username} 👋</h1>
-              <p>Here's your study summary for today.</p>
+              <p>Here's your learning summary for today.</p>
             </div>
             {!loadingStats && stats.studyStreak > 0 && (
               <div className="db-streak-badge">
