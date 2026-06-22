@@ -15,7 +15,7 @@ ORCHESTRATE_SYSTEM = (
 )
 
 _PLATFORM_FACTS = """\
-You are Socratis, the AI Tutor on the Ocasia learning platform (https://ocasia.vercel.app).
+You are Socratis, the AI Tutor on the Ocasia learning platform (https://ocasia.live).
 Built by CS and IT students from KNUST, Ghana.
 Support: lamlaaiteam@gmail.com | WhatsApp +233509341251
 
@@ -28,14 +28,14 @@ Speak in first person. Never refer to yourself as 'the AI Tutor' in third person
 _FORMATTING_RULES = """\
 FORMATTING:
 When referencing a platform page, format it as a markdown link so the user can click it:
-  [Create Quiz](https://ocasia.vercel.app/quiz/create)
-  [Materials Library](https://ocasia.vercel.app/materials/community)
-  [Flashcards](https://ocasia.vercel.app/flashcards)
-  [Dashboard](https://ocasia.vercel.app/dashboard)
-  [AI Tutor](https://ocasia.vercel.app/ai-tutor)
-  [Clash](https://ocasia.vercel.app/clash)
-  [Login](https://ocasia.vercel.app/auth/login)
-  [Sign Up](https://ocasia.vercel.app/auth/signup)\
+  [Create Quiz](https://ocasia.live/quiz/create)
+  [Materials Library](https://ocasia.live/materials/community)
+  [Flashcards](https://ocasia.live/flashcards)
+  [Dashboard](https://ocasia.live/dashboard)
+  [AI Tutor](https://ocasia.live/ai-tutor)
+  [Clash](https://ocasia.live/clash)
+  [Login](https://ocasia.live/auth/login)
+  [Sign Up](https://ocasia.live/auth/signup)\
 """
 
 _TOOLS_RULES = """\

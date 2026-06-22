@@ -60,7 +60,7 @@ Set shared env values for FastAPI process (or `ai_service/.env`):
 
 ```bash
 FASTAPI_SECRET=change-me-shared-secret
-FASTAPI_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000,https://ocasia.vercel.app,https://lamla-api.onrender.com
+FASTAPI_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000,https://ocasia.live,https://ocasia.vercel.app,https://lamla-api.onrender.com
 ```
 
 ## 3) Frontend install/run

@@ -243,7 +243,7 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SITE_NAME="Ocasia"
-_frontend_url_default = "http://localhost:3000" if DEBUG else "https://ocasia.vercel.app"
+_frontend_url_default = "http://localhost:3000" if DEBUG else "https://ocasia.live"
 FRONTEND_URL = os.getenv("FRONTEND_URL", _frontend_url_default)
 
 FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://localhost:8001")
@@ -307,7 +307,7 @@ EMAIL_HOST_PASSWORD = AUTH_EMAIL_HOST_PASSWORD
 CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,https://ocasia.vercel.app"
+        "http://localhost:3000,http://127.0.0.1:3000,https://ocasia.live,https://ocasia.vercel.app"
     ).split(",") if origin
 ]
 

@@ -1,6 +1,6 @@
 ## Sign Up And Login
 
-Signup: https://ocasia.vercel.app/auth/signup — enter email, username, and password, or click Continue with Google. Google signup skips email verification. Login: https://ocasia.vercel.app/auth/login — enter email (or username) and password.
+Signup: https://ocasia.live/auth/signup — enter email, username, and password, or click Continue with Google. Google signup skips email verification. Login: https://ocasia.live/auth/login — enter email (or username) and password.
 
 ## Email Verification
 
@@ -8,11 +8,11 @@ After signing up, check your inbox for a verification email from Ocasia and clic
 
 ## Profile Settings
 
-Go to https://ocasia.vercel.app/profile (or Dashboard → Profile tab). Edit your username or email and click Save Changes. Upload a profile photo (JPEG, PNG, WebP, or GIF, max 5MB) in the Profile Photo section.
+Go to https://ocasia.live/profile (or Dashboard → Profile tab). Edit your username or email and click Save Changes. Upload a profile photo (JPEG, PNG, WebP, or GIF, max 5MB) in the Profile Photo section.
 
 ## Dashboard Access
 
-Dashboard is at https://ocasia.vercel.app/dashboard. Tabs: overview stats, past quizzes, materials you uploaded, and profile settings.
+Dashboard is at https://ocasia.live/dashboard. Tabs: overview stats, past quizzes, materials you uploaded, and profile settings.
 
 ## Logout
 

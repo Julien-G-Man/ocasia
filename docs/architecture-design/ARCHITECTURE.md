@@ -347,7 +347,7 @@ question is broadcast. The client never supplies timing — `elapsed_ms` is not 
 
 ## Clash Share Link (OG Preview)
 
-Invitees receive a **frontend URL**: `https://ocasia.vercel.app/clash/share/<code>/`
+Invitees receive a **frontend URL**: `https://ocasia.live/clash/share/<code>/`
 
 When a social media bot crawls that URL, Vercel rewrites it to the Django backend which
 returns an HTML page with Clash-specific Open Graph tags (`clash-fist.jpg` as the preview

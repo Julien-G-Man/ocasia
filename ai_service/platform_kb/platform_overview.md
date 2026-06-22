@@ -31,15 +31,15 @@ Save time by auto-generating quizzes and flashcards from your notes. Get AI expl
 
 ## Quick Access URLs and Website
 
-Platform: https://ocasia.vercel.app
+Platform: https://ocasia.live
 
 Pages:
-- Login: https://ocasia.vercel.app/auth/login
-- Signup: https://ocasia.vercel.app/auth/signup
-- AI Tutor: https://ocasia.vercel.app/ai-tutor
-- Create Quiz: https://ocasia.vercel.app/quiz/create
-- Flashcards: https://ocasia.vercel.app/flashcards
-- Clash: https://ocasia.vercel.app/clash
-- Materials Library: https://ocasia.vercel.app/materials
-- Dashboard: https://ocasia.vercel.app/dashboard
-- Profile: https://ocasia.vercel.app/profile
+- Login: https://ocasia.live/auth/login
+- Signup: https://ocasia.live/auth/signup
+- AI Tutor: https://ocasia.live/ai-tutor
+- Create Quiz: https://ocasia.live/quiz/create
+- Flashcards: https://ocasia.live/flashcards
+- Clash: https://ocasia.live/clash
+- Materials Library: https://ocasia.live/materials
+- Dashboard: https://ocasia.live/dashboard
+- Profile: https://ocasia.live/profile

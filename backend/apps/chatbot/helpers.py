@@ -175,7 +175,7 @@ def fallback_response(user_message: str) -> str:
         return (
             "Ocasia offers quiz generation, flashcard creation, performance tracking, "
             "and study material uploads (PDF, PPTX, DOCX). "
-            "Visit https://ocasia.vercel.app to explore all features."
+            "Visit https://ocasia.live to explore all features."
         )
     if any(w in msg for w in ["contact", "support", "email"]):
         return (

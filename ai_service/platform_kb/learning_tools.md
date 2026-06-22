@@ -1,26 +1,26 @@
 ## Quiz Generator
 
-Go to https://ocasia.vercel.app/quiz/create. Choose a subject, add content (paste text, upload a file, or paste a YouTube URL), set number of questions (up to 20 MCQ + 10 short answer), difficulty, and time limit. Click Generate Quiz. After finishing, submit to see your score and results. Past quizzes are in your Dashboard.
+Go to https://ocasia.live/quiz/create. Choose a subject, add content (paste text, upload a file, or paste a YouTube URL), set number of questions (up to 20 MCQ + 10 short answer), difficulty, and time limit. Click Generate Quiz. After finishing, submit to see your score and results. Past quizzes are in your Dashboard.
 
 ## Flashcards
 
-Go to https://ocasia.vercel.app/flashcards. Click Create Deck, add content, choose number of cards (1–25) and difficulty, then Generate Flashcards. Save the deck with a title. Study mode shows one card at a time — flip to see the answer, then rate yourself (Again / Hard / Good / Easy). The spaced repetition algorithm schedules future reviews automatically.
+Go to https://ocasia.live/flashcards. Click Create Deck, add content, choose number of cards (1–25) and difficulty, then Generate Flashcards. Save the deck with a title. Study mode shows one card at a time — flip to see the answer, then rate yourself (Again / Hard / Good / Easy). The spaced repetition algorithm schedules future reviews automatically.
 
 ## AI Tutor
 
-Go to https://ocasia.vercel.app/ai-tutor (also /chat or /ai). Type your question and press Enter. You can also attach a file (PDF, DOCX, PPTX, TXT — max 10MB) to ask about its content, or enable web search mode (globe icon) for current information. AI responses stream in real time. No login required for guests.
+Go to https://ocasia.live/ai-tutor (also /chat or /ai). Type your question and press Enter. You can also attach a file (PDF, DOCX, PPTX, TXT — max 10MB) to ask about its content, or enable web search mode (globe icon) for current information. AI responses stream in real time. No login required for guests.
 
 ## Materials Library
 
-Go to https://ocasia.vercel.app/materials to browse community-shared PDFs. Filter by subject using the left sidebar. Click Download to save a file, or Use for Quiz to open it in the Quiz Creator. To upload: click Upload Material (login required), fill in title, description, subject, and select a PDF. Your uploads appear in your Dashboard under the Materials tab.
+Go to https://ocasia.live/materials to browse community-shared PDFs. Filter by subject using the left sidebar. Click Download to save a file, or Use for Quiz to open it in the Quiz Creator. To upload: click Upload Material (login required), fill in title, description, subject, and select a PDF. Your uploads appear in your Dashboard under the Materials tab.
 
 ## Dashboard And Progress
 
-Go to https://ocasia.vercel.app/dashboard. The overview shows total quizzes, average score, study streak, and flashcard decks. A Weak Areas card highlights your lowest-accuracy topics with a Practice button for each. Recent Activity shows a timeline of quizzes, flashcard decks, materials, and Clash games. Sidebar tabs: Dashboard, Past Quizzes, Materials, Profile.
+Go to https://ocasia.live/dashboard. The overview shows total quizzes, average score, study streak, and flashcard decks. A Weak Areas card highlights your lowest-accuracy topics with a Practice button for each. Recent Activity shows a timeline of quizzes, flashcard decks, materials, and Clash games. Sidebar tabs: Dashboard, Past Quizzes, Materials, Profile.
 
 ## Quiz History Page
 
-Go to https://ocasia.vercel.app/quiz (requires login). Shows all past quizzes with subject, score, and date. Guests are redirected to login.
+Go to https://ocasia.live/quiz (requires login). Shows all past quizzes with subject, score, and date. Guests are redirected to login.
 
 ## Weak Area Detection and Spaced Quiz Scheduling
 

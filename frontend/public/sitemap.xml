@@ -4,39 +4,39 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
   <url>
-    <loc>https://ocasia.vercel.app/</loc>
+    <loc>https://ocasia.live/</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://ocasia.vercel.app/assets/og-image.png</image:loc>
+      <image:loc>https://ocasia.live/assets/og-image.png</image:loc>
       <image:title>Lamla AI – AI-Powered Learning Platform</image:title>
     </image:image>
   </url>
 
   <url>
-    <loc>https://ocasia.vercel.app/quiz</loc>
+    <loc>https://ocasia.live/quiz</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://ocasia.vercel.app/flashcards</loc>
+    <loc>https://ocasia.live/flashcards</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://ocasia.vercel.app/chat</loc>
+    <loc>https://ocasia.live/chat</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://ocasia.vercel.app/dashboard</loc>
+    <loc>https://ocasia.live/dashboard</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

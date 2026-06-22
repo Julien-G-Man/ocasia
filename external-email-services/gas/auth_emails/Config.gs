@@ -36,7 +36,7 @@ var SITE_NAME = "Lamla AI";
 var LOGO_URL  = "https://staticassets.netlify.app/public/logos/lamla_logo.png";
 
 var SITE_URL  = (ENV === "production")
-  ? "https://ocasia.vercel.app"
+  ? "https://ocasia.live"
   : "http://localhost:3000";
 
 

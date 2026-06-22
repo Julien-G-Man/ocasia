@@ -1,6 +1,6 @@
 ## What Is Clash
 
-Clash is Ocasia's real-time multiplayer quiz battle. Up to 20 players compete on the same AI-generated questions with a shared countdown timer. Faster correct answers earn more points. The highest total score wins. Access: https://ocasia.vercel.app/clash
+Clash is Ocasia's real-time multiplayer quiz battle. Up to 20 players compete on the same AI-generated questions with a shared countdown timer. Faster correct answers earn more points. The highest total score wins. Access: https://ocasia.live/clash
 
 ## How To Host A Clash Room
 

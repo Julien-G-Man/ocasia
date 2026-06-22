@@ -124,8 +124,8 @@ import { GoogleLogin } from '@react-oauth/google';
 **Authorized JavaScript origins:**
 ```
 http://localhost:3000
+https://ocasia.live
 https://ocasia.vercel.app
-https://yourdomain.com
 ```
 
 **Authorized redirect URIs** (optional for token exchange flow):
