@@ -34,6 +34,15 @@ Use this before every production deploy.
 - `GET /health` works on FastAPI service.
 - Frontend warmup runs at load and every 10 minutes.
 
+## Payments (Paystack)
+
+- `PAYSTACK_SECRET_KEY` (live key — `sk_live_...`) and `PAYSTACK_PUBLIC_KEY` (`pk_live_...`) are set in Render environment.
+- Paystack webhook URL in the Paystack dashboard must include a trailing slash:
+  ```
+  https://<your-api>.onrender.com/api/subscriptions/webhook/
+  ```
+  Without the trailing slash, Django's `APPEND_SLASH` redirects POST → GET (301) and the webhook is never received. The backend also registers the no-slash path as a fallback, but the Paystack dashboard URL should always use the slash.
+
 ## Smoke Tests
 
 - Login/signup flow succeeds (email/username + password).
@@ -48,6 +57,13 @@ Use this before every production deploy.
   3. User A starts the clash — both see 3-2-1 countdown and first question.
   4. Both submit answers — `answer_confirmed` received, leaderboard updates.
   5. Game completes — final rankings shown on results page.
+- **Donation smoke test:**
+  1. Visit `/donate` as a guest — form loads, "Support Us" button visible in navbar.
+  2. Enter an amount (min GHS 5) and email, submit — redirected to Paystack hosted page.
+  3. Complete a real or test payment — redirected to `/donate/thank-you`.
+  4. Thank-you page shows "Payment received" and donor's name/amount.
+  5. Check Render logs for `Webhook event: charge.success ref=<ref>` and `Donation <ref> confirmed`.
+  6. Cancel a payment mid-flow — thank-you page shows "Payment cancelled, no charge was made."
 
 ## Error Handling
 

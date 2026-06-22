@@ -6,6 +6,44 @@
 - Keep Django and FastAPI `FASTAPI_SECRET` synchronized and private.
 - Keep CORS and CSRF allowlists explicit in production.
 
+## Security Fixes Applied - 2026-06-22
+
+Eight vulnerabilities fixed. All are now resolved in the codebase.
+
+### 1. Missing auth on quiz generation endpoints
+
+`generate_quiz_api_async` and `extract_youtube_transcript` in `backend/apps/quiz/async_views.py` were publicly accessible — any unauthenticated caller could trigger AI inference. Fixed: `_get_authenticated_user_async()` call added at the top of both handlers before any processing.
+
+### 2. Missing auth on file text extraction
+
+`ajax_extract_text` in `backend/apps/quiz/extract_text.py` accepted file uploads with no auth check. Fixed: `_require_auth()` async helper added using `sync_to_async(TokenAuthentication().authenticate)`.
+
+### 3. Missing auth on quiz download
+
+`download_quiz_results` in `backend/apps/quiz/download_helpers.py` returned PDF/DOCX/CSV exports with no auth guard. Fixed: synchronous `TokenAuthentication().authenticate(request)` check added at entry.
+
+### 4. Missing auth on chatbot messages
+
+`backend/apps/chatbot/async_views.py` resolved the session-user but did not reject anonymous callers. Fixed: explicit `if not user: return 401` guard added.
+
+### 5. VerifyEmailView lacked explicit AllowAny
+
+`VerifyEmailView` relied on global DRF default instead of `AllowAny`. Fixed: `permission_classes = [AllowAny]` added explicitly.
+
+### 6. Clash results IDOR
+
+Any authenticated user who knew a room code could call `/api/clash/results/<code>/` and receive all questions, correct answers, and every participant's answer history. Fixed: added participant membership check — non-participants receive 403.
+
+### 7. PII leaked in server logs via print() statements
+
+`SignupView`, `LoginView`, and `LogoutView` printed user emails directly to stdout (visible in Render logs, shareable log exports). Fixed: all three `print()` calls removed. Events are now silent unless an error occurs.
+
+### 8. Paystack amount not verified on confirmation
+
+`verify_donation` trusted the locally-stored `donation.amount` without cross-checking the amount Paystack actually charged. Fixed: `confirmed_amount = data["amount"] / 100` is now compared against the stored amount; mismatch returns HTTP 402 and logs a warning.
+
+---
+
 ## Security Review Findings - 2026-05-28
 
 This section records vulnerabilities and security gaps found by static review of the repository. Severity reflects likely production impact if the affected paths are reachable from the public web.
@@ -338,11 +376,27 @@ Before a reference is interpolated into a Paystack API URL it is validated again
 - **Amount:** Minimum GHS 5, maximum GHS 10,000. Enforced in the view before any Paystack call.
 - **Email (anonymous donors):** Validated with `django.core.validators.validate_email` before being sent to Paystack.
 
+### Amount Verification
+
+`verify_donation` compares the amount Paystack reports (`data["amount"] / 100`) against the amount stored at initiation time. A mismatch is rejected with HTTP 402 and logged as a warning. This prevents scenarios where a modified or replayed request could confirm a donation for a different amount than what was charged.
+
+### Stale Pending Donations
+
+Donations that remain `STATUS_PENDING` for more than 30 minutes are auto-failed on the next verify call. This covers cases where a user abandons the flow before being redirected to Paystack and the thank-you page is never visited.
+
+### Abandoned Payment Handling
+
+A `charge.abandoned` webhook handler marks pending donations as `STATUS_FAILED` when Paystack fires the event (typically hours after an abandoned payment session). This is the async complement to the stale-donation check in the verify endpoint.
+
 ### Idempotency & Race Safety
 
 `mark_donation_paid` uses `select_for_update()` inside `transaction.atomic()`. This acquires a DB-level row lock so that duplicate webhook deliveries or a simultaneous verify + webhook cannot both confirm the same donation.
 
 `PaymentHistory.get_or_create` on the unique `reference` field provides a second deduplication layer at the audit trail level.
+
+### Webhook URL Redirect Risk
+
+Django's `APPEND_SLASH=True` will redirect a POST to a URL without a trailing slash with HTTP 301. Browsers follow 301 as GET, which causes the webhook endpoint to return 405. To avoid this, both `/api/subscriptions/webhook/` and `/api/subscriptions/webhook` are registered in `urls.py`. The Paystack dashboard webhook URL must use the trailing-slash form.
 
 ### Audit Trail
 

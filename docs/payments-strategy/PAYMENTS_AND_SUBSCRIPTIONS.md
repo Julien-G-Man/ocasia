@@ -88,16 +88,28 @@ any documents. Documents are only required to go live with real money.
 
 ## Phase 1: Voluntary Donations
 
-### Status: SHIPPED (2026-04-15)
+### Status: LIVE (2026-06-22)
+
+Phase 1 is fully live in production with real payments. Paystack account is activated, live keys are on Render, and the end-to-end flow has been tested with a real GHS transaction (authenticated + anonymous, webhook confirmed).
 
 **What was built:**
 
 Backend — `backend/apps/subscriptions/`:
 - `models.py` — `Donation` model (user FK nullable, amount, reference, status, email, paid_at, created_at)
-- `paystack.py` — thin wrapper for Paystack Initialize + Verify Transaction API calls
-- `views.py` — three endpoints (initiate, verify, webhook) with signature verification
-- `urls.py`, `admin.py`, `apps.py`, `migrations/0001_initial.py`
+- `paystack.py` — thin wrapper for Paystack Initialize + Verify Transaction API calls (timeout: 15s)
+- `views.py` — three endpoints: initiate, verify, webhook
+- `helpers.py` — `mark_donation_paid` (idempotent, row-locked), `generate_reference`, `WEBHOOK_HANDLERS`
+- `urls.py` registers both `/webhook/` and `/webhook` (no trailing slash) — Paystack sends without slash; Django's `APPEND_SLASH` would redirect POST→GET which breaks webhook delivery
+- `admin.py`, `apps.py`, `migrations/`
 - Registered in `INSTALLED_APPS` and mounted at `/api/subscriptions/`
+
+Security and reliability hardening added post-launch:
+- `verify_donation` compares Paystack's confirmed amount against stored amount — mismatch is rejected
+- `verify_donation` short-circuits immediately for already-resolved donations (no redundant Paystack call)
+- Stale pending donations older than 30 minutes are auto-failed on next verify call
+- `charge.abandoned` webhook handler added — Paystack fires this hours after an abandoned session
+- `DonateThankyou.jsx` 15-second timeout prevents users being stuck forever if backend is down
+- Cancelled payments return `{"status": "abandoned"}` (200, not 402) so frontend shows "Payment cancelled, no charge was made" instead of "Something went wrong"
 
 User model (`backend/apps/accounts/models.py`):
 - Added `is_donor = BooleanField(default=False)` — set once on donation confirmation, never unset
@@ -105,12 +117,25 @@ User model (`backend/apps/accounts/models.py`):
 - `user_to_dict` updated to include `is_donor` in all user payloads
 
 Frontend:
-- `frontend/src/pages/Donate/Donate.jsx` — donation form with suggested amounts, anonymous email field, redirects to Paystack
-- `frontend/src/pages/Donate/DonateThankyou.jsx` — verifies payment on load, shows success/failure
+- `frontend/src/pages/Donate/Donate.jsx` — donation form with suggested amounts, anonymous email field, redirects to Paystack hosted payment page
+- `frontend/src/pages/Donate/DonateThankyou.jsx` — verifies payment on load, shows success / cancelled / failed states with appropriate messaging
 - Routes: `/donate` and `/donate/thank-you`
-- `frontend/src/services/donations.js` — `initiateDonation`, `verifyDonation`
+- `frontend/src/services/payments.js` — `initiateDonation`, `verifyDonation`
 
-Settings: `PAYSTACK_PUBLIC_KEY` and `PAYSTACK_SECRET_KEY` added to `settings.py` (read from env).
+Donate button placements:
+- **Navbar** — unauthenticated users only: solid blue "Support Us" button, right of Login. Not shown to logged-in users (they have the sidebar link).
+- **AppShell sidebar** — "Support Ocasia" with heart icon, above the user section. Visible to all authenticated users on every page.
+- **Quiz Results page** — nudge bar after the rating section: "Enjoying Ocasia? Help keep it free for every student."
+- **Footer** — Quick Links column
+
+Settings: `PAYSTACK_PUBLIC_KEY` and `PAYSTACK_SECRET_KEY` in `settings.py` (read from env). Live keys active on Render.
+
+**Critical deployment note:**
+The Paystack webhook URL registered in the dashboard must include a trailing slash:
+```
+https://your-api.onrender.com/api/subscriptions/webhook/
+```
+Without it, Django's `APPEND_SLASH` redirects POST → GET (301), and the webhook endpoint returns 405. The code now also accepts the URL without a trailing slash as a fallback.
 
 **What was intentionally deferred:**
 - Donor badge / "Supporter" visual badge — deferred until social profiles and

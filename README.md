@@ -18,6 +18,7 @@ performance tracking. Built by students at KNUST, Ghana.
 | Embeddings | OpenAI `text-embedding-3-small` | Document chunking → vector search |
 | Primary AI | OpenAI | Tool use, agent loop, content generation |
 | AI fallbacks | Claude, NVIDIA NIM, Azure OpenAI, DeepSeek, Gemini, HuggingFace | Provider cascade on failure |
+| Payments | Paystack | Donation payment processing — initiate, verify, webhook |
 | File storage | Cloudinary | Material images and uploaded files — served via Cloudinary CDN |
 | Hosting | Render (Django + FastAPI), Vercel (React) | Production deployment |
 
