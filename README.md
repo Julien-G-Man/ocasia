@@ -13,12 +13,12 @@ performance tracking. Built by students at KNUST, Ghana.
 | AI service | FastAPI + Uvicorn | Agent loop, tool calling, LLM calls, vector indexing |
 | Database | PostgreSQL (Neon) | All relational data |
 | Vector database | Upstash Vector | Document chunk embeddings for chatbot RAG |
-| Cache / channel layer | Redis (Upstash Redis) | Django Channels pub/sub for Clash WebSockets |
+| Cache / channel layer | Redis (Upstash Redis) | Django Channels WebSocket pub/sub (Clash) + view-level response caching (dashboard, quiz, flashcards, admin stats) |
 | Realtime | Django Channels + ASGI | WebSocket connections for live Clash game |
 | Embeddings | OpenAI `text-embedding-3-small` | Document chunking → vector search |
-| Primary AI | Claude (Anthropic) | Tool use, agent loop, content generation |
-| AI fallbacks | NVIDIA NIM, Azure OpenAI, DeepSeek, Gemini, HuggingFace | Provider cascade on failure |
-| File storage | In-request only | Files extracted in Django, not persisted to disk |
+| Primary AI | OpenAI | Tool use, agent loop, content generation |
+| AI fallbacks | Claude, NVIDIA NIM, Azure OpenAI, DeepSeek, Gemini, HuggingFace | Provider cascade on failure |
+| File storage | Cloudinary | Material images and uploaded files — served via Cloudinary CDN |
 | Hosting | Render (Django + FastAPI), Vercel (React) | Production deployment |
 
 ## Start Here
@@ -40,6 +40,7 @@ Browser
   │
   └─── HTTPS ──► Render (Django :8000)
                   ├── auth, quiz, flashcards, dashboard, chatbot, clash views
+                  ├── material uploads ──► Cloudinary (file storage + CDN)
                   ├── ws://.../ws/clash/:code/  ──► Django Channels
                   │                                   └── Upstash Redis (channel layer)
                   └── X-Internal-Secret ──► Render (FastAPI :8001)
