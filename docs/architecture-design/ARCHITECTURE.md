@@ -223,6 +223,43 @@ Django cache  (live game state per room, TTL 2h)
 PostgreSQL  (ClashRoom, ClashParticipant — persisted at game end)
 ```
 
+## File Storage (Cloudinary)
+
+Material images and uploaded files are stored in Cloudinary and served via its CDN.
+Django handles the upload logic; files are never written to local disk.
+
+```
+React (FormData)
+  │  POST /api/materials/upload/
+  ▼
+Django materials view
+  ├── Validate file
+  ├── Upload to Cloudinary → returns CDN URL
+  └── Store URL in Material.file_url (PostgreSQL)
+```
+
+---
+
+## Redis Caching (View-Level)
+
+In addition to the channel layer, Redis is used for response-level caching via Django's
+`cache` framework (`from django.core.cache import cache`).
+
+| Cache key pattern | TTL | Busted when |
+|---|---|---|
+| `dash:stats:{user_id}` | 60s | User submits a quiz |
+| `quiz:hist:{user_id}` | 60s | User submits a quiz |
+| `quiz:weak:{user_id}` | 120s | User submits a quiz |
+| `quiz:due:{user_id}` | 60s | User submits a quiz |
+| `flash:hist:{user_id}` | 120s | User saves a flashcard deck |
+| `admin:stats` | 120s | Any quiz submitted or deck saved |
+| `admin:trends:{days}` | 120s | Not explicitly busted (short TTL sufficient) |
+
+All bust operations use `cache.delete_many([...])` immediately after the write that
+invalidates them. Async views wrap this in `await sync_to_async(cache.delete_many)(...)`.
+
+---
+
 ### Channel Layer
 
 Configured in `settings.py` when `REDIS_URL` env var is set:

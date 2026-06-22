@@ -25,6 +25,8 @@
 | Spaced Quiz Scheduling (SM-2 on topics) | ✅ Live | — |
 | Chatbot user performance awareness | ✅ Live | — |
 | Exam Simulation Mode (flag) | ✅ Live (backend) | Frontend UX not built yet |
+| Clash — live multiplayer quiz battles | ✅ Live | — |
+| Redis view-level caching (dashboard, quiz, flashcards) | ✅ Live | — |
 
 ---
 
@@ -128,6 +130,8 @@ This loop — fully closed — is what turns a quiz tool into a tutor.
 ✅ SHIPPED   Socratic tutor mode (Tier 2)
 ✅ SHIPPED   Chatbot tool calling + SSE streaming (chatbot enhancements)
 ✅ SHIPPED   Agentic inline quiz creation + quiz card persistence
+✅ SHIPPED   Clash — live multiplayer quiz battles (Tier 5)
+✅ SHIPPED   Redis view-level caching — dashboard, quiz, flashcard endpoints
 
 ⏳ NEXT      Exam simulation mode — frontend UX (Tier 1)
 ⏳ NEXT      Daily study plan (Tier 1)
@@ -138,5 +142,4 @@ This loop — fully closed — is what turns a quiz tool into a tutor.
 ⏳           Celery task queue + per-user daily LLM budget (Tier 3)
 
 Ongoing     Concept tagging, peer challenges, study groups (Tier 3–4)
-After 200 MAU  Quiz Battle (Tier 5)
 ```

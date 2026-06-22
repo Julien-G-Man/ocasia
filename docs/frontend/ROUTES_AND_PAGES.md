@@ -115,9 +115,12 @@ Aliases: `/ai`, `/chat`, `/chatbot` → all redirect to `/ai-tutor`
 | Route | Component | Notes |
 |---|---|---|
 | `/clash` | ClashCreate | Toggle between **Host a Room** and **Join a Room**. `?join=CODE` auto-switches to the join tab and pre-fills the room code (used by lobby share links). |
+| `/clash/history` | ClashHistory | Current user's finished clash list — table view styled like admin dashboard. Links to detail. |
+| `/clash/history/:code` | ClashHistoryDetail | Detail for one past clash — meta stats, leaderboard, answer review. Uses AppShell sidebar. |
+| `/clash/share/:code` | ClashShareRedirect | Redirects to `/clash/lobby/:code`. Exists so social share links (crawled by bots for OG preview via Django) land cleanly. |
 | `/clash/lobby/:code` | ClashLobby | Waiting room. Participant list updates live via WebSocket. Host sees Start button; others see waiting status. |
 | `/clash/play/:code` | ClashPlay | Live quiz — 2-column layout (question + options on left, standings sidebar on right). Timer bar, answer feedback, and explanation shown after each question. |
-| `/clash/results/:code` | ClashResults | Final results — 2-column layout (podium + personal result on left, full leaderboard on right). |
+| `/clash/results/:code` | ClashResults | Final results — podium, full leaderboard, and answer review toggle (shows correct answer + explanation per question). |
 
 All Clash routes require authentication.
 

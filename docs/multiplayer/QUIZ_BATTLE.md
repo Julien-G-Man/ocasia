@@ -102,9 +102,10 @@ class ClashParticipant(models.Model):
 |---|---|---|---|
 | `POST` | `/api/clash/create/` | User | Create room, generate questions via FastAPI. Body: `{subject, difficulty, num_questions, time_per_question, study_text?}`. Returns `{room_code, …}` |
 | `POST` | `/api/clash/join/` | User | Join a waiting room. Body: `{room_code}`. Returns room info + participant list |
-| `GET`  | `/api/clash/my/` | User | Current user's finished Clash participations — used by user dashboard recent activity. Returns `{clashes: [{room_code, subject, difficulty, num_questions, score, rank, player_count, is_host, finished_at}]}` |
+| `GET`  | `/api/clash/my/` | User | Current user's finished Clash history list. Returns `{clashes: [{room_code, subject, difficulty, num_questions, score, rank, player_count, is_host, finished_at}]}` |
+| `GET`  | `/api/clash/my/{code}/` | User | Detail for one past clash the user participated in. Returns room meta, `questions`, `my_answers [{q_idx, correct, points}]`, `my_rank`, `my_score`, and full `participants` leaderboard. 403 if user was not a participant. |
 | `GET`  | `/api/clash/{code}/` | User | Room detail — used by lobby on load |
-| `GET`  | `/api/clash/{code}/results/` | User | Final leaderboard after game ends |
+| `GET`  | `/api/clash/{code}/results/` | User | Final leaderboard after game ends. Response includes `rankings`, `questions` (full MCQ list), and `my_answers [{q_idx, correct, points}]` for the answer review UI. |
 | `GET`  | `/api/clash/admin/` | Admin | All rooms newest-first with summary stats (room_code, subject, difficulty, participant count, winner, status, timestamps) |
 | `GET`  | `/api/clash/admin/{code}/` | Admin | Full detail for one room — metadata + full participant leaderboard (score, correct, accuracy, rank) |
 
@@ -246,10 +247,13 @@ remaining players.
 
 | Route | Component | Notes |
 |---|---|---|
-| `/clash` | `ClashCreate` | Host/Join tab toggle. `?join=CODE` auto-fills the join tab |
+| `/clash` | `ClashCreate` | Host/Join tab toggle. `?join=CODE` auto-fills the join tab. "My History →" button in hero. |
+| `/clash/history` | `ClashHistory` | User's finished clash list — admin-style table. |
+| `/clash/history/:code` | `ClashHistoryDetail` | Past clash detail — meta stats, leaderboard, answer review. AppShell sidebar. |
+| `/clash/share/:code` | `ClashShareRedirect` | Frontend redirect to lobby; OG preview served by Django at the same path. |
 | `/clash/lobby/:code` | `ClashLobby` | Live participant list via WebSocket. Host sees Start button |
 | `/clash/play/:code` | `ClashPlay` | 2-column desktop layout (question + standings sidebar) |
-| `/clash/results/:code` | `ClashResults` | 2-column desktop layout (podium on left, leaderboard on right) |
+| `/clash/results/:code` | `ClashResults` | Podium, leaderboard, and answer review toggle (correct answer + explanation per question) |
 
 All Clash routes require authentication.
 
