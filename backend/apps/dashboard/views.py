@@ -77,6 +77,15 @@ class DashboardStatsView(APIView):
             'total_questions': tp.total_questions,
         } for tp in weak_qs]
 
+        from apps.clash.models import ClashParticipant, ClashRoom
+        clash_agg = ClashParticipant.objects.filter(
+            user=user, room__status=ClashRoom.FINISHED
+        ).aggregate(
+            total=dm.Count('id'),
+            wins=dm.Count('id', filter=dm.Q(rank=1)),
+            best_rank=dm.Min('rank'),
+        )
+
         result = {
             'total_quizzes': quiz_stats['total'] or 0,
             'average_score': round(float(quiz_stats['avg'] or 0), 1),
@@ -86,6 +95,9 @@ class DashboardStatsView(APIView):
             'total_ratings': int(feedback_stats.get('total') or 0),
             'average_experience_rating': round(float(feedback_stats.get('average') or 0), 2),
             'weak_areas': weak_areas,
+            'total_clashes': int(clash_agg['total'] or 0),
+            'clash_wins': int(clash_agg['wins'] or 0),
+            'best_rank': clash_agg['best_rank'],
         }
         cache.set(cache_key, result, timeout=60)
         return Response(result)

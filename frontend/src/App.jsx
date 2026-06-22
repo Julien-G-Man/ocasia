@@ -36,6 +36,8 @@ import MaterialsMine from "./pages/Materials/MyMaterials";
 import MaterialUpload from "./pages/Materials/MaterialUpload";
 import NotFound from "./pages/NotFound/NotFound";
 import Donate from "./pages/Donate/Donate";
+import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
+import TermsOfService from "./pages/Legal/TermsOfService";
 import DonateThankyou from "./pages/Donate/DonateThankyou";
 import ClashCreate from "./pages/Clash/ClashCreate";
 import ClashLobby from "./pages/Clash/ClashLobby";
@@ -47,6 +49,19 @@ import AdminClash from "./pages/Dashboards/AdminClash";
 import AdminClashDetail from "./pages/Dashboards/AdminClashDetail";
 
 const WAKE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      const el = document.getElementById(hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+  return null;
+}
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -88,6 +103,7 @@ function App() {
       <ThemeProvider>
       <AuthProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
             {/* <Route path="/about" element={<About />} /> */}
@@ -130,6 +146,10 @@ function App() {
 
             <Route path="/donate" element={<Donate />} />
             <Route path="/donate/thank-you" element={<DonateThankyou />} />
+
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/cookie-policy" element={<Navigate to="/privacy-policy#cookies" replace />} />
 
             <Route path="/materials" element={<Navigate to="/materials/community" replace />} />
             <Route path="/materials/community" element={<Materials />} />

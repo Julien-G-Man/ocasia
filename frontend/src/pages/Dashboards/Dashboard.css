@@ -1,5 +1,84 @@
 @import './dashboard-shared.css';
 
+/* ── Clash performance strip ─────────────────────────────────── */
+.db-clash-strip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: var(--radius-2xl);
+  padding: 16px 24px;
+  margin-bottom: var(--spacing-3xl);
+  flex-wrap: wrap;
+}
+
+.db-clash-strip-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.db-clash-strip-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.db-clash-strip-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+  padding: 4px 12px;
+}
+
+.db-clash-strip-stat strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.db-clash-strip-stat span {
+  font-size: 0.72rem;
+  color: #a5b4fc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.db-clash-strip-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(165, 180, 252, 0.2);
+}
+
+.db-clash-strip .db-btn-ghost {
+  background: #fff;
+  border-color: #fff;
+  color: #1e1b4b;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.db-clash-strip .db-btn-ghost:hover {
+  background: #fff;
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .db-clash-strip { gap: 14px; padding: 14px 16px; }
+  .db-clash-strip-stat strong { font-size: 1.25rem; }
+}
+
 /* ── Quiz history rows ───────────────────────────────────────── */
 .db-quiz-row {
   display: flex;

@@ -42,4 +42,19 @@
     <priority>0.7</priority>
   </url>
 
+
+  <url>
+    <loc>https://ocasia.live/privacy-policy</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://ocasia.live/terms-of-service</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

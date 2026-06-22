@@ -33,6 +33,11 @@ const Dashboard = () => {
     studyStreak: 0,
     totalFlashcards: 0,
   });
+  const [clashStats, setClashStats] = useState({
+    totalClashes: 0,
+    clashWins: 0,
+    bestRank: null,
+  });
   const [weakAreas, setWeakAreas] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -65,6 +70,11 @@ const Dashboard = () => {
           averageScore: statsData.average_score,
           studyStreak: statsData.study_streak,
           totalFlashcards: statsData.total_flashcard_sets,
+        });
+        setClashStats({
+          totalClashes: statsData.total_clashes || 0,
+          clashWins: statsData.clash_wins || 0,
+          bestRank: statsData.best_rank ?? null,
         });
         setWeakAreas(statsData.weak_areas || []);
 
@@ -178,6 +188,34 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+
+          {!loadingStats && clashStats.totalClashes > 0 && (
+            <div className="db-clash-strip">
+              <div className="db-clash-strip-label">
+                <FontAwesomeIcon icon={faBolt} />
+                <span>Clash Performance</span>
+              </div>
+              <div className="db-clash-strip-stats">
+                <div className="db-clash-strip-stat">
+                  <strong>{clashStats.totalClashes}</strong>
+                  <span>Played</span>
+                </div>
+                <div className="db-clash-strip-divider" />
+                <div className="db-clash-strip-stat">
+                  <strong>{clashStats.clashWins}</strong>
+                  <span>Wins</span>
+                </div>
+                <div className="db-clash-strip-divider" />
+                <div className="db-clash-strip-stat">
+                  <strong>{clashStats.bestRank != null ? `#${clashStats.bestRank}` : '—'}</strong>
+                  <span>Best Rank</span>
+                </div>
+              </div>
+              <button className="db-btn db-btn-ghost db-btn-sm" onClick={() => navigate('/clash/history')}>
+                View History
+              </button>
+            </div>
+          )}
 
           <div className="db-lower-grid">
             {/* Left column: Quick Actions + Weak Areas */}

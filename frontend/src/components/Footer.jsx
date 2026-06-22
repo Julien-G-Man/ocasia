@@ -87,9 +87,9 @@ const Footer = () => {
       <div className="footer-bottom">
         <p>&copy; 2026 Ocasia. All rights reserved.</p>
         <div className="legal-links">
-          <Link to="#/privacy-policy">Privacy Policy</Link>
-          <Link to="#/terms-of-service">Terms of Service</Link>
-          <Link to="#/cookie-policy">Cookie Policy</Link>
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <Link to="/terms-of-service">Terms of Service</Link>
+          <Link to="/privacy-policy#cookies">Cookie Policy</Link>
         </div>
       </div>
     </footer>

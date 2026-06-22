@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # ── Reference generation ──────────────────────────────────────────────────────
 
 def generate_reference():
-    return f"lamla-{uuid.uuid4().hex[:16]}"
+    return f"ocasia-{uuid.uuid4().hex[:16]}"
 
 
 # ── Payment confirmation ──────────────────────────────────────────────────────
