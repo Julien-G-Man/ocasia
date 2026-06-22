@@ -17,12 +17,15 @@ const DonateThankyou = () => {
   useEffect(() => {
     if (!reference) { setState("no_ref"); return; }
 
+    const timeout = setTimeout(() => setState("failed"), 15000);
+
     verifyDonation(reference)
       .then(({ data }) => {
         if (data.status === "success") { setAmount(data.amount); setState("success"); }
         else setState("failed");
       })
-      .catch(() => setState("failed"));
+      .catch(() => setState("failed"))
+      .finally(() => clearTimeout(timeout));
   }, [reference]);
 
   return (
@@ -51,12 +54,14 @@ const DonateThankyou = () => {
                 everything to us.
               </p>
               <div className="ty-actions">
-                <Link to="/dashboard" className="ty-btn-primary">
-                  Back to Dashboard →
-                </Link>
-                <Link to="/quiz/create" className="ty-btn-secondary">
-                  Start a Quiz
-                </Link>
+                {user ? (
+                  <Link to="/dashboard" className="ty-btn-primary">Back to Dashboard →</Link>
+                ) : (
+                  <Link to="/" className="ty-btn-primary">Go to Home →</Link>
+                )}
+                {user && (
+                  <Link to="/quiz/create" className="ty-btn-secondary">Start a Quiz</Link>
+                )}
               </div>
             </div>
             <div className="ty-right">
