@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../../components/AppShell/AppShell";
-import "./Clash.css";
+import "../Dashboards/AdminDashboard.css";
 
 const DJANGO_API_URL = import.meta.env.VITE_DJANGO_API_URL;
 
-const MEDAL_EMOJI = { 1: "🥇", 2: "🥈", 3: "🥉" };
-
 const DIFF_BADGE = {
-  easy:   { label: "Easy",   color: "#16a34a" },
-  medium: { label: "Medium", color: "#d97706" },
-  hard:   { label: "Hard",   color: "#dc2626" },
+  easy:   "db-badge-green",
+  medium: "db-badge-blue",
+  hard:   "db-badge-gray",
 };
 
 function fmt(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
+  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function ClashHistory() {
@@ -32,88 +30,102 @@ export default function ClashHistory() {
       headers: { Authorization: `Token ${token}` },
     })
       .then(r => r.json())
-      .then(data => {
-        setClashes(data.clashes || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load clash history.");
-        setLoading(false);
-      });
+      .then(data => { setClashes(data.clashes || []); setLoading(false); })
+      .catch(() => { setError("Failed to load clash history."); setLoading(false); });
   }, []); // eslint-disable-line
 
   return (
     <AppShell>
-      <div className="clash-history-page">
-        <div className="clash-history-header">
+      <main className="db-main">
+        <div className="db-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <p className="clash-kicker">Clash</p>
-            <h1 className="clash-page-title">My History</h1>
-            <p className="clash-page-sub" style={{ margin: 0 }}>
-              All the battles you've taken part in.
-            </p>
+            <h1>My Clash History</h1>
+            <p>All the battles you've taken part in.</p>
           </div>
-          <button
-            className="clash-history-new-btn"
-            onClick={() => navigate("/clash")}
-          >
+          <button className="db-btn db-btn-primary db-btn-sm" onClick={() => navigate("/clash")}>
             + New Clash
           </button>
         </div>
 
         {loading ? (
-          <div className="clash-history-empty">
-            <div className="clash-spinner" style={{ margin: "0 auto 12px" }} />
+          <div className="db-card" style={{ textAlign: "center", padding: "48px 24px", color: "var(--text-secondary)" }}>
             <p>Loading history…</p>
           </div>
         ) : error ? (
-          <div className="clash-history-empty">
-            <p style={{ color: "var(--clash-red)" }}>{error}</p>
+          <div className="db-card">
+            <p style={{ color: "var(--color-error)", textAlign: "center", padding: "24px" }}>{error}</p>
           </div>
         ) : clashes.length === 0 ? (
-          <div className="clash-history-empty">
-            <p className="clash-history-empty-icon">⚔️</p>
+          <div className="db-card" style={{ textAlign: "center", padding: "48px 24px", color: "var(--text-secondary)" }}>
+            <p style={{ fontSize: "2em", marginBottom: "8px" }}>⚔️</p>
             <p>You haven't played any clashes yet.</p>
-            <button className="clash-btn-primary" style={{ marginTop: "12px", maxWidth: "240px" }} onClick={() => navigate("/clash")}>
+            <button className="db-btn db-btn-primary" style={{ marginTop: "16px" }} onClick={() => navigate("/clash")}>
               Start a Clash
             </button>
           </div>
         ) : (
-          <div className="clash-history-list">
-            {clashes.map(clash => {
-              const diff = DIFF_BADGE[clash.difficulty] || { label: clash.difficulty, color: "#64748b" };
-              const rankLabel = MEDAL_EMOJI[clash.rank] ?? `#${clash.rank}`;
-              return (
-                <button
-                  key={clash.room_code}
-                  className="clash-history-item"
-                  onClick={() => navigate(`/clash/history/${clash.room_code}`)}
-                >
-                  <div className="clash-history-item-left">
-                    <span className="clash-history-rank">{rankLabel}</span>
-                    <div className="clash-history-meta">
-                      <span className="clash-history-subject">{clash.subject}</span>
-                      <div className="clash-history-tags">
-                        <span className="clash-history-tag" style={{ color: diff.color, borderColor: diff.color }}>
-                          {diff.label}
-                        </span>
-                        <span className="clash-history-tag">{clash.num_questions}Q</span>
-                        <span className="clash-history-tag">{clash.player_count} player{clash.player_count !== 1 ? "s" : ""}</span>
-                        {clash.is_host && <span className="clash-history-tag clash-history-tag-host">Host</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="clash-history-item-right">
-                    <span className="clash-history-score">{clash.score.toLocaleString()} pts</span>
-                    <span className="clash-history-date">{fmt(clash.finished_at)}</span>
-                    <span className="clash-history-arrow">→</span>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="db-table-wrap">
+            <table className="db-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Subject</th>
+                  <th>Difficulty</th>
+                  <th>Questions</th>
+                  <th>Players</th>
+                  <th>Your Rank</th>
+                  <th>Score</th>
+                  <th>Finished</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {clashes.map(c => (
+                  <tr
+                    key={c.room_code}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/clash/history/${c.room_code}`)}
+                  >
+                    <td data-label="Code">
+                      <span style={{ fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-primary)" }}>
+                        {c.room_code}
+                      </span>
+                    </td>
+                    <td data-label="Subject" style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                      {c.subject}
+                    </td>
+                    <td data-label="Difficulty">
+                      <span className={`db-badge ${DIFF_BADGE[c.difficulty] || "db-badge-gray"}`} style={{ textTransform: "capitalize" }}>
+                        {c.difficulty}
+                      </span>
+                    </td>
+                    <td data-label="Questions" style={{ textAlign: "center" }}>{c.num_questions}</td>
+                    <td data-label="Players" style={{ textAlign: "center" }}>{c.player_count}</td>
+                    <td data-label="Your Rank" style={{ textAlign: "center", fontSize: "1.1em" }}>
+                      {c.rank === 1 ? "🥇" : c.rank === 2 ? "🥈" : c.rank === 3 ? "🥉" : `#${c.rank}`}
+                      {c.is_host && (
+                        <span className="db-badge db-badge-blue" style={{ marginLeft: "6px", fontSize: "0.75em" }}>Host</span>
+                      )}
+                    </td>
+                    <td data-label="Score" style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                      {c.score.toLocaleString()} pts
+                    </td>
+                    <td data-label="Finished">{fmt(c.finished_at)}</td>
+                    <td>
+                      <button
+                        className="db-btn db-btn-ghost db-btn-sm"
+                        onClick={e => { e.stopPropagation(); navigate(`/clash/history/${c.room_code}`); }}
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </main>
     </AppShell>
   );
 }
