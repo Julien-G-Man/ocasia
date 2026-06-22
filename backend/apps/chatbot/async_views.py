@@ -56,6 +56,8 @@ async def chatbot_api_async(request):
 
         # 1. Auth + session
         user, session_obj = await _get_or_create_session(request, session_id=session_id)
+        if not user:
+            return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
 
         # 2. Save user message
         await _save_user_message(session_obj, user_message)

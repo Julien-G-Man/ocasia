@@ -53,7 +53,6 @@ class SignupView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
 
             logger.info("New user registered: %s (admin=%s)", user.email, user.is_admin)
-            print("New user registered: %s (admin=%s)", user.email, user.is_admin)
             return Response(
                 {
                     "token": token.key,
@@ -97,7 +96,6 @@ class LoginView(APIView):
         token = Token.objects.create(user=user)
 
         logger.info("User logged in: %s (admin=%s)", user.email, user.is_admin)
-        print("User logged in: %s (admin=%s)", user.email, user.is_admin)
         return Response(
             {"token": token.key, "user": user_to_dict(user)},
             status=status.HTTP_200_OK,
@@ -112,7 +110,6 @@ class LogoutView(APIView):
         try:
             request.user.auth_token.delete()
             logger.info("User logged out: %s", request.user.email)
-            print("User logged out: %s" % request.user.email)
         except Token.DoesNotExist:
             pass
         return Response({"detail": "Logged out successfully."}, status=status.HTTP_200_OK)
@@ -127,6 +124,7 @@ class MeView(APIView):
 
 
 class VerifyEmailView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = VerifyEmailSerializer(data=request.data)

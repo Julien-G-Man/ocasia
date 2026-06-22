@@ -72,8 +72,22 @@ def _on_charge_success(data):
     logger.info("charge.success: donation %s confirmed", reference)
 
 
+def _on_charge_abandoned(data):
+    """Mark a donation as failed when Paystack fires charge.abandoned."""
+    reference = data.get("reference", "")
+    if not reference:
+        return
+    updated = Donation.objects.filter(
+        reference=reference,
+        status=Donation.STATUS_PENDING,
+    ).update(status=Donation.STATUS_FAILED)
+    if updated:
+        logger.info("charge.abandoned: donation %s marked failed", reference)
+
+
 WEBHOOK_HANDLERS = {
-    "charge.success": _on_charge_success,
+    "charge.success":   _on_charge_success,
+    "charge.abandoned": _on_charge_abandoned,
     # Phase 2 — implement and uncomment when subscriptions ship:
     # "subscription.create":    _on_subscription_create,
     # "subscription.disable":   _on_subscription_disable,

@@ -2,9 +2,12 @@ import os
 import docx
 import PyPDF2
 import logging
+from asgiref.sync import sync_to_async
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 
 try:
     import pdfplumber
@@ -12,6 +15,21 @@ except Exception:  # optional dependency
     pdfplumber = None
  
 logger = logging.getLogger(__name__)
+
+
+async def _require_auth(request):
+    try:
+        auth_result = await sync_to_async(
+            TokenAuthentication().authenticate, thread_sensitive=True
+        )(request)
+    except AuthenticationFailed as exc:
+        return None, JsonResponse({"detail": str(exc)}, status=401)
+    if auth_result is None:
+        return None, JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
+    user, _token = auth_result
+    if not user or not user.is_active:
+        return None, JsonResponse({"detail": "Invalid user."}, status=401)
+    return user, None
 
 
 @csrf_exempt
@@ -22,6 +40,10 @@ async def ajax_extract_text(request):
     Matches frontend key: 'slide_file'
     Uses asyncio.to_thread to make blocking I/O operations non-blocking.
     """
+    _user, err = await _require_auth(request)
+    if err:
+        return err
+
     if 'slide_file' not in request.FILES:
         return JsonResponse({'error': 'No file uploaded'}, status=400)
 

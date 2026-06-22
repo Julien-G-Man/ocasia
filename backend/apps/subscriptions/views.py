@@ -2,8 +2,10 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import timedelta
 
 from django.conf import settings
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.views.decorators.csrf import csrf_exempt
@@ -112,6 +114,16 @@ def verify_donation(request):
     if donation.status == Donation.STATUS_SUCCESS:
         return Response({"status": "success", "amount": str(donation.amount)})
 
+    if donation.status == Donation.STATUS_FAILED:
+        return Response({"status": "failed"})
+
+    # Auto-fail stale pending donations (>30 min old) without hitting Paystack
+    if (timezone.now() - donation.created_at) > timedelta(minutes=30):
+        donation.status = Donation.STATUS_FAILED
+        donation.save(update_fields=["status"])
+        logger.info("verify: stale pending donation %s auto-failed", reference)
+        return Response({"status": "failed"})
+
     try:
         result = paystack_client.verify_transaction(reference)
     except Exception as exc:
@@ -120,12 +132,20 @@ def verify_donation(request):
 
     data = result.get("data", {})
     if result.get("status") and data.get("status") == "success":
+        confirmed_amount = data.get("amount", 0) / 100  # pesewas → GHS
+        if round(float(confirmed_amount), 2) != round(float(donation.amount), 2):
+            logger.warning(
+                "Paystack amount mismatch for ref=%s: expected=%s confirmed=%s",
+                reference, donation.amount, confirmed_amount,
+            )
+            return Response({"error": "Payment amount mismatch. Contact support."}, status=status.HTTP_402_PAYMENT_REQUIRED)
         mark_donation_paid(donation)
         return Response({"status": "success", "amount": str(donation.amount)})
 
+    paystack_status = data.get("status", "failed")
     donation.status = Donation.STATUS_FAILED
     donation.save(update_fields=["status"])
-    return Response({"status": data.get("status", "failed")}, status=status.HTTP_402_PAYMENT_REQUIRED)
+    return Response({"status": paystack_status})
 
 
 @csrf_exempt

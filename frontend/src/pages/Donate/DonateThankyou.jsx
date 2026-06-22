@@ -13,6 +13,7 @@ const DonateThankyou = () => {
 
   const [state, setState]   = useState("loading");
   const [amount, setAmount] = useState(null);
+  const [cancelled, setCancelled] = useState(false);
 
   useEffect(() => {
     if (!reference) { setState("no_ref"); return; }
@@ -22,6 +23,7 @@ const DonateThankyou = () => {
     verifyDonation(reference)
       .then(({ data }) => {
         if (data.status === "success") { setAmount(data.amount); setState("success"); }
+        else if (data.status === "abandoned") { setCancelled(true); setState("failed"); }
         else setState("failed");
       })
       .catch(() => setState("failed"))
@@ -82,13 +84,23 @@ const DonateThankyou = () => {
         {state === "failed" && (
           <div className="ty-center ty-failed">
             <div className="ty-status-icon failed">✕</div>
-            <p className="donate-eyebrow">PAYMENT NOT CONFIRMED</p>
-            <h1 className="ty-heading">Something went wrong.</h1>
-            <p className="ty-body">
-              We could not confirm your payment. If you were charged, please
-              contact us with your reference:<br />
-              <code className="ty-ref">{reference}</code>
-            </p>
+            {cancelled ? (
+              <>
+                <p className="donate-eyebrow">PAYMENT CANCELLED</p>
+                <h1 className="ty-heading">No charge was made.</h1>
+                <p className="ty-body">You cancelled the payment. Nothing was deducted from your account.</p>
+              </>
+            ) : (
+              <>
+                <p className="donate-eyebrow">PAYMENT NOT CONFIRMED</p>
+                <h1 className="ty-heading">Something went wrong.</h1>
+                <p className="ty-body">
+                  We could not confirm your payment. If you were charged, please
+                  contact us with your reference:<br />
+                  <code className="ty-ref">{reference}</code>
+                </p>
+              </>
+            )}
             <div className="ty-actions ty-actions--center">
               <Link to="/donate" className="ty-btn-primary">Try again →</Link>
             </div>

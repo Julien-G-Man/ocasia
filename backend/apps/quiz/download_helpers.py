@@ -15,6 +15,8 @@ import logging
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 
 try:
     from reportlab.lib.pagesizes import letter
@@ -39,6 +41,13 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def download_quiz_results(request):
     """Download quiz results as PDF, DOCX, or TXT."""
+    try:
+        auth_result = TokenAuthentication().authenticate(request)
+    except AuthenticationFailed as exc:
+        return JsonResponse({"detail": str(exc)}, status=401)
+    if not auth_result:
+        return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
+
     try:
         data        = json.loads(request.body) if request.body else {}
         results     = data.get('results', {})

@@ -65,6 +65,9 @@ async def _get_authenticated_user_async(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 async def extract_youtube_transcript(request):
+    user, err = await _get_authenticated_user_async(request)
+    if err:
+        return err
     """
     Extract transcript text from a YouTube URL.
     Returns the same shape as ajax-extract-text so the frontend feeds it
@@ -107,9 +110,13 @@ async def extract_youtube_transcript(request):
 async def generate_quiz_api_async(request):
     """
     High-performance async proxy for quiz generation endpoint.
-    
+
     React-facing endpoint to generate a quiz via FastAPI.
     """
+    user, err = await _get_authenticated_user_async(request)
+    if err:
+        return err
+
     try:
         # Parse request
         data = json.loads(request.body) if request.body else {}

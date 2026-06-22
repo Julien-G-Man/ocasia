@@ -376,6 +376,8 @@ async def clash_results(request, room_code):
     )
 
     my_participant = next((p for p in participants if p.user_id == user.id), None)
+    if not my_participant:
+        return JsonResponse({"detail": "You did not participate in this clash."}, status=403)
 
     return JsonResponse({
         "room_code": room.room_code,
@@ -384,7 +386,7 @@ async def clash_results(request, room_code):
         "num_questions": room.num_questions,
         "status": room.status,
         "questions": room.questions or [],
-        "my_answers": my_participant.answers if my_participant else [],
+        "my_answers": my_participant.answers,
         "rankings": [
             {
                 "rank": idx + 1,
