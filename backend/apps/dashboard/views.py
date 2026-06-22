@@ -1,5 +1,6 @@
 import datetime
 import logging
+from django.core.cache import cache
 from django.utils import timezone
 from django.db import models as dm
 from django.db.models import Value, TextField
@@ -44,6 +45,10 @@ class DashboardStatsView(APIView):
 
     def get(self, request):
         user = request.user
+        cache_key = f'dash:stats:{user.id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
 
         quiz_stats = QuizSession.objects.filter(user=user).aggregate(
             total=dm.Count('id'),
@@ -72,7 +77,7 @@ class DashboardStatsView(APIView):
             'total_questions': tp.total_questions,
         } for tp in weak_qs]
 
-        return Response({
+        result = {
             'total_quizzes': quiz_stats['total'] or 0,
             'average_score': round(float(quiz_stats['avg'] or 0), 1),
             'total_flashcard_sets': total_flashcard_sets,
@@ -81,7 +86,9 @@ class DashboardStatsView(APIView):
             'total_ratings': int(feedback_stats.get('total') or 0),
             'average_experience_rating': round(float(feedback_stats.get('average') or 0), 2),
             'weak_areas': weak_areas,
-        })
+        }
+        cache.set(cache_key, result, timeout=60)
+        return Response(result)
 
 
 class AdminDashboardStatsView(APIView):
@@ -89,6 +96,10 @@ class AdminDashboardStatsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request):
+        cached = cache.get('admin:stats')
+        if cached is not None:
+            return Response(cached)
+
         from apps.accounts.models import User
         from apps.flashcards.models import Deck, Flashcard
         from apps.materials.models import Material
@@ -206,7 +217,7 @@ class AdminDashboardStatsView(APIView):
         # Last-24h activity feed for dashboard overview only
         recent_activity_payload, _, _ = _collect_admin_activity(start_at=day_ago, limit=20, offset=0)
 
-        return Response({
+        result = {
             'total_users': total_users,
             'verified_users': verified_users,
             'total_quizzes': quiz_stats['total'] or 0,
@@ -254,7 +265,9 @@ class AdminDashboardStatsView(APIView):
             },
             'avg_response_ms': avg_response_ms,
             'latency_sample_count': latency_sample_count,
-        })
+        }
+        cache.set('admin:stats', result, timeout=120)
+        return Response(result)
 
 
 class AdminUsageTrendsView(APIView):
@@ -273,6 +286,11 @@ class AdminUsageTrendsView(APIView):
         except (TypeError, ValueError):
             days = 14
         days = max(7, min(days, 90))
+
+        cache_key = f'admin:trends:{days}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
 
         today = timezone.now().date()
         start_day = today - datetime.timedelta(days=days - 1)
@@ -313,20 +331,20 @@ class AdminUsageTrendsView(APIView):
             materials.append(materials_map.get(day, 0))
             clashes.append(clashes_map.get(day, 0))
 
-        return Response(
-            {
-                "days": days,
-                "labels": labels,
-                "series": {
-                    "new_users": users,
-                    "quizzes": quizzes,
-                    "decks": decks,
-                    "chat_messages": chats,
-                    "uploaded_materials": materials,
-                    "clashes": clashes,
-                },
-            }
-        )
+        result = {
+            "days": days,
+            "labels": labels,
+            "series": {
+                "new_users": users,
+                "quizzes": quizzes,
+                "decks": decks,
+                "chat_messages": chats,
+                "uploaded_materials": materials,
+                "clashes": clashes,
+            },
+        }
+        cache.set(cache_key, result, timeout=120)
+        return Response(result)
 
 
 class AdminAnonymousUsageView(APIView):

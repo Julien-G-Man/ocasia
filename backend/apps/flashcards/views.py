@@ -3,6 +3,7 @@ import json
 import logging
 import httpx
 from time import perf_counter
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_http_methods
@@ -197,6 +198,7 @@ def save_flashcard_deck(request):
 
             Flashcard.objects.bulk_create(objs)
 
+        cache.delete_many([f'flash:hist:{user.id}', 'admin:stats'])
         return JsonResponse({"deck_id": deck.id}, status=201)
     except Exception:
         logger.exception("Failed to save flashcard deck for user_id=%s", user.id)
@@ -266,6 +268,11 @@ def get_flashcards_history(request):
     if auth_error:
         return auth_error
 
+    cache_key = f'flash:hist:{user.id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+
     try:
         decks = (
             Deck.objects.filter(user=user)
@@ -273,20 +280,20 @@ def get_flashcards_history(request):
             .order_by("-created_at")[:30]
         )
 
-        return JsonResponse(
-            {
-                "history": [
-                    {
-                        "id": d.id,
-                        "title": d.title,
-                        "subject": d.subject,
-                        "card_count": d.card_count,
-                        "created_at": d.created_at.isoformat(),
-                    }
-                    for d in decks
-                ]
-            }
-        )
+        result = {
+            "history": [
+                {
+                    "id": d.id,
+                    "title": d.title,
+                    "subject": d.subject,
+                    "card_count": d.card_count,
+                    "created_at": d.created_at.isoformat(),
+                }
+                for d in decks
+            ]
+        }
+        cache.set(cache_key, result, timeout=120)
+        return JsonResponse(result)
     except Exception:
         logger.exception("Failed to fetch flashcards history for user_id=%s", user.id)
         return JsonResponse({"error": "Failed to fetch flashcards history"}, status=500)

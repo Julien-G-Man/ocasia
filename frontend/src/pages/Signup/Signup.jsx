@@ -47,13 +47,17 @@ const Signup = () => {
   const navigate = useNavigate();
   const { signup, googleAuth } = useAuth();
 
+  const _redirectAfterAuth = (isAdmin) => {
+    const from = location.state?.from?.pathname;
+    navigate(from || (isAdmin ? '/admin-dashboard' : '/dashboard'), { replace: true });
+  };
+
   const handleGoogleSuccess = async (credentialResponse) => {
     setIsLoading(true);
     setError('');
     try {
       const { user } = await googleAuth(credentialResponse.credential);
-      const isAdmin = user?.is_admin;
-      navigate(isAdmin ? '/admin-dashboard' : '/dashboard', { replace: true });
+      _redirectAfterAuth(user?.is_admin);
     } catch (err) {
       setError(err?.message || 'Google signup failed. Please try again.');
     } finally {
@@ -114,7 +118,7 @@ const Signup = () => {
     setIsLoading(true);
     try {
       await signup(formData.email, formData.password, formData.username);
-      navigate('/dashboard');
+      _redirectAfterAuth(false);
     } catch (err) {
       setError(typeof err === 'string' ? err : err?.message || 'Signup failed. Please try again.');
     } finally {

@@ -11,6 +11,7 @@ import httpx
 from datetime import datetime
 from time import perf_counter
 from asgiref.sync import sync_to_async
+from django.core.cache import cache
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -326,6 +327,13 @@ async def submit_quiz_api_async(request):
             time_limit_minutes=int(data.get("time_limit") or 0) or None,
         )
 
+        # Bust per-user quiz caches and admin stats so they reflect the new submission.
+        uid = user.id
+        await sync_to_async(cache.delete_many)(
+            [f'quiz:hist:{uid}', f'quiz:weak:{uid}', f'quiz:due:{uid}',
+             f'dash:stats:{uid}', 'admin:stats']
+        )
+
         # Update Tier 1 intelligence models (fire-and-forget; errors are logged, never bubble up)
         try:
             await _update_topic_performance(user, subject_clean, correct_count, total_questions)
@@ -456,6 +464,11 @@ class QuizHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        cache_key = f'quiz:hist:{request.user.id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         sessions = QuizSession.objects.filter(
             user=request.user
         ).order_by('-created_at')[:20]
@@ -470,7 +483,9 @@ class QuizHistoryView(APIView):
             'exam_mode':      s.exam_mode,
         } for s in sessions]
 
-        return Response({'history': data})
+        result = {'history': data}
+        cache.set(cache_key, result, timeout=60)
+        return Response(result)
 
 
 class QuizReplayView(APIView):
@@ -491,6 +506,11 @@ class WeakAreasView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        cache_key = f'quiz:weak:{request.user.id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         weak = TopicPerformance.objects.filter(
             user=request.user,
             total_questions__gte=3,
@@ -505,7 +525,9 @@ class WeakAreasView(APIView):
             'last_attempted':  tp.last_attempted.isoformat(),
         } for tp in weak]
 
-        return Response({'weak_areas': data})
+        result = {'weak_areas': data}
+        cache.set(cache_key, result, timeout=120)
+        return Response(result)
 
 
 class DueTopicsView(APIView):
@@ -514,6 +536,11 @@ class DueTopicsView(APIView):
 
     def get(self, request):
         from django.utils import timezone
+        cache_key = f'quiz:due:{request.user.id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         due = QuizTopicSchedule.objects.filter(
             user=request.user,
             next_review__lte=timezone.now(),
@@ -527,4 +554,6 @@ class DueTopicsView(APIView):
             'interval':    s.interval,
         } for s in due]
 
-        return Response({'due_topics': data})
+        result = {'due_topics': data}
+        cache.set(cache_key, result, timeout=60)
+        return Response(result)
