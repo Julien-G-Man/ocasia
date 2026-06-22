@@ -712,8 +712,14 @@ class AIClient:
         resp.raise_for_status()
 
         data = resp.json()
-        content = _coerce_text(data.get("choices", [{}])[0].get("message", {}).get("content"))
+        message = data.get("choices", [{}])[0].get("message", {})
+        content = _coerce_text(message.get("content"))
         if not content:
+            # DeepSeek thinking models may place output in reasoning_content with empty content.
+            reasoning = _coerce_text(message.get("reasoning_content")) or _coerce_text(message.get("reasoning"))
+            if reasoning and ("{" in reasoning or "[" in reasoning):
+                logger.warning("NVIDIA DeepSeek returned null content; using reasoning field as fallback.")
+                return reasoning
             raise APIIntegrationError(f"NVIDIA DeepSeek returned empty content. Full response: {data}")
 
         logger.debug("NVIDIA DeepSeek response snippet: %s...", content[:120])
@@ -756,10 +762,10 @@ class AIClient:
         # Standard OpenAI shape
         content = _coerce_text(message.get("content"))
         if not content:
-            # Some NVIDIA-compatible models may place partial/truncated output in reasoning fields.
+            # Some NVIDIA reasoning models place output in reasoning_content with empty content.
             reasoning = _coerce_text(message.get("reasoning_content")) or _coerce_text(message.get("reasoning"))
-            if reasoning and "{" in reasoning and ("mcq_questions" in reasoning or "short_questions" in reasoning):
-                logger.warning("NVIDIA returned null content; using reasoning fallback for downstream repair.")
+            if reasoning and ("{" in reasoning or "[" in reasoning):
+                logger.warning("NVIDIA OpenAI returned null content; using reasoning field as fallback.")
                 return reasoning
 
             finish_reason = choice.get("finish_reason") if isinstance(choice, dict) else None
@@ -784,7 +790,7 @@ class AIClient:
         resp.raise_for_status()
         return resp.text
 
-    async def _call_azure_openai(self, client: httpx.AsyncClient, prompt: str, max_tokens: int, timeout: int = DEFAULT_TIMEOUT) -> Union[dict, str]:
+    async def _call_azure_openai(self, client: httpx.AsyncClient, prompt: str, max_tokens: int, timeout: int = DEFAULT_TIMEOUT) -> str:
         if not self.azure_endpoint or not self.azure_key:
             raise APIIntegrationError("Azure OpenAI not configured")
 
@@ -822,9 +828,16 @@ class AIClient:
             resp.raise_for_status()
 
         try:
-            return resp.json()
+            data = resp.json()
         except json.JSONDecodeError as e:
             raise APIIntegrationError(f"Azure returned invalid JSON: {e}")
+
+        content = _coerce_text(data.get("choices", [{}])[0].get("message", {}).get("content"))
+        if not content:
+            raise APIIntegrationError(f"Azure returned empty content. Full response: {data}")
+
+        logger.debug("Azure response snippet: %s...", content[:120])
+        return content
 
     async def _call_gemini(self, client: httpx.AsyncClient, prompt: str, max_tokens: int, timeout: int = DEFAULT_TIMEOUT) -> str:
         if not self.gemini_key or not self.gemini_url:
