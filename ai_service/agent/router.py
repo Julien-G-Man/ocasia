@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 agent_router = APIRouter()
 
 _CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]
-_CHAT_MAX_ITERATIONS = 5
+_CHAT_MAX_ITERATIONS = 10
 _CHAT_MAX_TOKENS = 1200
 
 
