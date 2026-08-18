@@ -510,7 +510,7 @@ quiz creation — no navigation away, no second agent call.
 
 7. User confirms or adjusts params and clicks **Generate**.
 8. A full-screen loading overlay (spinner + "Generating your quiz with AI…") appears, matching the quiz/flashcard creation page style.
-9. React POSTs to `POST /api/quiz/create-from-agent/` (Django proxy — requires auth) with `{ topic, num_questions, time_limit, session_id }`.
+9. React POSTs to `POST /api/chat/create-quiz-from-agent/` (Django proxy — requires auth) with `{ topic, num_questions, time_limit, session_id }`.
 10. Django fetches `user_stats`, proxies to `POST /agent/quiz/generate/` (FastAPI), then saves `__QUIZ__:<json>` as an AI message in the current `ChatSession`.
 11. FastAPI auto-determines difficulty from `user_stats` and calls `_generate_quiz_handler`.
 12. Returns `{ "quiz_data": { mcq_questions, short_questions, subject, difficulty, id, time_limit } }`.
@@ -531,7 +531,7 @@ Django POST /api/chat/
 React renders inline quiz-param card
   │  user fills form, clicks Generate
   ▼
-Django POST /api/quiz/create-from-agent/
+Django POST /api/chat/create-quiz-from-agent/
   └── fetches user_stats
   └── POST /agent/quiz/generate/ (FastAPI)
         _determine_difficulty(user_stats, topic)
@@ -606,7 +606,7 @@ Response:
 
 ### Django proxy
 
-`POST /api/quiz/create-from-agent/` — authenticated view that:
+`POST /api/chat/create-quiz-from-agent/` — authenticated view that:
 1. Reads `topic`, `num_questions`, `time_limit`, and `session_id` from the request body.
 2. Authenticates the user via `_resolve_authenticated_user` (does **not** create a session).
 3. Fetches `user_stats` for the logged-in user.

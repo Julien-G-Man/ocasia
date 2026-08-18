@@ -48,7 +48,7 @@ From `backend/apps/quiz/urls.py`:
 
 From `backend/apps/chatbot/urls.py`:
 
-- `POST /api/quiz/create-from-agent/` — chatbot-triggered quiz generation (see [Chatbot feature](CHATBOT.md))
+- `POST /api/chat/create-quiz-from-agent/` — chatbot-triggered quiz generation (see [Chatbot feature](CHATBOT.md))
 
 ## FastAPI Endpoint
 
@@ -122,7 +122,7 @@ Quizzes can also be generated directly from the AI Tutor chat without navigating
 
 1. User expresses quiz intent in chat → agent calls `request_quiz_form(topic)`.
 2. An inline quiz-param card appears in the chat (topic, num_questions, time_limit).
-3. User submits → `POST /api/quiz/create-from-agent/` → FastAPI auto-determines difficulty from user stats → questions generated.
+3. User submits → `POST /api/chat/create-quiz-from-agent/` → FastAPI auto-determines difficulty from user stats → questions generated.
 4. A **Start Quiz** card replaces the form; clicking it navigates to `/quiz/play`.
 
 The generated quiz card is persisted as a `__QUIZ__:` chat message so it reappears when the user returns to that conversation. Difficulty is picked automatically:

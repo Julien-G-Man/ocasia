@@ -86,7 +86,7 @@ async def llm_proxy_view(request: HttpRequest):
     """
     # 1. Django handles Auth/Business logic (Fast)
     if not request.user.is_authenticated:
-        # Allow anonymous users (adjust based on your requirements)
+        # Allow anonymous users 
         # For stricter auth, uncomment:
         # return HttpResponse("Unauthorized", status=401)
         pass

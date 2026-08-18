@@ -10,5 +10,5 @@ urlpatterns = [
     path("chat/history/clear/",         async_views.clear_conversation_history,  name="clear_history"),
     path("chat/history/rename/",        async_views.rename_conversation_session, name="rename_history"),
     path("chatbot/history/",            ChatHistoryView.as_view(),               name="chat_history_dashboard"),
-    path("quiz/create-from-agent/",     async_views.create_quiz_from_agent,      name="quiz_create_from_agent"),
+    path("chat/create-quiz-from-agent/",     async_views.create_quiz_from_agent,      name="quiz_create_from_agent"),
 ]

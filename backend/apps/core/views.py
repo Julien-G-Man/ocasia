@@ -8,7 +8,7 @@ class HealthCheckView(View):
         return JsonResponse(
             {
                 "status": "ok",
-                "service": "lamla-django",
+                "service": "ocasia-django",
             },
             status=200,
         )

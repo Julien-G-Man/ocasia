@@ -395,7 +395,7 @@ const Chatbot = ({ user: userProp }) => {
         if (!topic.trim() || quizFormGenerating) return;
         setQuizFormGenerating(true);
         try {
-            const res = await djangoApi.post('/quiz/create-from-agent/', {
+            const res = await djangoApi.post('/chat/create-quiz-from-agent/', {
                 topic,
                 num_questions: numQ,
                 time_limit: timeLimit,

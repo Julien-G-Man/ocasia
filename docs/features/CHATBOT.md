@@ -175,7 +175,7 @@ Quizzes can be created inline without leaving the chat. Full flow documented in
 2. Router sets `action="show_quiz_form"`, `prefill={"topic":"X"}` in the response.
 3. React renders `QuizFormCard` (topic, num_questions, time_limit).
 4. A full-screen loading overlay appears while the quiz generates (matches CreateQuiz page style).
-5. On submit → `POST /api/quiz/create-from-agent/` → FastAPI determines difficulty from user stats
+5. On submit → `POST /api/chat/create-quiz-from-agent/` → FastAPI determines difficulty from user stats
    → questions generated → result saved as `__QUIZ__:<json>` chat message.
 6. `StartQuizCard` appears → click → `/quiz/play`.
 
@@ -313,4 +313,4 @@ From `backend/apps/chatbot/urls.py`:
 - `DELETE /api/chat/history/clear/` — delete a session (`?session_id=`)
 - `POST /api/chat/history/rename/` — rename a session
 - `GET /api/chatbot/history/` — sidebar session list (newest 10, with `last_message` preview)
-- `POST /api/quiz/create-from-agent/` — chatbot-triggered quiz generation (auth required)
+- `POST /api/chat/create-quiz-from-agent/` — chatbot-triggered quiz generation (auth required)
