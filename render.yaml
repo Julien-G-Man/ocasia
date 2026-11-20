@@ -4,7 +4,9 @@ services:
     env: python
     region: oregon
     plan: starter
-    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python manage.py migrate --noinput
+    autoDeployTrigger: commit
     startCommand: uvicorn config.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
