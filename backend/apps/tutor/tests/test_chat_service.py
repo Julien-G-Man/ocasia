@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 from django.test import SimpleTestCase
 
-from apps.tutor.chat_service import TutorChatService
+from apps.tutor.services import TutorChatService
 
 
 class TutorChatServiceTests(SimpleTestCase):
@@ -10,7 +10,7 @@ class TutorChatServiceTests(SimpleTestCase):
         with self.assertRaisesMessage(ValueError, "message must not be empty"):
             await TutorChatService().respond("  ")
 
-    @patch("apps.tutor.chat_service.run_tutor_agent", new_callable=AsyncMock)
+    @patch("apps.tutor.services.run_tutor_agent", new_callable=AsyncMock)
     async def test_returns_agent_response(self, run_agent):
         run_agent.return_value.response = "A clear answer."
 
