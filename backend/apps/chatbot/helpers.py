@@ -59,17 +59,28 @@ async def _get_or_create_session(request, session_id=None):
     if not user:
         return None, None
 
-    if session_id is None:
+    if session_id:
+        session_obj = await sync_to_async(
+            ChatSession.objects.filter(session_id=session_id, user=user).first
+        )()
+        if session_obj is None:
+            if await sync_to_async(
+                ChatSession.objects.filter(session_id=session_id).exclude(user=user).exists
+            )():
+                return user, None
+            session_obj = await sync_to_async(ChatSession.objects.create)(
+                session_id=session_id,
+                user=user,
+            )
+            created = True
+        else:
+            created = False
+    else:
         session_id = f"chat-{user.id}-{int(time.time())}"
-
-    session_obj, created = await sync_to_async(ChatSession.objects.get_or_create)(
-        session_id=session_id,
-        defaults={"user": user},
-    )
-
-    if session_obj.user_id != user.id:
-        session_obj.user = user
-        await sync_to_async(session_obj.save, thread_sensitive=True)(update_fields=["user"])
+        session_obj, created = await sync_to_async(ChatSession.objects.get_or_create)(
+            session_id=session_id,
+            defaults={"user": user},
+        )
 
     if created:
         logger.debug("Created new session %s for user %s", session_id, user.id)
