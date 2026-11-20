@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.accounts',
     'apps.chatbot',
+    'apps.tutor',
     'apps.quiz',
     'apps.flashcards',
     'apps.dashboard',
@@ -259,6 +260,8 @@ AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TUTOR_MODEL = os.getenv("TUTOR_MODEL", "gpt-4o-mini")
+TUTOR_TEMPERATURE = float(os.getenv("TUTOR_TEMPERATURE", "0.3"))
 
 DEEPSEEK_API_URL = os.getenv("DEEPSEEK_API_URL")
 
