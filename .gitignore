@@ -10,6 +10,8 @@ CLAUDE.md
 __pycache__/
 context.txt
 .omc/
+.venv/
+.venv
 
 # Graphify generated artifacts (local analysis output)
 graphify-out/
