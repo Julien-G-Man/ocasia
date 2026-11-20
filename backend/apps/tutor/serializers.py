@@ -19,7 +19,7 @@ class TutorChatRequestSerializer(serializers.Serializer):
     tutor_mode = serializers.ChoiceField(choices=("direct", "socratic"), default="direct")
     user_stats = serializers.DictField(required=False, allow_null=True)
     file_text = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=50_000)
-    session_id = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=255)
+    session_id = serializers.CharField(required=False, allow_null=True, allow_blank=True, max_length=100)
     has_document = serializers.BooleanField(required=False)
 
     def validate(self, attrs):
