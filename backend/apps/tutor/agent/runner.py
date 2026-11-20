@@ -9,7 +9,7 @@ from apps.tutor.agent.executor import execute_tool
 from apps.tutor.agent.prompts import build_tutor_system_prompt, wrap_file_context
 from apps.tutor.agent.registry import get_tools
 from apps.tutor.agent.schemas import TutorAgentResult
-from apps.tutor.langchain import build_chat_model
+from apps.tutor.services import build_chat_model
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,10 @@ async def run_tutor_agent(
                 output = '{"error":"Unknown tool."}'
                 error = "Unknown tool."
             else:
-                output, error, duration_ms = await execute_tool(tool, call.get("args") or {})
+                tool_args = call.get("args") or {}
+                if name == "search_document":
+                    tool_args["session_id"] = session_id
+                output, error, duration_ms = await execute_tool(tool, tool_args)
                 logger.info("Tutor tool %s completed in %.1fms (error=%s)", name, duration_ms, bool(error))
 
             if name == "request_quiz_form" and not error:
@@ -182,7 +185,10 @@ async def stream_tutor_agent(
                 if tool is None:
                     output, error = '{"error":"Unknown tool."}', "Unknown tool."
                 else:
-                    output, error, duration_ms = await execute_tool(tool, call.get("args") or {})
+                    tool_args = call.get("args") or {}
+                    if name == "search_document":
+                        tool_args["session_id"] = session_id
+                    output, error, duration_ms = await execute_tool(tool, tool_args)
                     logger.info("Tutor stream tool %s completed in %.1fms (error=%s)", name, duration_ms, bool(error))
 
                 if name == "request_quiz_form" and not error:

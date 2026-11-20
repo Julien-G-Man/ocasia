@@ -119,8 +119,14 @@ class RAGEngine:
 
     @staticmethod
     def _hybrid_search(
-        query_vector: list[float], query: str, limit: int, candidate_limit: int, source_type: str | None
+        query_vector: list[float],
+        query: str,
+        limit: int,
+        candidate_limit: int,
+        source_type: str | None,
+        session_id: str | None,
     ) -> list[dict]:
+        from django.db.models import Q
         from pgvector.django import CosineDistance
 
         from apps.tutor.models import TutorDocumentChunk
@@ -128,6 +134,14 @@ class RAGEngine:
         chunks = TutorDocumentChunk.objects.select_related("document")
         if source_type:
             chunks = chunks.filter(metadata__source_type=source_type)
+        elif session_id:
+            chunks = chunks.filter(
+                Q(metadata__source_type="platform_kb")
+                | Q(metadata__session_id=session_id)
+            )
+        else:
+            # A search without an active tutor session can only see public KB.
+            chunks = chunks.filter(metadata__source_type="platform_kb")
         vector_rows = list(
             chunks
             .annotate(distance=CosineDistance("embedding", query_vector))
@@ -169,13 +183,25 @@ class RAGEngine:
                 break
         return results
 
-    async def search(self, query: str, *, top_k: int = 5, source_type: str | None = None) -> list[dict]:
+    async def search(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        source_type: str | None = None,
+        session_id: str | None = None,
+    ) -> list[dict]:
         query = query.strip()
         if not query:
             return []
         query_vector = await self.embeddings.aembed_query(query)
         return await sync_to_async(self._hybrid_search, thread_sensitive=True)(
-            query_vector, query, max(1, min(int(top_k), 20)), self.candidate_limit, source_type
+            query_vector,
+            query,
+            max(1, min(int(top_k), 20)),
+            self.candidate_limit,
+            source_type,
+            session_id,
         )
 
 

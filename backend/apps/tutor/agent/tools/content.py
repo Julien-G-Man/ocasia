@@ -3,8 +3,7 @@ import logging
 import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
-
-from apps.tutor.langchain import build_chat_model
+from apps.tutor.services import build_chat_model
 
 logger = logging.getLogger(__name__)
 
