@@ -60,6 +60,16 @@ def _maybe_index_upload(file_bytes: bytes, filename: str, session_id: str) -> No
         logger.exception("Tutor upload indexing failed for %s", filename)
 
 
+def _authenticated_user_id(request) -> int | None:
+    """Return the signed-in user's id, or None for anonymous/raw requests.
+
+    The project sets ``UNAUTHENTICATED_USER = None``, so ``request.user`` is
+    ``None`` for anonymous callers instead of an ``AnonymousUser`` instance.
+    """
+    user = request.user
+    return user.id if getattr(user, "is_authenticated", False) else None
+
+
 class TutorChatView(APIView):
     """POST /api/tutor/chat/ — return one tutor response and agent metadata."""
 
@@ -69,7 +79,7 @@ class TutorChatView(APIView):
         serializer = TutorChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
-        payload["user_id"] = request.user.id if request.user.is_authenticated else None
+        payload["user_id"] = _authenticated_user_id(request)
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
@@ -111,7 +121,7 @@ class TutorChatStreamView(APIView):
         serializer = TutorChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
-        payload["user_id"] = request.user.id if request.user.is_authenticated else None
+        payload["user_id"] = _authenticated_user_id(request)
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
@@ -200,7 +210,7 @@ class TutorDocumentUploadView(APIView):
             "session_id": data.get("session_id") or None,
             "file_text": file_text,
             "has_document": True,
-            "user_id": request.user.id if request.user.is_authenticated else None,
+            "user_id": _authenticated_user_id(request),
         }
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)
