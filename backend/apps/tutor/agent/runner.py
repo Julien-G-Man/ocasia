@@ -46,6 +46,7 @@ class TutorAgent:
         user_stats: dict | None = None,
         file_text: str | None = None,
         session_id: str | None = None,
+        user_id: int | None = None,
         has_document: bool = False,
         max_iterations: int = MAX_AGENT_ITERATIONS,
     ) -> None:
@@ -55,6 +56,7 @@ class TutorAgent:
         self.user_stats = user_stats
         self.file_text = file_text
         self.session_id = session_id
+        self.user_id = user_id
         self.has_document = has_document
         self.max_iterations = max_iterations
 
@@ -111,6 +113,8 @@ class TutorAgent:
             tool_args = call.get("args") or {}
             if name == "search_document":
                 tool_args["session_id"] = self.session_id
+            elif name == "get_user_performance":
+                tool_args["user_id"] = self.user_id
             output, error, duration_ms = await execute_tool(tool, tool_args)
             logger.info(
                 "Tutor tool %s completed in %.1fms (error=%s)",

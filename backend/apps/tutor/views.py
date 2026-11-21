@@ -69,6 +69,7 @@ class TutorChatView(APIView):
         serializer = TutorChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
+        payload["user_id"] = request.user.id if request.user.is_authenticated else None
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
@@ -110,6 +111,7 @@ class TutorChatStreamView(APIView):
         serializer = TutorChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
+        payload["user_id"] = request.user.id if request.user.is_authenticated else None
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
@@ -198,6 +200,7 @@ class TutorDocumentUploadView(APIView):
             "session_id": data.get("session_id") or None,
             "file_text": file_text,
             "has_document": True,
+            "user_id": request.user.id if request.user.is_authenticated else None,
         }
         try:
             session = TutorConversationStore.get_or_create_session(request.user, payload)

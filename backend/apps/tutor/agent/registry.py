@@ -11,6 +11,8 @@ from apps.tutor.agent.tools.content import (
     summarize_text,
 )
 from apps.tutor.agent.tools.document import search_document
+from apps.tutor.agent.tools.library import list_library_materials
+from apps.tutor.agent.tools.performance import get_user_performance
 from apps.tutor.agent.tools.search import kb_search, search_web
 from apps.tutor.agent.tools.youtube import extract_youtube_transcript
 
@@ -26,6 +28,8 @@ TOOL_DESCRIPTIONS = {
     "evaluate_answer": "Evaluate a student's free-text answer against the correct answer. MCQ scoring is deterministic and should not use this tool.",
     "explain_concept": "Explain a flashcard or quiz answer to a student who is confused.",
     "search_document": "Search the indexed platform knowledge and PDF/PowerPoint study-material corpus using hybrid vector and BM25 retrieval. Return and cite the most useful source and page.",
+    "get_user_performance": "Fetch the signed-in student's live quiz performance: average score, per-topic accuracy (weakest first), recent quizzes, and topics due for review. Use when the student asks about their progress, scores, weak areas, or what to study next.",
+    "list_library_materials": "List community study materials in the library with direct file links. Use when the student asks what materials are available or wants a particular file. Present each result as a markdown link [Title](url) so it opens in a new tab.",
 }
 
 TOOL_TIMEOUTS = {
@@ -39,6 +43,8 @@ TOOL_TIMEOUTS = {
     "evaluate_answer": 25.0,
     "explain_concept": 25.0,
     "search_document": 20.0,
+    "get_user_performance": 10.0,
+    "list_library_materials": 10.0,
 }
 
 _HANDLERS = {
@@ -51,6 +57,8 @@ _HANDLERS = {
     "generate_flashcards": generate_flashcards,
     "evaluate_answer": evaluate_answer,
     "explain_concept": explain_concept,
+    "get_user_performance": get_user_performance,
+    "list_library_materials": list_library_materials,
 }
 
 
