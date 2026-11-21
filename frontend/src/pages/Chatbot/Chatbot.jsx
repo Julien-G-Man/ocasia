@@ -313,7 +313,7 @@ const Chatbot = ({ user: userProp }) => {
         if (!localStorage.getItem('auth_token')) return;
         try {
             setIsLoadingHistory(true);
-            const response = await djangoApi.get('/chatbot/history/');
+            const response = await djangoApi.get('/tutor/sessions/');
             if (response.data?.history) {
                 setChatSessions(response.data.history);
             }
@@ -327,7 +327,7 @@ const Chatbot = ({ user: userProp }) => {
     const loadSessionMessages = async (sessionId) => {
         try {
             setHistory([{ id: messageIdCounter++, text: 'Loading past messages…', type: 'ai', sender: 'AI Tutor' }]);
-            const res = await djangoApi.get('/chat/history/', { params: { session_id: sessionId } });
+            const res = await djangoApi.get(`/tutor/sessions/${sessionId}/`);
             const messages = Array.isArray(res?.data?.messages) ? res.data.messages : [];
             // toUiMessage detects __QUIZ__: messages and returns start_quiz type automatically
             setHistory(messages.length === 0 ? [getWelcomeMessage(user)] : messages.map(toUiMessage));
@@ -352,7 +352,7 @@ const Chatbot = ({ user: userProp }) => {
 
     const handleDeleteSession = async (sessionId) => {
         try {
-            await djangoApi.delete('/chat/history/clear/', { params: { session_id: sessionId } });
+            await djangoApi.delete(`/tutor/sessions/${sessionId}/`);
             setChatSessions((prev) => {
                 const remaining = prev.filter((s) => (s.session_id || s.id) !== sessionId);
                 if (currentSessionId === sessionId) {
@@ -374,7 +374,7 @@ const Chatbot = ({ user: userProp }) => {
 
     const handleRenameSession = async (sessionId, title) => {
         try {
-            const res = await djangoApi.post('/chat/history/rename/', { session_id: sessionId, title });
+            const res = await djangoApi.patch(`/tutor/sessions/${sessionId}/`, { title });
             const updated = res?.data?.title || title;
             setChatSessions((prev) =>
                 prev.map((s) => (s.session_id || s.id) === sessionId ? { ...s, title: updated } : s)
@@ -395,7 +395,7 @@ const Chatbot = ({ user: userProp }) => {
         if (!topic.trim() || quizFormGenerating) return;
         setQuizFormGenerating(true);
         try {
-            const res = await djangoApi.post('/chat/create-quiz-from-agent/', {
+            const res = await djangoApi.post('/tutor/quiz/from-agent/', {
                 topic,
                 num_questions: numQ,
                 time_limit: timeLimit,
@@ -454,7 +454,7 @@ const Chatbot = ({ user: userProp }) => {
                 form.append('session_id', currentSessionId);
                 const token = localStorage.getItem('auth_token');
                 const baseUrl = djangoApi.defaults.baseURL.replace(/\/+$/, '');
-                const fileRes = await fetch(`${baseUrl}/chat/file/`, {
+                const fileRes = await fetch(`${baseUrl}/tutor/upload/`, {
                     method: 'POST',
                     headers: token ? { Authorization: `Token ${token}` } : {},
                     credentials: 'include',
@@ -478,7 +478,7 @@ const Chatbot = ({ user: userProp }) => {
                 const token = localStorage.getItem('auth_token');
                 const baseUrl = (djangoApi.defaults.baseURL || '').replace(/\/+$/, '');
 
-                const sseRes = await fetch(`${baseUrl}/chat/stream/`, {
+                const sseRes = await fetch(`${baseUrl}/tutor/chat/stream/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

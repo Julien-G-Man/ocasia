@@ -1,11 +1,27 @@
 """Persistence and ownership rules for tutor conversations."""
 
+import json
 import uuid
 
 from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery
 
 from apps.tutor.models import TutorMessage, TutorSession
+
+_QUIZ_PREFIX = "__QUIZ__:"
+
+
+def preview_message(raw: str) -> str:
+    """Human-readable sidebar/dashboard preview — strips internal quiz blobs."""
+    if not raw:
+        return ""
+    if raw.startswith(_QUIZ_PREFIX):
+        try:
+            subject = json.loads(raw[len(_QUIZ_PREFIX):]).get("subject", "")
+            return f"Quiz generated: {subject}" if subject else "Quiz generated"
+        except Exception:
+            return "Quiz generated"
+    return raw[:120]
 
 
 class TutorConversationStore:

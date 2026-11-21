@@ -50,3 +50,10 @@ class TutorDocumentUploadSerializer(serializers.Serializer):
                 "Unsupported file type. Upload PDF, PPTX, Markdown, or TXT."
             )
         return uploaded_file
+
+
+class TutorQuizFromAgentSerializer(serializers.Serializer):
+    topic = serializers.CharField(max_length=200, allow_blank=False, trim_whitespace=True)
+    num_questions = serializers.IntegerField(required=False, default=10, min_value=1, max_value=30)
+    time_limit = serializers.IntegerField(required=False, default=15, min_value=1, max_value=120)
+    session_id = serializers.CharField(required=False, allow_blank=True, max_length=100)

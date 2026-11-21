@@ -4,6 +4,7 @@ from apps.tutor.views import (
     TutorChatStreamView,
     TutorChatView,
     TutorDocumentUploadView,
+    TutorQuizFromAgentView,
     TutorSessionDetailView,
     TutorSessionListView,
 )
@@ -14,6 +15,7 @@ urlpatterns = [
     path("tutor/chat/", TutorChatView.as_view(), name="chat"),
     path("tutor/chat/stream/", TutorChatStreamView.as_view(), name="chat_stream"),
     path("tutor/upload/", TutorDocumentUploadView.as_view(), name="upload"),
+    path("tutor/quiz/from-agent/", TutorQuizFromAgentView.as_view(), name="quiz_from_agent"),
     path("tutor/sessions/", TutorSessionListView.as_view(), name="session_list"),
     path("tutor/sessions/<str:session_id>/", TutorSessionDetailView.as_view(), name="session_detail"),
 ]

@@ -39,7 +39,7 @@ export const dashboardService = {
   },
 
   getChatHistory: async () => {
-    const res = await djangoApi.get('/chatbot/history/');
+    const res = await djangoApi.get('/tutor/sessions/');
     return res.data.history;
   },
 

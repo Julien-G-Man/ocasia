@@ -12,6 +12,7 @@ from apps.tutor.views import (
     TutorChatStreamView,
     TutorChatView,
     TutorDocumentUploadView,
+    TutorQuizFromAgentView,
     TutorSessionDetailView,
     TutorSessionListView,
 )
@@ -220,8 +221,9 @@ class TutorDocumentUploadApiTests(TestCase):
             format="multipart",
         )
 
+    @patch("apps.tutor.views._maybe_index_upload")
     @patch("apps.tutor.views.TutorAgent")
-    def test_upload_extracts_text_and_returns_response(self, AgentMock):
+    def test_upload_extracts_text_and_returns_response(self, AgentMock, index_upload):
         AgentMock.return_value.run = AsyncMock(
             return_value=_agent_result("Here is the summary.")
         )
@@ -241,6 +243,7 @@ class TutorDocumentUploadApiTests(TestCase):
         )
         AgentMock.return_value.run.assert_awaited_once()
         self.assertIn("Photosynthesis", AgentMock.call_args.kwargs["file_text"])
+        index_upload.assert_called_once()
 
     @patch("apps.tutor.views.TutorAgent")
     def test_upload_rejects_unsupported_file_type(self, AgentMock):
@@ -252,3 +255,53 @@ class TutorDocumentUploadApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         AgentMock.assert_not_called()
         self.assertFalse(TutorSession.objects.exists())
+
+    def test_upload_requires_authentication(self):
+        request = self._upload()
+
+        response = TutorDocumentUploadView.as_view()(request)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertFalse(TutorSession.objects.exists())
+
+
+class TutorQuizFromAgentApiTests(TestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create_user(email="quiz@example.com", username="quiz")
+
+    @patch("apps.tutor.agent.tools.content.generate_quiz", new_callable=AsyncMock)
+    def test_quiz_from_agent_returns_quiz_data_and_persists_card(self, generate_quiz):
+        generate_quiz.return_value = {
+            "subject": "Thermodynamics",
+            "study_text": "Heat flows from hot to cold.",
+            "difficulty": "medium",
+            "mcq_questions": [{"question": "Q?", "options": ["A", "B", "C", "D"], "answer": "A", "explanation": "E"}],
+            "short_questions": [],
+        }
+        session = TutorSession.objects.create(session_id="quiz-session", user=self.user)
+        request = self.factory.post(
+            "/tutor/quiz/from-agent/",
+            {"topic": "Thermodynamics", "num_questions": 5, "time_limit": 10, "session_id": session.session_id},
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+
+        response = TutorQuizFromAgentView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        quiz_data = response.data["quiz_data"]
+        self.assertEqual(quiz_data["subject"], "Thermodynamics")
+        self.assertEqual(quiz_data["time_limit"], 10)
+        self.assertTrue(quiz_data["id"])
+        self.assertTrue(
+            TutorMessage.objects.filter(session=session, content__startswith="__QUIZ__:").exists()
+        )
+        generate_quiz.assert_awaited_once()
+
+    def test_quiz_from_agent_requires_authentication(self):
+        request = self.factory.post("/tutor/quiz/from-agent/", {"topic": "Thermodynamics"}, format="json")
+
+        response = TutorQuizFromAgentView.as_view()(request)
+
+        self.assertEqual(response.status_code, 401)
