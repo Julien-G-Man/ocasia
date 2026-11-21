@@ -17,14 +17,20 @@ from apps.tutor.views import (
 )
 
 
+def _agent_result(response):
+    return SimpleNamespace(
+        response=response, tool_calls_made=[], action=None, prefill=None
+    )
+
+
 class TutorAPIViewTests(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
 
-    @patch("apps.tutor.views.TutorChatService.respond_turn", new_callable=AsyncMock)
-    def test_chat_returns_agent_result(self, respond_turn):
-        respond_turn.return_value = SimpleNamespace(
-            response="Hello", tool_calls_made=[], action=None, prefill=None
+    @patch("apps.tutor.views.TutorAgent")
+    def test_chat_returns_agent_result(self, AgentMock):
+        AgentMock.return_value.run = AsyncMock(
+            return_value=_agent_result("Hello")
         )
         request = self.factory.post(
             "/api/tutor/chat/", {"message": "Hi"}, format="json"
@@ -40,12 +46,12 @@ class TutorAPIViewTests(TestCase):
             list(session.messages.values_list("sender", "content")),
             [("user", "Hi"), ("ai", "Hello")],
         )
-        respond_turn.assert_awaited_once()
+        AgentMock.return_value.run.assert_awaited_once()
 
-    @patch("apps.tutor.views.TutorChatService.respond_turn", new_callable=AsyncMock)
-    def test_chat_uses_saved_messages_as_follow_up_history(self, respond_turn):
-        respond_turn.return_value = SimpleNamespace(
-            response="The answer", tool_calls_made=[], action=None, prefill=None
+    @patch("apps.tutor.views.TutorAgent")
+    def test_chat_uses_saved_messages_as_follow_up_history(self, AgentMock):
+        AgentMock.return_value.run = AsyncMock(
+            return_value=_agent_result("The answer")
         )
         session = TutorSession.objects.create(session_id="existing-session")
         TutorMessage.objects.create(session=session, sender="user", content="First question")
@@ -59,15 +65,15 @@ class TutorAPIViewTests(TestCase):
         response = TutorChatView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
-        history = respond_turn.await_args.kwargs["history"]
+        history = AgentMock.call_args.kwargs["history"]
         self.assertEqual(history, [
             {"role": "user", "content": "First question"},
             {"role": "ai", "content": "First answer"},
         ])
         self.assertEqual(session.messages.count(), 4)
 
-    @patch("apps.tutor.views.TutorChatService.respond_turn", new_callable=AsyncMock)
-    def test_chat_does_not_allow_access_to_another_users_session(self, respond_turn):
+    @patch("apps.tutor.views.TutorAgent")
+    def test_chat_does_not_allow_access_to_another_users_session(self, AgentMock):
         owner = User.objects.create_user(email="owner@example.com", username="owner")
         other_user = User.objects.create_user(email="other@example.com", username="other")
         session = TutorSession.objects.create(
@@ -83,24 +89,24 @@ class TutorAPIViewTests(TestCase):
         response = TutorChatView.as_view()(request)
 
         self.assertEqual(response.status_code, 404)
-        respond_turn.assert_not_awaited()
+        AgentMock.assert_not_called()
 
-    @patch("apps.tutor.views.TutorChatService.respond_turn", new_callable=AsyncMock)
-    def test_chat_rejects_invalid_payload(self, respond_turn):
+    @patch("apps.tutor.views.TutorAgent")
+    def test_chat_rejects_invalid_payload(self, AgentMock):
         request = self.factory.post("/api/tutor/chat/", {"message": " "}, format="json")
 
         response = TutorChatView.as_view()(request)
 
         self.assertEqual(response.status_code, 400)
-        respond_turn.assert_not_awaited()
+        AgentMock.assert_not_called()
 
-    @patch("apps.tutor.views.TutorChatService.stream_turn")
-    def test_stream_returns_server_sent_events(self, stream_turn):
+    @patch("apps.tutor.views.TutorAgent")
+    def test_stream_returns_server_sent_events(self, AgentMock):
         async def events(**_kwargs):
             yield {"type": "token", "content": "Hello"}
             yield {"type": "done", "side_data": {}}
 
-        stream_turn.side_effect = events
+        AgentMock.return_value.stream = events
         request = self.factory.post(
             "/api/tutor/chat/stream/", {"message": "Hi"}, format="json"
         )
@@ -214,10 +220,10 @@ class TutorDocumentUploadApiTests(TestCase):
             format="multipart",
         )
 
-    @patch("apps.tutor.views.TutorChatService.respond_turn", new_callable=AsyncMock)
-    def test_upload_extracts_text_and_returns_response(self, respond_turn):
-        respond_turn.return_value = SimpleNamespace(
-            response="Here is the summary.", tool_calls_made=[], action=None, prefill=None
+    @patch("apps.tutor.views.TutorAgent")
+    def test_upload_extracts_text_and_returns_response(self, AgentMock):
+        AgentMock.return_value.run = AsyncMock(
+            return_value=_agent_result("Here is the summary.")
         )
         request = self._upload()
         force_authenticate(request, user=self.user)
@@ -233,14 +239,16 @@ class TutorDocumentUploadApiTests(TestCase):
             list(session.messages.values_list("sender", "content")),
             [("user", "Summarize this"), ("ai", "Here is the summary.")],
         )
-        respond_turn.assert_awaited_once()
-        self.assertIn("Photosynthesis", respond_turn.await_args.kwargs["file_text"])
+        AgentMock.return_value.run.assert_awaited_once()
+        self.assertIn("Photosynthesis", AgentMock.call_args.kwargs["file_text"])
 
-    def test_upload_rejects_unsupported_file_type(self):
+    @patch("apps.tutor.views.TutorAgent")
+    def test_upload_rejects_unsupported_file_type(self, AgentMock):
         request = self._upload(name="data.csv", content=b"a,b,c")
         force_authenticate(request, user=self.user)
 
         response = TutorDocumentUploadView.as_view()(request)
 
         self.assertEqual(response.status_code, 400)
+        AgentMock.assert_not_called()
         self.assertFalse(TutorSession.objects.exists())

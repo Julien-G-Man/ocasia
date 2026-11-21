@@ -1,121 +1,14 @@
-import uuid
-from functools import lru_cache
-from django.conf import settings
-from collections.abc import Sequence
-from collections.abc import AsyncIterator
-from django.db.models import Count, OuterRef, Subquery
-from django.db import transaction
+"""Persistence and ownership rules for tutor conversations."""
 
-from apps.tutor.agent.schemas import TutorAgentResult
+import uuid
+
+from django.db import transaction
+from django.db.models import Count, OuterRef, Subquery
+
 from apps.tutor.models import TutorMessage, TutorSession
 
 
-@lru_cache(maxsize=1)
-def build_chat_model():
-    """LangChain chat model used by tutor and its tools."""
-    try:
-        from langchain_openai import ChatOpenAI
-    except ImportError as exc:
-        raise RuntimeError(
-            "LangChain OpenAI integration is missing. Install langchain-openai."
-        ) from exc
-
-    api_key = getattr(settings, "OPENAI_API_KEY", None)
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY must be configured for the tutor model.")
-
-    return ChatOpenAI(
-        api_key=api_key,
-        model=getattr(settings, "TUTOR_MODEL", "gpt-4o-mini"),
-        temperature=getattr(settings, "TUTOR_TEMPERATURE", 0.3),
-        max_tokens=getattr(settings, "CHATBOT_MAX_TOKENS", 1200),
-    )
-
-
-class TutorChatService:
-    """Application boundary for tutor responses.
-
-    Persistence, authentication, and HTTP transport stay outside this class.
-    """
-
-    async def respond(
-        self,
-        message: str,
-        history: Sequence[dict[str, str]] = (),
-        *,
-        tutor_mode: str = "direct",
-        user_stats: dict | None = None,
-        file_text: str | None = None,
-        session_id: str | None = None,
-        has_document: bool = False,
-    ) -> str:
-        result = await self.respond_turn(
-            message,
-            history,
-            tutor_mode=tutor_mode,
-            user_stats=user_stats,
-            file_text=file_text,
-            session_id=session_id,
-            has_document=has_document,
-        )
-        return result.response
-
-    async def respond_turn(
-        self,
-        message: str,
-        history: Sequence[dict[str, str]] = (),
-        *,
-        tutor_mode: str = "direct",
-        user_stats: dict | None = None,
-        file_text: str | None = None,
-        session_id: str | None = None,
-        has_document: bool = False,
-    ) -> TutorAgentResult:
-        if not message or not message.strip():
-            raise ValueError("message must not be empty")
-
-        from apps.tutor.agent.runner import run_tutor_agent
-
-        return await run_tutor_agent(
-            message=message,
-            history=history,
-            tutor_mode=tutor_mode,
-            user_stats=user_stats,
-            file_text=file_text,
-            session_id=session_id,
-            has_document=has_document,
-        )
-
-    async def stream_turn(
-        self,
-        message: str,
-        history: Sequence[dict[str, str]] = (),
-        *,
-        tutor_mode: str = "direct",
-        user_stats: dict | None = None,
-        file_text: str | None = None,
-        session_id: str | None = None,
-        has_document: bool = False,
-    ) -> AsyncIterator[dict]:
-        from apps.tutor.agent.runner import stream_tutor_agent
-
-        async for event in stream_tutor_agent(
-            message=message,
-            history=history,
-            tutor_mode=tutor_mode,
-            user_stats=user_stats,
-            file_text=file_text,
-            session_id=session_id,
-            has_document=has_document,
-        ):
-            yield event
-
-
-
-
-# Persistence and ownership rules for tutor conversations.
-
-class TutorConversationService:
+class TutorConversationStore:
     """Manage tutor sessions and message history independently of HTTP views."""
 
     @staticmethod
@@ -195,7 +88,7 @@ class TutorConversationService:
 
     @staticmethod
     def rename_session(user, session_id: str, title: str) -> TutorSession | None:
-        session = TutorConversationService.get_session(user, session_id)
+        session = TutorConversationStore.get_session(user, session_id)
         if session is None:
             return None
         session.title = title[:120]
@@ -204,7 +97,7 @@ class TutorConversationService:
 
     @staticmethod
     def delete_session(user, session_id: str) -> tuple[int, str | None]:
-        session = TutorConversationService.get_session(user, session_id)
+        session = TutorConversationStore.get_session(user, session_id)
         if session is None:
             return 0, None
         requested_id = session.session_id

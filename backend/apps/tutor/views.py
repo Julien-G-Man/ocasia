@@ -16,7 +16,8 @@ from apps.tutor.serializers import (
     TutorDocumentUploadSerializer,
     TutorSessionRenameSerializer,
 )
-from apps.tutor.services import TutorChatService, TutorConversationService
+from apps.tutor.agent.runner import TutorAgent
+from apps.tutor.conversations import TutorConversationStore
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +40,10 @@ class TutorChatView(APIView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
         try:
-            session = TutorConversationService.get_or_create_session(request.user, payload)
+            session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
                 payload["session_id"] = session.session_id
-                payload["history"] = TutorConversationService.history_for_session(
+                payload["history"] = TutorConversationStore.history_for_session(
                     session, payload["history"]
                 )
         except Exception as exc:
@@ -50,14 +51,14 @@ class TutorChatView(APIView):
         if session is None:
             return Response({"error": "Tutor session was not found."}, status=404)
         try:
-            result = async_to_sync(TutorChatService().respond_turn)(**payload)
+            result = async_to_sync(TutorAgent(**payload).run)()
         except ValueError as exc:
             return Response({"error": str(exc)}, status=400)
         except Exception as exc:
             return _error_response(exc)
 
         try:
-            TutorConversationService.save_turn(session, payload["message"], result.response)
+            TutorConversationStore.save_turn(session, payload["message"], result.response)
         except Exception as exc:
             return _error_response(exc)
 
@@ -80,10 +81,10 @@ class TutorChatStreamView(APIView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.validated_data
         try:
-            session = TutorConversationService.get_or_create_session(request.user, payload)
+            session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is not None:
                 payload["session_id"] = session.session_id
-                payload["history"] = TutorConversationService.history_for_session(
+                payload["history"] = TutorConversationStore.history_for_session(
                     session, payload["history"]
                 )
         except Exception as exc:
@@ -95,12 +96,13 @@ class TutorChatStreamView(APIView):
             response_parts = []
             saved = False
             try:
-                async for event in TutorChatService().stream_turn(**payload):
+                agent = TutorAgent(**payload)
+                async for event in agent.stream():
                     if event.get("type") == "token":
                         response_parts.append(event.get("content", ""))
                     elif event.get("type") == "done" and not saved:
                         await sync_to_async(
-                            TutorConversationService.save_turn,
+                            TutorConversationStore.save_turn,
                             thread_sensitive=True,
                         )(
                             session,
@@ -165,25 +167,25 @@ class TutorDocumentUploadView(APIView):
             "has_document": True,
         }
         try:
-            session = TutorConversationService.get_or_create_session(request.user, payload)
+            session = TutorConversationStore.get_or_create_session(request.user, payload)
             if session is None:
                 return Response({"error": "Tutor session was not found."}, status=404)
             payload["session_id"] = session.session_id
-            payload["history"] = TutorConversationService.history_for_session(
+            payload["history"] = TutorConversationStore.history_for_session(
                 session, payload["history"]
             )
         except Exception as exc:
             return _error_response(exc)
 
         try:
-            result = async_to_sync(TutorChatService().respond_turn)(**payload)
+            result = async_to_sync(TutorAgent(**payload).run)()
         except ValueError as exc:
             return Response({"error": str(exc)}, status=400)
         except Exception as exc:
             return _error_response(exc)
 
         try:
-            TutorConversationService.save_turn(session, message, result.response)
+            TutorConversationStore.save_turn(session, message, result.response)
         except Exception as exc:
             return _error_response(exc)
 
@@ -199,7 +201,7 @@ class TutorSessionListView(APIView):
 
     def get(self, request):
         try:
-            sessions = TutorConversationService.list_sessions(request.user)
+            sessions = TutorConversationStore.list_sessions(request.user)
             return Response({"history": [
                 {
                     "id": session.pk,
@@ -220,7 +222,7 @@ class TutorSessionDetailView(APIView):
 
     def get(self, request, session_id):
         try:
-            session = TutorConversationService.get_session(request.user, session_id)
+            session = TutorConversationStore.get_session(request.user, session_id)
             if session is None:
                 return Response({"detail": "Session not found."}, status=404)
             messages = session.messages.order_by("created_at", "pk")
@@ -244,7 +246,7 @@ class TutorSessionDetailView(APIView):
         serializer = TutorSessionRenameSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            session = TutorConversationService.rename_session(
+            session = TutorConversationStore.rename_session(
                 request.user, session_id, serializer.validated_data["title"]
             )
             if session is None:
@@ -259,7 +261,7 @@ class TutorSessionDetailView(APIView):
 
     def delete(self, request, session_id):
         try:
-            deleted_count, deleted_session_id = TutorConversationService.delete_session(
+            deleted_count, deleted_session_id = TutorConversationStore.delete_session(
                 request.user, session_id
             )
             if deleted_session_id is None:
