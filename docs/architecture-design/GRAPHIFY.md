@@ -55,17 +55,16 @@ This separation makes community detection more meaningful and reports easier to 
 
 ## Big Picture Architecture
 
-At runtime, Ocasia is split into three active layers:
+At runtime, Ocasia has two active layers, with a legacy AI service being retired:
 
-1. Frontend clients
-2. Django backend as API gateway + system-of-record
-3. FastAPI AI service for async AI workloads and tool orchestration
+1. Frontend clients (React SPA + Next.js app)
+2. Django backend — API, persistence, and the in-process tutor agent (LangChain + pgvector)
 
-The key architectural decision is this boundary:
+Legacy: a FastAPI `ai_service` still serves quiz generation and short-answer evaluation.
 
-- Django owns authentication, persistence, and user-facing API composition.
-- FastAPI owns AI provider interaction, structured generation, and agent-style tool orchestration.
-- Calls from Django to FastAPI are internal and gated by shared-secret middleware.
+- Django owns authentication, persistence, user-facing API composition, and the tutor agent.
+- The legacy FastAPI service owns only the remaining quiz AI work.
+- Django → FastAPI calls are internal and gated by shared-secret middleware.
 
 ```mermaid
 flowchart LR
@@ -84,25 +83,22 @@ flowchart LR
         N3[Shared Components]
     end
 
-    subgraph DJ[Django API Gateway]
+    subgraph DJ[Django API + Agent Runtime]
         D1[URL Router]
         D2[accounts]
-        D3[chatbot]
+        D3[tutor]
         D4[quiz]
         D5[flashcards]
         D6[dashboard]
         D7[materials]
         D8[core health + warmup]
-        DB[(PostgreSQL)]
+        DB[(PostgreSQL + pgvector)]
     end
 
-    subgraph AI[FastAPI AI Engine]
-        A1[main app]
-        A2[chatbot routes]
-        A3[quiz routes]
-        A4[flashcards routes]
-        A5[agent routes]
-        A6[internal auth middleware]
+    subgraph AI[FastAPI AI Engine (legacy)]
+        A1[quiz routes]
+        A2[agent/call]
+        A3[internal auth middleware]
         AP[AI providers]
     end
 
@@ -112,7 +108,6 @@ flowchart LR
     R1 --> R2
     R1 --> R3
     R4 --> D8
-    R4 --> A1
     R2 --> D1
 
     N1 --> N2
@@ -133,14 +128,10 @@ flowchart LR
     D6 --> DB
     D7 --> DB
 
-    D3 -->|Internal Secret| A2
-    D4 -->|Internal Secret| A3
-    D5 -->|Internal Secret| A4
-    A1 --> A6
+    D4 -->|Internal Secret| A1
+    D4 -->|Internal Secret| A2
+    A1 --> AP
     A2 --> AP
-    A3 --> AP
-    A4 --> AP
-    A5 --> AP
 ```
 
 ## What The Three Graph Runs Revealed
@@ -153,17 +144,17 @@ Strongly connected core entities were:
 - QuizSession
 - Deck
 - Material
-- ChatSession
+- TutorSession
 
 Interpretation:
 
 - Backend domain model is centered on user-linked learning state.
-- Quiz, flashcards, materials, and chatbot all converge on user context.
+- Quiz, flashcards, materials, and the tutor all converge on user context.
 - This is expected for a personalized learning platform, but it also means user-model changes have high blast radius.
 
 Notable inferred bridges:
 
-- Chat history endpoint to ChatSession model
+- Tutor session endpoints to TutorSession model
 - Async quiz flow to QuizSession model
 
 Actionable takeaway:
@@ -188,19 +179,19 @@ Actionable takeaway:
 
 - If frontend regressions appear across multiple pages, inspect shared services first.
 
-### 3) AI service graph
+### 3) Django AI engine graph
 
-The dominant node was AIClient, followed by provider orchestration and APIIntegrationError.
+The dominant node is `AIClient`, followed by provider orchestration and `APIIntegrationError`.
 
 Interpretation:
 
-- The AI service is intentionally organized around one orchestration center.
-- Quiz and flashcards routes are thin handlers around that center.
+- AI work is intentionally organized around one orchestration center.
+- Flashcard generation and quiz evaluation are thin callers around that center.
 - Error normalization and provider fallback are core resilience mechanisms.
 
 Actionable takeaway:
 
-- Prioritize contract tests around AIClient and schema repair paths when changing providers or prompt formatting.
+- Prioritize contract tests around `AIClient` and schema repair paths when changing providers or prompt formatting.
 
 ## Confidence Model: How To Read Edges Correctly
 
@@ -223,21 +214,18 @@ Practical rule:
 - /warmup/
 - /health/
 - /admin/
-- /api/ mounted modules for chatbot, quiz, flashcards, accounts, dashboard, materials
+- /api/ mounted modules for tutor, quiz, flashcards, accounts, dashboard, materials
 
-### FastAPI entry points
+### FastAPI entry points (legacy)
 
-- /chatbot
 - /quiz
-- /flashcards
 - /agent
-- /
 - /health
 
 Contract boundary:
 
-- Django performs user auth and persistence.
-- FastAPI executes AI-heavy operations and tool calls.
+- Django performs user auth, persistence, and the tutor agent loop.
+- The legacy FastAPI service executes the remaining quiz AI operations.
 - Internal headers/secret are required for Django to call FastAPI protected routes.
 
 ## Output Files And How To Use Them

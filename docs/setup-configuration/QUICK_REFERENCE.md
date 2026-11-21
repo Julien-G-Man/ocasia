@@ -18,7 +18,7 @@ Django (`backend/.env`):
 - `PAYSTACK_PUBLIC_KEY` — Paystack public key (`pk_test_...` / `pk_live_...`)
 - `PAYSTACK_SECRET_KEY` — Paystack secret key, backend only, never expose to frontend
 
-FastAPI (`ai_service/.env` or process env):
+Legacy FastAPI (`ai_service/.env` or process env; quiz generation only):
 
 - `FASTAPI_SECRET`
 - `FASTAPI_ALLOWED_ORIGINS`
@@ -38,9 +38,8 @@ See `docs/architecture-design/AI_PROVIDERS.md` for full provider docs.
 
 Frontend (`frontend/.env`):
 
-- `REACT_APP_DJANGO_API_URL`
-- `REACT_APP_FASTAPI_URL`
-- `REACT_APP_GOOGLE_CLIENT_ID` - **Google OAuth client ID (must match backend)**
+- `VITE_DJANGO_API_URL`
+- `VITE_GOOGLE_CLIENT_ID` - **Google OAuth client ID (must match backend)**
 - `REACT_APP_EMAILJS_PUBLIC_KEY` - EmailJS account public key
 - `REACT_APP_EMAILJS_SERVICE_ID` - EmailJS email service ID
 - `REACT_APP_EMAILJS_TEMPLATE_VERIFY` - EmailJS template ID for verification emails
@@ -71,13 +70,15 @@ Flashcards:
 - `GET /api/flashcards/decks/`
 - `POST /api/flashcards/review/`
 
-Chat:
+AI Tutor:
 
-- `POST /api/chat/`
-- `POST /api/chat/file/`
-- `GET /api/chat/history/`
-- `DELETE /api/chat/history/clear/`
-- `POST /api/chat/history/rename/`
+- `POST /api/tutor/chat/`
+- `POST /api/tutor/chat/stream/`
+- `POST /api/tutor/upload/`
+- `POST /api/tutor/quiz/from-agent/`
+- `GET /api/tutor/sessions/`
+- `PATCH /api/tutor/sessions/:id/`
+- `DELETE /api/tutor/sessions/:id/`
 
 Materials:
 
@@ -110,7 +111,7 @@ Dashboard/Admin:
 
 ## Important Behavior
 
-- FastAPI `/health` is public for probes.
-- Non-health FastAPI routes require `X-Internal-Secret` from Django.
+- Legacy FastAPI `/health` is public for probes.
+- Non-health legacy FastAPI routes require `X-Internal-Secret` from Django.
 - React warmup pings run on load and every 10 minutes.
 - Materials extraction/download can use Cloudinary signed URL fallback when raw asset URLs are restricted.

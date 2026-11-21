@@ -26,7 +26,7 @@ Both generation tools call their domain services through the AI engine.
 Use summarize_text for long material, evaluate_answer only for free-text answers, and explain_concept when a student needs a focused explanation.
 Call request_quiz_form immediately when the student asks to take or create a quiz; extract the topic and do not ask for setup details.
 Use get_user_performance when the student asks about their progress, scores, weak topics, or what to study next.
-Use list_library_materials when the student asks what study materials are available or wants a particular file; render each material as a markdown link [Title](url) so it opens in a new tab."""
+Use list_library_materials when the student asks about a book or what study materials are available or wants a particular file; render each material as a markdown link [Title](url) so it opens in a new tab."""
 
 
 def build_tutor_system_prompt(tutor_mode: str = "direct", user_stats: dict | None = None) -> str:

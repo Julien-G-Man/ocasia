@@ -76,7 +76,7 @@ src/
 │   ├── AppShell/
 │   │   ├── AppShell.jsx       # Authenticated layout — 240px sidebar (desktop) + bottom tab (mobile)
 │   │   └── AppShell.css
-│   ├── Navbar.jsx             # Top navbar — used by public pages + standalone Chatbot
+│   ├── Navbar.jsx             # Top navbar — used by public pages + standalone AI Tutor page
 │   ├── Footer.jsx             # Footer — public pages only
 │   ├── GoogleSignInButton.jsx
 │   ├── GoogleSignInButton.css
@@ -180,8 +180,8 @@ All authenticated pages (`Dashboard`, `Quiz`, `Flashcards`, `Materials`, `Profil
 - **Desktop ≥1024px:** fixed 240px left sidebar with nav links, user section, logout
 - **Mobile <1024px:** full-width content + fixed bottom tab bar (5 items)
 
-### Standalone (public + chatbot)
-`Home`, `Login`, `Signup`, auth pages, `Donate`, and **`Chatbot`** render with their own `<Navbar>`. Chatbot is standalone because it has its own full-height layout with a session sidebar.
+### Standalone (public + AI tutor)
+`Home`, `Login`, `Signup`, auth pages, `Donate`, and **`Chatbot`** (the AI Tutor page) render with their own `<Navbar>`. It is standalone because it has its own full-height layout with a session sidebar.
 
 ---
 
@@ -235,7 +235,7 @@ All tokens live in `App.css` `:root`. **No component should hardcode colors, fon
 - Axios instance targeting Django REST API
 - Base URL: `VITE_DJANGO_API_URL` (env var)
 - Request interceptor: injects `Authorization: Token <token>` on every request
-- Warmup: pings Django + FastAPI on mount and every 10 min
+- Warmup: pings Django on mount and every 10 min
 
 ### Environment Variables
 All use `VITE_` prefix (Vite requirement):
@@ -243,7 +243,6 @@ All use `VITE_` prefix (Vite requirement):
 | Variable | Description |
 |---|---|
 | `VITE_DJANGO_API_URL` | Django REST API base URL |
-| `VITE_FASTAPI_URL` | FastAPI AI service base URL |
 
 ---
 

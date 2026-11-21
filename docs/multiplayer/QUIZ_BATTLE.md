@@ -20,7 +20,7 @@ celebrates the top 3 and every participant is ranked.
 Host                                   Players
 ─────────────────────────────────────────────────────────
 Create room (topic + settings)
-Questions generated via FastAPI
+Questions generated via the quiz service (legacy FastAPI)
 Room code displayed + share link
 Share code ───────────────────────→ Enter code → Join lobby
 See players joining live             See other players
@@ -72,7 +72,7 @@ class ClashRoom(models.Model):
     host             # ForeignKey(User)
     subject          # CharField(200)
     difficulty       # CharField — "easy" / "medium" / "hard"
-    questions        # JSONField — MCQ list from FastAPI
+    questions        # JSONField — MCQ list from the quiz service
     num_questions    # PositiveIntegerField
     time_per_question # PositiveIntegerField (seconds, default 20)
     status           # "waiting" | "active" | "finished"
@@ -100,7 +100,7 @@ class ClashParticipant(models.Model):
 
 | Method | URL | Auth | Purpose |
 |---|---|---|---|
-| `POST` | `/api/clash/create/` | User | Create room, generate questions via FastAPI. Body: `{subject, difficulty, num_questions, time_per_question, study_text?}`. Returns `{room_code, …}` |
+| `POST` | `/api/clash/create/` | User | Create room, generate questions via the quiz service. Body: `{subject, difficulty, num_questions, time_per_question, study_text?}`. Returns `{room_code, …}` |
 | `POST` | `/api/clash/join/` | User | Join a waiting room. Body: `{room_code}`. Returns room info + participant list |
 | `GET`  | `/api/clash/my/` | User | Current user's finished Clash history list. Returns `{clashes: [{room_code, subject, difficulty, num_questions, score, rank, player_count, is_host, finished_at}]}` |
 | `GET`  | `/api/clash/my/{code}/` | User | Detail for one past clash the user participated in. Returns room meta, `questions`, `my_answers [{q_idx, correct, points}]`, `my_rank`, `my_score`, and full `participants` leaderboard. 403 if user was not a participant. |

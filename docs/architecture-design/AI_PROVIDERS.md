@@ -1,6 +1,6 @@
 # AI Provider System
 
-The FastAPI service uses a multi-provider AI orchestrator (`core/ai_client.py`) that tries
+The Django AI engine uses a multi-provider AI orchestrator (`apps/core/ai_engine/client.py`) that tries
 providers in priority order and falls back automatically when one fails.
 
 ## How It Works
@@ -59,7 +59,7 @@ Do **not** append date suffixes (e.g. `claude-opus-4-6-20250514`) — that will 
 
 ### Minimal local setup
 
-Add to `ai_service/.env`:
+Add to `backend/.env`:
 
 ```bash
 CLAUDE_API_KEY=sk-ant-...

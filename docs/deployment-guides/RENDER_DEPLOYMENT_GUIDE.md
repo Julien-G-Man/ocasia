@@ -1,11 +1,12 @@
-﻿# Render Deployment Guide (Django + FastAPI)
+﻿# Render Deployment Guide (Django + legacy FastAPI)
 
-This project deploys Django and FastAPI as separate Render services.
+Django is the primary service. The legacy FastAPI `ai_service` is still deployed for quiz
+generation and short-answer evaluation.
 
 ## Service Layout
 
-- Service 1: Django API (`backend`)
-- Service 2: FastAPI worker (`ai_service`)
+- Service 1: Django API + tutor agent (`backend`)
+- Service 2: FastAPI worker (`ai_service`) — legacy, quiz only
 - Frontend runs separately (Vercel)
 
 ## Django Service
@@ -28,7 +29,7 @@ python run_django.py --port 10000 --no-reload --workers 4
 - `CORS_ALLOWED_ORIGINS=<frontend-origins>`
 - `CSRF_TRUSTED_ORIGINS=<frontend-origins>`
 
-## FastAPI Service
+## Legacy FastAPI Service
 
 ### Start command
 
@@ -52,5 +53,5 @@ python run.py
 
 - Django `GET /health/` returns 200
 - FastAPI `GET /health` returns 200
-- Django can call FastAPI internal endpoints (quiz/flashcards/chat)
+- Django can call legacy FastAPI internal endpoints (quiz generation, short-answer evaluation)
 - Frontend login + quiz + flashcards + chat work end-to-end

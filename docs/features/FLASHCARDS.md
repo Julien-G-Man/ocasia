@@ -33,11 +33,6 @@ From `backend/apps/flashcards/urls.py`:
 - `POST /api/flashcards/cards/update/` (edit card)
 - `DELETE /api/flashcards/cards/:id/delete/` (also accepts POST)
 
-## FastAPI Endpoints (Internal)
-
-- `POST /flashcards/generate`
-- `POST /flashcards/explain`
-
 ## Models
 
 - `Deck` (owner, title, subject, created_at)
@@ -47,7 +42,7 @@ From `backend/apps/flashcards/urls.py`:
 
 If AI providers fail or return invalid shape:
 
-- FastAPI returns deterministic fallback cards and `fallback_used: true`.
+- The Django AI engine returns deterministic fallback cards and `fallback_used: true`.
 - Frontend also has client-side fallback card generation on request failure.
 
 This ensures user flow does not hard-fail.
@@ -104,7 +99,7 @@ Validation failures now return a consistent `400` payload:
 - Invalid/missing JSON body is handled with `400` (`Invalid JSON body` / `Request body is required`).
 - Unexpected internal exceptions are now logged server-side and return generic error messages.
 - Raw exception text is no longer exposed to API clients.
-- FastAPI upstream errors are mapped safely:
+- AI provider upstream errors are mapped safely:
 	- timeout -> `504`
 	- request/upstream failures -> `503`
 
@@ -117,7 +112,7 @@ The flashcards backend is optimized for high-traffic scenarios:
 - Indexed fields: `user_id`, `deck_id`, `created_at`, `next_review`
 
 **AI Request Management:**
-- Semaphore: Max 50 concurrent AI requests (prevents FastAPI overload)
+- Semaphore: Max 50 concurrent AI requests (prevents AI overload)
 - Timeout: 45 seconds per AI request (prevents hanging requests)
 - Error recovery: Automatic fallback generation on AI failure
 
@@ -150,30 +145,13 @@ The flashcards backend is optimized for high-traffic scenarios:
 
 This release adds practical safeguards for high concurrency, especially during AI traffic spikes.
 
-### FastAPI Service (AI Layer)
+### Django AI Layer
 
-- `flashcards` endpoints now use strict Pydantic request schemas (`subject/text/prompt/num_cards/difficulty`, and explain input bounds).
-- AI generation/explanation calls are protected by an in-process semaphore.
-	- If the semaphore cannot be acquired quickly, the endpoint serves deterministic fallback content instead of queueing unboundedly.
-- Overload responses include `fallback_used: true` and an `overloaded` flag.
-- Outbound provider HTTP client now uses pooled connections, HTTP/2, and configurable limits/timeouts.
-
-Environment variables:
-
-- `FLASHCARDS_AI_MAX_CONCURRENT` (default `250`)
-- `FLASHCARDS_AI_SEMAPHORE_WAIT_SECONDS` (default `0.35`)
-- `FASTAPI_OUTBOUND_MAX_CONNECTIONS` (default `1000`)
-- `FASTAPI_OUTBOUND_MAX_KEEPALIVE` (default `250`)
-- `FASTAPI_OUTBOUND_CONNECT_TIMEOUT` (default `4`)
-- `FASTAPI_OUTBOUND_READ_TIMEOUT` (default `45`)
-- `FASTAPI_OUTBOUND_WRITE_TIMEOUT` (default `10`)
-- `FASTAPI_OUTBOUND_POOL_TIMEOUT` (default `6`)
-- `DJANGO_FASTAPI_MAX_CONNECTIONS` (default `1000`)
-- `DJANGO_FASTAPI_MAX_KEEPALIVE` (default `200`)
-- `DJANGO_FASTAPI_CONNECT_TIMEOUT` (default `5`)
-- `DJANGO_FASTAPI_READ_TIMEOUT` (default `60`)
-- `DJANGO_FASTAPI_WRITE_TIMEOUT` (default `10`)
-- `DJANGO_FASTAPI_POOL_TIMEOUT` (default `6`)
+- Flashcard generation and explanation run in-process through `apps.core.ai_engine`
+  with the shared provider cascade.
+- Generation failures fall back to deterministic cards with `fallback_used: true`.
+- Outbound provider HTTP clients use pooled connections and configurable timeouts.
+- The legacy FastAPI flashcard service is retired.
 
 ### Django/Data Layer
 
@@ -198,7 +176,7 @@ Environment variables:
 
 For a target like ~5k concurrent users on AI features, these code changes improve graceful degradation and reduce failure cascades, but production capacity still depends on:
 
-- horizontal scaling (multiple FastAPI workers/instances),
+- horizontal scaling (multiple Django workers/instances),
 - provider-side throughput limits,
 - database sizing,
 - queueing and observability.

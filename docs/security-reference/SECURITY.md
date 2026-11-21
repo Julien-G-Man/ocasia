@@ -3,7 +3,7 @@
 ## Non-Negotiables
 
 - Never commit secrets (`.env`, API keys, credentials).
-- Keep Django and FastAPI `FASTAPI_SECRET` synchronized and private.
+- Keep the legacy `FASTAPI_SECRET` synchronized and private.
 - Keep CORS and CSRF allowlists explicit in production.
 
 ## Security Fixes Applied - 2026-06-22
@@ -22,9 +22,9 @@ Eight vulnerabilities fixed. All are now resolved in the codebase.
 
 `download_quiz_results` in `backend/apps/quiz/download_helpers.py` returned PDF/DOCX/CSV exports with no auth guard. Fixed: synchronous `TokenAuthentication().authenticate(request)` check added at entry.
 
-### 4. Missing auth on chatbot messages
+### 4. Missing auth on tutor messages
 
-`backend/apps/chatbot/async_views.py` resolved the session-user but did not reject anonymous callers. Fixed: explicit `if not user: return 401` guard added.
+Tutor chat/stream/upload views allow anonymous callers by design, but `TutorConversationStore.get_or_create_session` enforces session ownership — another user's session returns 404. The legacy `apps/chatbot/async_views.py` had the same gap and is being retired.
 
 ### 5. VerifyEmailView lacked explicit AllowAny
 
@@ -50,7 +50,7 @@ This section records vulnerabilities and security gaps found by static review of
 
 ### High: Raw HTML Rendering in Rich Text Output
 
-**Evidence:** `frontend/src/utils/richTextRenderer.jsx` imports `rehype-raw` and passes it to `ReactMarkdown`. That renderer is reused for chatbot responses, flashcards, quiz questions/results, and admin content views.
+**Evidence:** `frontend/src/utils/richTextRenderer.jsx` imports `rehype-raw` and passes it to `ReactMarkdown`. That renderer is reused for tutor responses, flashcards, quiz questions/results, and admin content views.
 
 **Risk:** AI responses, uploaded study material, generated quiz/flashcard content, and stored admin-visible tutor responses can contain raw HTML. Rendering raw HTML creates an HTML injection surface and can become XSS if a dangerous element, attribute, URL transform bypass, or future markdown/plugin change slips through.
 
@@ -84,7 +84,7 @@ This section records vulnerabilities and security gaps found by static review of
 
 ### Medium: Upload Extractors Trust File Extensions
 
-**Evidence:** `backend/apps/quiz/extract_text.py` and `backend/apps/chatbot/file_extractor.py` choose parsers from `file.name` extension. `backend/apps/flashcards/extract_text_helper.py` adds MIME checks, but still relies on client-supplied metadata rather than file signatures.
+**Evidence:** `backend/apps/quiz/extract_text.py` and the tutor upload extractor choose parsers from `file.name` extension. `backend/apps/flashcards/extract_text_helper.py` adds MIME checks, but still relies on client-supplied metadata rather than file signatures.
 
 **Risk:** An attacker can upload malformed or mislabeled files to parser libraries (`PyPDF2`, `python-docx`, `python-pptx`). The 10 MB size limit helps, but extension-only validation still leaves parser abuse and resource exhaustion risk. This is higher risk because these endpoints process untrusted documents synchronously in request flow.
 
@@ -93,7 +93,7 @@ This section records vulnerabilities and security gaps found by static review of
 - Keep extension and MIME checks, but treat them as hints only.
 - Add parser timeouts or run extraction in an isolated worker.
 - Enforce page/slide/paragraph count limits in addition to byte-size limits.
-- Align quiz, flashcards, chatbot, profile image, and material upload validation rules.
+- Align quiz, flashcards, tutor, profile image, and material upload validation rules.
 
 ### Medium: Long-Lived Auth Tokens Are Stored in localStorage
 
@@ -117,7 +117,7 @@ This section records vulnerabilities and security gaps found by static review of
 - Verify first bytes before upload or immediately after upload.
 - Store detected content type separately from client-supplied metadata.
 
-### Low: Internal FastAPI Secret Comparison Is Plain String Equality
+### Low: Internal FastAPI Secret Comparison Is Plain String Equality (legacy)
 
 **Evidence:** `ai_service/core/middleware.py` compares `internal_secret != settings.FASTAPI_SECRET`.
 
@@ -143,7 +143,7 @@ Django:
 - `CORS_ALLOWED_ORIGINS` for frontend origins.
 - `CSRF_TRUSTED_ORIGINS` aligned with same trusted origins.
 
-FastAPI:
+Legacy FastAPI:
 
 - `FASTAPI_ALLOWED_ORIGINS` for browser-origin validation.
 - `/health` remains public.
@@ -448,3 +448,4 @@ If a secret leaks:
 2. Redeploy all affected services.
 3. Audit recent logs and access patterns.
 4. Remove leaked value from history where possible.
+.

@@ -458,7 +458,7 @@ def post(self, request):
 - Test rate limiting under load (verify 5/hour is sufficient but not too restrictive).
 - Stress test admin users list pagination (10k+ users).
 - Monitor database connection pool under 5k concurrent users.
-- Verify semaphore limits on FastAPI flashcards service.
+- Verify concurrency limits on the Django flashcards service.
 
 ---
 

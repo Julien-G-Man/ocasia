@@ -16,10 +16,10 @@
 | AI Mistake Patterns (Weekly Batch) | ⏳ Not started |
 
 > **Note:** Agentic inline quiz creation (user says "quiz me on X" in the AI Tutor →
-> quiz generated immediately) is also shipped, but lives in the chatbot feature, not
-> this tier. It uses a synchronous FastAPI call (`POST /agent/quiz/generate/`) rather
-> than a Celery task — one LLM call per chatbot-initiated quiz, no caching needed since
-> each quiz is personalised to the user's current difficulty level.
+> quiz generated immediately) is also shipped, but lives in the tutor feature, not
+> this tier. It uses a synchronous call to the quiz service rather than a Celery task —
+> one LLM call per tutor-initiated quiz, no caching needed since each quiz is
+> personalised to the user's current difficulty level.
 
 ---
 
@@ -32,7 +32,7 @@ If 500 students take a quiz on the same Chemistry PDF, the material summary
 is generated once and served 500 times. If a student submits the same quiz
 answers twice, the analysis is fetched from cache.
 
-The ResearchCache model already exists in the chatbot app. Extend this pattern.
+The ResearchCache model already exists in the tutor app (`TutorResearchCache`). Extend this pattern.
 
 ---
 
@@ -201,7 +201,7 @@ filename says nothing about it.
 On the material detail page, a "Take a quiz on this →" button pre-fills
 the quiz generation form with:
 - Subject: from the material's subject field
-- Study text: extracted text from the material (already done for chatbot)
+- Study text: extracted text from the material (already done for the tutor)
 - Suggested questions: the 3 pre-generated questions seeded as a starting point
 
 ---
@@ -209,7 +209,7 @@ the quiz generation form with:
 ## 3. Socratic Tutor Mode ✅ SHIPPED
 
 ### What It Does
-A toggle in the chatbot interface that shifts the AI from answer-giving
+A toggle in the AI tutor interface that shifts the AI from answer-giving
 to guided discovery. Instead of:
 
 > "Osmosis is the movement of water molecules across a semipermeable
@@ -244,24 +244,21 @@ two of the highest-impact learning techniques in cognitive science.
 ### Shipped Implementation
 
 **`tutor_mode` is a per-request field, not a DB column.**
-Django forwards `tutor_mode: "direct" | "socratic"` in the `/agent/chat`
-payload on every request. No `ChatSession` migration, no `PATCH` endpoint.
+Django forwards `tutor_mode: "direct" | "socratic"` in the tutor chat payload
+on every request. No `TutorSession` migration, no `PATCH` endpoint.
 
-**System prompt injection lives in `ai_service/agent/prompts.py`:**
+**System prompt injection lives in `backend/apps/tutor/agent/prompts.py`:**
 ```python
-_SOCRATIC_RULES = """
-TUTOR MODE: SOCRATIC
-Guide the student through questions rather than giving answers directly.
-Ask what they already know, build on correct thinking, ask one question at a time.
-Reveal the full answer only after at least two exchanges of guided reasoning,
-or if the student explicitly asks you to explain directly.
-"""
-
-def build_chat_system_prompt(tutor_mode: str, user_stats: dict | None) -> str:
-    ...
+def build_tutor_system_prompt(tutor_mode: str = "direct", user_stats: dict | None = None) -> str:
+    sections = [_PLATFORM_FACTS, _FORMATTING, _TOOL_GUIDANCE, f"Today's date: {date.today().isoformat()}."]
+    if user_stats:
+        ...
     if tutor_mode == "socratic":
-        sections += ["", _SOCRATIC_RULES]
-    return "\n".join(sections)
+        sections.append(
+            "SOCRATIC MODE: Guide with one question at a time, build on correct reasoning, "
+            "and reveal the full answer after at least two guided exchanges unless the student asks directly."
+        )
+    return "\n\n".join(sections)
 ```
 
 **Frontend toggle in `Chatbot.jsx`:**

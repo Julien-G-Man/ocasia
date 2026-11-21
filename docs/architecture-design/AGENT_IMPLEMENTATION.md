@@ -4,40 +4,39 @@
 
 ## 1. What Agent Means Here
 
-Agent is a pattern where the AI receives a typed list of capabilities (tools), can request
-to call them instead of generating a final response, and continues reasoning over the results
-until it produces a definitive answer.
+An agent receives a typed list of capabilities (tools), can request to call them instead of
+generating a final response, and keeps reasoning over the results until it produces a
+definitive answer.
 
 In Ocasia this means:
-- The AI receives tool definitions (name, description, JSON Schema) at the start of a request.
-- The AI can respond with a `tool_use` block instead of text.
-- The executor runs the tool in-process and returns the result to the AI.
-- The loop repeats until `stop_reason == end_turn` or `max_iterations` is hit.
+
+- The model receives tool definitions (name, description, JSON Schema) at the start of a request.
+- The model can return `tool_calls` instead of text.
+- The executor runs each tool in-process and returns a `ToolMessage` to the model.
+- The loop repeats until the model stops calling tools or `MAX_AGENT_ITERATIONS` is hit.
+
+The tutor agent runs **inside Django**. There is no separate AI service for the tutor.
 
 ---
+
 ## 2. Architecture
 
 ```
 React
-  │  POST /api/chat/
+  │  POST /api/tutor/chat/stream/
   ▼
-Django (API Gateway)
-  ├── Auth & session management
-  ├── Fetch user stats from DB (compact, ~60 tokens)
-  ├── Extract file text (file uploads)
-  ├── Persist messages (ChatMessage)
-  └── Forward to FastAPI
-          │  POST /agent/chat
-          ▼
-       FastAPI (AI Service)
-          ├── Build minimal system prompt (prompts.py)
-          ├── Run agent loop (router.py)
-          │     ├── kb_search  → ai_service/kb/ provider
-          │     └── web_search → Tavily
-          └── Return { "response": str }
+Django (API + agent runtime)
+  ├── Auth, session ownership, and history (TutorConversationStore)
+  ├── TutorAgent (apps/tutor/agent/runner.py)
+  │     ├── build_tutor_system_prompt(...)
+  │     ├── ChatOpenAI.bind_tools(get_tools())
+  │     ├── run tools via executor.execute_tool()
+  │     └── emit tool_start / tool_done / token / done events
+  ├── Persist TutorMessage rows on done
+  └── SSE via StreamingHttpResponse
 ```
 
-Django owns all DB work. FastAPI owns all AI work. No prompt construction in Django.
+Django owns auth, persistence, prompts, tool execution, and the agent loop.
 
 ---
 
@@ -45,99 +44,80 @@ Django owns all DB work. FastAPI owns all AI work. No prompt construction in Dja
 
 | Layer | Responsibility |
 |---|---|
-| Django | Auth, session/message persistence, user stats, file extraction |
-| FastAPI | System prompt, agent loop, tool orchestration, LLM calls |
-| Agent tools | Atomic capabilities (kb_search, web_search, generate_quiz, …) |
-
-Django never builds prompts. FastAPI never writes to the DB.
+| Django views (`apps/tutor/views.py`) | Auth, session ownership, history, upload extraction, SSE framing |
+| `TutorConversationStore` | Session/message persistence and ownership rules |
+| `TutorAgent` | Prompt construction, model calls, tool loop, streaming |
+| `registry` / `executor` | Tool schemas, descriptions, per-tool timeouts, error normalization |
+| Tool modules | Atomic capabilities (kb_search, generate_quiz, …) |
 
 ---
 
 ## 4. File Structure
 
 ```
-ai_service/
-  core/
-    ai_client.py         # generate_content() + generate_with_tools() + generate_with_tools_stream()
-    upstash.py           # Upstash Vector async client: upsert_document_chunks(), search_document_chunks()
-    config.py            # All settings (ANTHROPIC_API_KEY, UPSTASH_VECTOR_URL, etc.)
+backend/apps/tutor/
   agent/
-    prompts.py           # All system prompt construction (build_chat_system_prompt, etc.)
-    schemas.py           # ToolDefinition, ToolCall, ToolResult, ChatRequest, IndexDocumentRequest
-    registry.py          # TOOL_REGISTRY, get_definitions(), get_handler()
-    executor.py          # execute_tool() — 5 error classes, per-tool timeouts, never raises
-    helpers.py           # _run_agent_loop() + _run_agent_loop_stream() — extra_tool_handlers pattern
-    router.py            # Route handlers: /tools, /call, /orchestrate, /chat, /chat/stream, /document/index
+    runner.py            # TutorAgent — run(), stream(), _build_messages(), _run_tool()
+    llm.py               # build_chat_model() → ChatOpenAI
+    prompts.py           # build_tutor_system_prompt(), wrap_file_context()
+    registry.py          # get_tools(), TOOL_DESCRIPTIONS, TOOL_TIMEOUTS, _HANDLERS
+    executor.py          # execute_tool() — asyncio.wait_for, never raises
+    schemas.py           # TutorAgentResult
     tools/
-      youtube.py         # extract_youtube_transcript()
-      evaluate.py        # evaluate_answer()
-      summarize.py       # summarize_text()
-      search.py          # search_web() via Tavily / SerpAPI
-      document.py        # make_search_document_handler(session_id) — RAG query tool factory
-  kb_config/
-    base.py              # KBSearchProvider ABC
-    tfidf_provider.py    # Default — token overlap + keyword/heading boost
-    loader.py            # Resolves platform_kb/ path, instantiates provider, exposes kb_store singleton
-    md_parser.py         # Loads kb_index.json + .md files, merges into chunk dicts
-  platform_kb/
-    kb_index.json        # Chunk index: chunk_id -> {heading, source_file, keywords}
-    *.md                 # Content files, one ## section per chunk, matched by heading
-  services/
-    quiz/                # POST /quiz/ — standalone quiz generation
-    flashcards/          # POST /flashcards/ — standalone flashcard generation
-
-backend/apps/chatbot/
-  async_views.py         # Proxy views: fetch stats, chunk+index file, forward to /agent/chat, persist response
-  helpers.py             # Session/auth/DB helpers, chunk_text(), _fetch_user_performance_sync()
-  models.py              # ChatSession (has_document flag), ChatMessage
+      content.py         # kb_search, summarize_text, request_quiz_form
+      document.py        # search_document
+      files.py           # extract_youtube_transcript
+      generation.py      # generate_quiz, generate_flashcards, evaluate_answer, explain_concept
+      library.py         # list_library_materials
+      performance.py     # get_user_performance
+      search.py          # search_web
+  retrieval/             # RAGEngine, chunking, pgvector search
+  knowledge/             # platform KB loader + BM25/vector index
+  conversations.py       # TutorConversationStore
+  models.py              # TutorSession, TutorMessage, TutorDocument, TutorDocumentChunk
+  views.py               # chat, stream, upload, quiz-from-agent, session CRUD
+  urls.py
 ```
 
 ---
 
 ## 5. Registered Tools
 
-All static tools live in `ai_service/agent/registry.py`.
-Handlers run in-process — no internal HTTP round-trips.
+All tools live in `apps/tutor/agent/registry.py` and run in-process.
 
-| Tool | Handler | Notes | Timeout |
+| Tool | Handler | Purpose | Timeout |
 |---|---|---|---|
-| `kb_search` | `kb/loader.py` singleton | Platform knowledge retrieval | 5s |
-| `search_web` | `tools/search.py` | Tavily/SerpAPI — agent decides when to call | 12s |
-| `extract_youtube_transcript` | `tools/youtube.py` | Deterministic API call | 30s |
-| `summarize_text` | `tools/summarize.py` | LLM — truncation fallback on failure | 30s |
-| `evaluate_answer` | `tools/evaluate.py` | LLM + string-match fallback | 25s |
-| `generate_quiz` | inline in registry.py | LLM via quiz service | 90s |
-| `generate_flashcards` | inline in registry.py | LLM via flashcards service | 45s |
-| `explain_concept` | inline in registry.py | LLM | 20s |
-| `request_quiz_form` | inline in registry.py | No-op signal tool (sets side_data) | 2s |
-| `search_document` | `tools/document.py` (per-request) | RAG — queries Upstash Vector for session | 15s |
-
-### Chatbot tool subset
-
-`POST /agent/chat` always exposes these three tools (`_CHAT_TOOLS`):
-
-```python
-_CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]
-```
-
-When `has_document=True`, `search_document` is **additionally** injected via
-`extra_tool_defs` / `extra_tool_handlers` (not added to `_CHAT_TOOLS` — see §18).
-
-All other tools (YouTube, summarize, evaluate, generate_quiz, generate_flashcards, explain_concept)
-are available via `POST /agent/orchestrate` when called with the appropriate whitelist.
+| `kb_search` | `tools/content.py` | Hybrid KB retrieval | 10s |
+| `search_web` | `tools/search.py` | Tavily web search | 12s |
+| `search_document` | `tools/document.py` | pgvector study-material retrieval | 15s |
+| `extract_youtube_transcript` | `tools/files.py` | YouTube transcript + title | 30s |
+| `summarize_text` | `tools/content.py` | Condense long content | 30s |
+| `evaluate_answer` | `tools/generation.py` | Grade a free-text answer | 25s |
+| `generate_quiz` | `tools/generation.py` | Generate MCQ/short-answer questions | 90s |
+| `generate_flashcards` | `tools/generation.py` | Generate flashcards | 45s |
+| `explain_concept` | `tools/generation.py` | Focused explanation | 20s |
+| `request_quiz_form` | `tools/content.py` | Signal quiz intent (sets `action`/`prefill`) | 5s |
+| `get_user_performance` | `tools/performance.py` | Live quiz performance snapshot | 10s |
+| `list_library_materials` | `tools/library.py` | Community materials with file links | 10s |
 
 ### Input/output schemas
 
 **kb_search**
 ```
 query: str, top_k: int = 4
--> {chunks: [{heading, text}]}
+-> {chunks: [{heading, text, score, source}]}
 ```
 
 **search_web**
 ```
 query: str, num_results: int = 3
 -> {results: [{title, url, snippet}]}
+```
+
+**search_document**
+```
+query: str, top_k: int = 5
+-> {chunks: [{text, score, source, page_number}], answer: str}
 ```
 
 **extract_youtube_transcript**
@@ -160,7 +140,7 @@ question: str, correct_answer: str, user_answer: str
 
 **generate_quiz**
 ```
-study_text: str, subject: str,
+study_text: str | None, subject: str,
 difficulty: "easy" | "medium" | "hard" = "medium",
 num_mcq: int = 5, num_short: int = 0
 -> {mcq_questions: list, short_questions: list, subject: str, difficulty: str}
@@ -179,160 +159,158 @@ question: str, answer: str
 -> {explanation: str}
 ```
 
+**request_quiz_form**
+```
+topic: str
+-> {status: "quiz_form_shown", topic: str}
+```
+
+**get_user_performance**
+```
+-> {available: bool, total_quizzes: int, avg_score: float,
+    all_topics: [[topic, accuracy, count]], recent_quizzes: [...], due_topics: [...]}
+```
+
+**list_library_materials**
+```
+query: str = "", subject: str = "", limit: int = 10
+-> {materials: [{id, title, subject, url, filename}], count: int, message: str}
+```
+
 ---
 
 ## 6. Executor
 
 `agent/executor.py` dispatches every tool call and handles all failure modes.
-It never raises — errors surface through `ToolResult.error`.
+It never raises — errors surface as `{"error": "..."}` dicts.
 
-| Exception caught | Cause | Log level |
+| Failure | Cause | Handling |
 |---|---|---|
-| `KeyError` | Unknown tool name | ERROR |
-| `asyncio.TimeoutError` | Per-tool timeout exceeded | WARNING |
-| `TypeError` | AI passed wrong argument names or types | WARNING |
-| `ValueError` | Expected user-facing error (bad URL, transcript unavailable, etc.) | WARNING |
-| `Exception` | Unexpected failure | EXCEPTION (full traceback) |
+| `KeyError` | Unknown tool name | `{"error": "Unknown tool: ..."}` |
+| `asyncio.TimeoutError` | Per-tool timeout exceeded | `{"error": "Tool '...' timed out after Ns."}` |
+| `ToolExecutionError` | Expected user-facing tool error | `{"error": "..."}` |
+| `Exception` | Unexpected failure | `{"error": "Unexpected error: ..."}`, logged with traceback |
 
-Both sync and async handlers are supported. Sync handlers are wrapped in `asyncio.to_thread()`.
+`asyncio.wait_for` enforces the per-tool timeout from `registry.TOOL_TIMEOUTS`.
 
 ---
 
-## 7. generate_with_tools() in ai_client.py
+## 7. TutorAgent Loop
+
+`TutorAgent` (`agent/runner.py`) is constructed per request.
 
 ```python
-async def generate_with_tools(
-    self,
-    messages: list[dict],   # Anthropic messages format
-    tools: list[dict],      # Anthropic-format tool definitions
-    max_tokens: int = 1024,
-    system: str = "",
-    timeout: int = 60,
-) -> dict:
-    # Returns:
-    # {
-    #   stop_reason: "tool_use" | "end_turn",
-    #   tool_calls:  [{id, name, input}],   # populated when stop_reason == tool_use
-    #   text:        str | None,             # populated when stop_reason == end_turn
-    #   raw_content: list,                  # content blocks for history reconstruction
-    # }
+TutorAgent(
+    message=...,
+    history=[...],              # [{"role": "user"|"ai", "content": str}]
+    tutor_mode="direct",        # or "socratic"
+    user_stats=None,            # optional performance snapshot
+    file_text=None,             # first upload turn only
+    session_id=None,            # injected into search_document
+    user_id=None,               # injected into get_user_performance
+    has_document=False,
+    max_iterations=MAX_AGENT_ITERATIONS,
+)
 ```
 
-**Provider cascade (in order):**
-1. Claude — Anthropic SDK native tool use (most reliable)
-2. NVIDIA OpenAI-compatible — OpenAI `tools=` format
-3. Azure OpenAI — OpenAI `tools=` format
-4. Text-mode fallback — embed schemas in system prompt, parse `{"action":"tool_call",...}` JSON
+### `run()` — buffered
+
+1. `_build_messages()` → `[SystemMessage, *history, HumanMessage]`.
+2. `_ensure_model()` → `ChatOpenAI.bind_tools(get_tools())`.
+3. `ainvoke` the bound model.
+4. If `tool_calls`: append the `AIMessage`, run each tool via `_run_tool`, append
+   `ToolMessage`, repeat.
+5. If no tool calls: return `TutorAgentResult`.
+6. On hitting the iteration cap: force one final answer with "Do not call more tools."
+
+### `stream()` — SSE
+
+Same loop with `astream`, yielding event dicts:
+
+- `{"event": "tool_start", "tool": name, "args": safe_args}`
+- `{"event": "tool_done", "tool": name, "duration_ms": int, "result": ...}`
+- `{"event": "token", "content": str}`
+- `{"event": "done", "side_data": {"tool_calls_made": [...], "action"?, "prefill"?}}`
+- `{"event": "error", "message": str}`
+
+### Per-call context injection
+
+`_run_tool` injects request-scoped values before dispatch:
+
+- `search_document` → `tool_args["session_id"] = self.session_id`
+- `get_user_performance` → `tool_args["user_id"] = self.user_id`
+
+### Result contract
+
+`TutorAgentResult(response, tool_calls_made, action, prefill)`:
+
+- `action="show_quiz_form"` and `prefill={"topic": ...}` are set when the agent calls
+  `request_quiz_form`.
+- `tool_calls_made` records every tool name for analytics and debugging.
 
 ---
 
-## 8. Agent Endpoints
+## 8. Django Integration
 
-### POST /agent/chat — Primary chatbot endpoint
+### Views (`apps/tutor/views.py`)
 
-Accepts the structured payload from Django. Builds the system prompt internally, runs the
-agent loop restricted to `kb_search` + `web_search` + `request_quiz_form` (+ `search_document`
-when `has_document=True`), falls back to one-shot on failure.
+| View | Endpoint | Purpose |
+|---|---|---|
+| `TutorChatView` | `POST /api/tutor/chat/` | Non-streaming chat |
+| `TutorChatStreamView` | `POST /api/tutor/chat/stream/` | SSE streaming chat |
+| `TutorDocumentUploadView` | `POST /api/tutor/upload/` | Upload + first-turn analysis |
+| `TutorQuizFromAgentView` | `POST /api/tutor/quiz/from-agent/` | Inline quiz generation |
+| `TutorSessionListView` | `GET /api/tutor/sessions/` | Sidebar session list |
+| `TutorSessionDetailView` | `GET/PATCH/DELETE /api/tutor/sessions/<id>/` | History, rename, delete |
 
-```json
-{
-  "message": "string",
-  "conversation_history": [...],
-  "tutor_mode": "direct | socratic",
-  "user_stats": { ... } | null,
-  "file_text": "string" | null,
-  "user_id": int | null,
-  "session_id": "string" | null,
-  "has_document": false
-}
-```
+### Chat flow
 
-Returns `{ "response": str }`, optionally with `"action"` and `"prefill"`.
+1. Parse `message`, `session_id`, `tutor_mode`, and optional `history`.
+2. `TutorConversationStore.get_or_create_session(request.user, payload)` — enforces ownership.
+3. `history_for_session(...)` — stored messages, or import supplied history.
+4. `TutorAgent(**payload).run()` / `.stream()`.
+5. `save_turn(session, message, response)` — persist user + AI rows.
+6. Return JSON or SSE.
 
-### POST /agent/document/index — Document RAG indexing
-
-Called fire-and-forget by Django after file text extraction.
-FastAPI embeds all chunks via `text-embedding-3-small` and upserts them into
-Upstash Vector under `namespace=session_id`.
-
-```json
-Request:
-{ "session_id": "string", "chunks": ["string", ...], "filename": "string" }
-
-Response:
-{ "indexed": 23, "session_id": "string" }
-```
-
-### POST /agent/orchestrate — Generic tool-loop endpoint
-
-Used by quiz evaluation and other non-chatbot flows that need tool access.
-Accepts `messages`, `tools` whitelist, `system_prompt`, `max_tokens`, `max_iterations`.
-Returns `OrchestratorResponse`.
-
-### GET /agent/tools, POST /agent/call
-
-Debug/direct-call endpoints. Not called by Django in production.
+The view injects `user_id` for `get_user_performance` and `session_id` for
+`search_document`.
 
 ---
 
-## 9. Django Integration
+## 9. Fallback Strategy
 
-`async_views.chatbot_api_async` flow:
-
-1. Parse `message`, `session_id`, `tutor_mode` from request body.
-2. Resolve auth + get/create session.
-3. Save user message to DB.
-4. Fetch last 20 messages from session history.
-5. Fetch user stats via `_fetch_user_performance_sync()` — all topics (no minimum threshold), last 5 quiz sessions, and due topics.
-6. `POST /agent/chat` with the structured payload.
-7. On FastAPI failure: return static fallback (message not persisted).
-8. Save AI response to DB, return to React.
-
-There is no agent flag, no prompt building, no one-shot path in Django.
-FastAPI owns the full AI decision tree.
+1. **Tool error** — executor catches the exception, returns `{"error": ...}`; the agent
+   keeps reasoning.
+2. **Iteration cap** — the agent is forced to produce a final answer without more tools.
+3. **Unexpected view error** — returns `{"error": "..."}` with HTTP 502; the partial stream
+   may already have emitted tokens.
 
 ---
 
-## 10. Fallback Strategy (Three Layers)
+## 10. System Prompt
 
-1. **Tool error** — executor catches exception, returns `ToolResult.error`; agent continues reasoning.
-2. **Agent loop empty/failed** — one-shot `generate_content()` call in `router.py` (no tools, just system + message).
-3. **FastAPI unreachable** — Django returns a static keyword-matched response; message is not persisted.
+All prompt text lives in `agent/prompts.py`.
 
----
+`build_tutor_system_prompt(tutor_mode, user_stats)` contains:
 
-## 11. System Prompt
-
-All prompt text lives in `ai_service/agent/prompts.py`. The router never builds strings.
-
-The chatbot system prompt (`build_chat_system_prompt`) contains:
-- Platform facts (name, URLs, support contacts)
-- Formatting rules (markdown links for page references)
-- Tool usage rules (kb_search first, web_search for external only, request_quiz_form for quiz intent)
+- Platform facts (name, URLs, support contacts, feature list)
+- Formatting rules (markdown links to platform pages)
+- Tool usage rules (kb_search first, search_document for materials, etc.)
 - Current date
-- User stats block (injected if available): recent quiz sessions, all topics sorted weakest-first, due topics
-- Socratic mode block (injected if `tutor_mode == "socratic"`)
+- User stats block (when available): totals, recent quizzes, weakest topics, due topics
+- Socratic mode block (when `tutor_mode == "socratic"`)
 
-The user stats block format (from `_fetch_user_performance_sync`):
-```
-STUDENT LEARNING PROGRESS:
-[5 quizzes taken | Avg score: 72.4%]
-Recent quizzes: Thermodynamics (8/10, 80%), Mechanics (4/10, 40%)
-All topics (weakest first): Mechanics (40%, 10q), Calculus (58%, 6q), Thermodynamics (80%, 10q)
-Due for review: Mechanics
-```
-
-`__QUIZ__:` messages in conversation history are summarized to `[Quiz generated: Topic, N questions, difficulty]`
-before being sent to the AI — the raw JSON blob is never forwarded.
+`__QUIZ__:` messages in history are summarised to `[Quiz generated: ...]` before being
+sent to the model — the raw JSON blob is never forwarded.
 
 ---
 
-## 12. What Does NOT Change
+## 11. What Does NOT Change
 
-| Endpoint | Why it stays hardcoded |
+| Endpoint | Why it stays direct |
 |---|---|
-| `POST /api/quiz/generate/` | User explicitly requests quiz — no AI reasoning needed |
-| `POST /api/flashcards/generate/` | Same — explicit generation request |
+| `POST /api/quiz/generate/` | Explicit generation request |
+| `POST /api/flashcards/generate/` | Explicit generation request |
 | `POST /api/quiz/submit/` | Deterministic MCQ scoring + persisted session |
 | `POST /api/flashcards/review/` | SM-2 algorithm |
 | All auth endpoints | Never AI-controlled |
@@ -340,207 +318,138 @@ before being sent to the AI — the raw JSON blob is never forwarded.
 
 ---
 
-## 13. What the AI Controls vs the Backend
+## 12. What the AI Controls vs the Backend
 
 | Decision | Owner |
 |---|---|
 | Which tool to call and when | AI |
-| When to search the KB vs the web | AI |
+| When to search the KB vs the web vs documents | AI |
 | Quiz content, flashcard text | AI |
 | Short-answer evaluation | AI |
 | Summarization, explanation | AI |
 | Authentication | Django |
 | MCQ answer comparison | Django (deterministic) |
 | SM-2 scheduling | Django (algorithm-based) |
-| DB writes (sessions, decks, messages) | Django |
+| DB writes (sessions, messages) | Django |
 | Input validation | Django |
 
 ---
 
-## 14. Key Design Rules
+## 13. Key Design Rules
 
-1. **Tools are in-process async functions.** No HTTP round-trips inside FastAPI.
+1. **Tools are in-process async functions.** No HTTP round-trips inside the agent.
 2. **Tools are stateless.** No DB writes. Django persists everything after the loop returns.
-3. **The agent loop has a hard cap.** Default `max_iterations=5`, max 10.
-4. **Schemas drive AI performance.** Tool `description` and `input_schema` are prompt engineering.
-5. **Graceful degradation at every level.** Each tool catches its own exceptions; the executor never raises; the router returns an error field; Django has a static fallback.
-6. **Prompt text lives in `prompts.py`.** The router imports functions — it never builds strings itself.
+3. **The agent loop has a hard cap.** `MAX_AGENT_ITERATIONS` (default 10).
+4. **Schemas drive AI performance.** Tool `description` and input schema are prompt engineering.
+5. **Graceful degradation at every level.** Each tool catches its own exceptions; the
+   executor never raises; the agent emits an error event.
+6. **Prompt text lives in `prompts.py`.** The runner imports functions — it never builds
+   strings itself.
 
 ---
 
-## 15. Example Trace: YouTube video to flashcards
+## 14. Example Trace: YouTube video to flashcards
 
 User: `"Make me flashcards from https://youtube.com/watch?v=abc123"`
 
 ```
-Django chatbot_api_async:
-  → Creates/loads session, saves user message to DB
-  → Fetches user stats
-  → POST /agent/chat { message, conversation_history, user_stats, tutor_mode: "direct" }
+TutorChatView:
+  → get_or_create_session + history_for_session
+  → TutorAgent(message=..., history=...).run()
 
-FastAPI /agent/chat:
-  → Builds system prompt
-  → Agent loop iteration 1:
-      AI: tool_use { name: "extract_youtube_transcript", input: {url: "..."} }
-      Executor: {text: "...", title: "Intro to ML", video_id: "abc123"}
-  → Agent loop iteration 2:
-      AI: tool_use { name: "generate_flashcards",
-                     input: {text, subject: "Intro to ML", num_cards: 10} }
-      Executor: {cards: [{question, answer}, ...]}
-  → Agent loop iteration 3:
-      AI: end_turn { text: "Here are 10 flashcards based on Intro to ML: ..." }
-  → Returns { "response": "Here are 10 flashcards..." }
+TutorAgent loop:
+  iteration 1:
+    AI: tool_calls [{name: "extract_youtube_transcript", args: {url: "..."}}]
+    executor: {text: "...", title: "Intro to ML", video_id: "abc123"}
+  iteration 2:
+    AI: tool_calls [{name: "generate_flashcards",
+                     args: {text, subject: "Intro to ML", num_cards: 10}}]
+    executor: {cards: [{question, answer}, ...]}
+  iteration 3:
+    AI: text → "Here are 10 flashcards based on Intro to ML: ..."
 
-Django chatbot_api_async:
-  → Saves AI response as ChatMessage
-  → Returns JSON to React
+TutorChatView:
+  → save_turn(session, message, response)
+  → return {response, session_id}
 ```
 
 ---
 
-## 16. Anti-Patterns to Avoid
+## 15. Anti-Patterns to Avoid
 
 - Do not add auth, scoring, or DB writes to any tool.
-- Do not put prompt construction in Django — it belongs in FastAPI `prompts.py`.
+- Do not build prompt strings in the views — they belong in `prompts.py`.
 - Do not let tools call each other. The AI composes them; tools do not.
-- Do not expose all tools to the chatbot. Use `_CHAT_TOOLS = ["kb_search", "search_web", "request_quiz_form"]`.
+- Do not call provider SDKs directly from views — go through the agent or `apps.core.ai_engine`.
 - Do not remove the direct quiz/flashcard endpoints. The quiz page calls them directly.
-- Do not add `search_document` to `_CHAT_TOOLS` — this causes it to be registered twice
-  (once from `get_definitions(_CHAT_TOOLS)` and once from `extra_tool_defs`), which makes
-  Claude reject the request with `tools: Tool names must be unique`.
 
 ---
 
-## 18. Document RAG — Per-Request Tool Injection
+## 16. Document RAG — Per-Call Session Injection
 
 ### Problem
 
-`search_document` needs a `session_id` pre-bound into its handler so it can query the
-correct Upstash Vector namespace. The global `TOOL_REGISTRY` cannot hold this because
-`session_id` varies per request. Passing it as a tool input would expose internal state
-to the AI and risk namespace leakage.
+`search_document` needs a `session_id` so it can scope retrieval to the right document.
+The global tool registry cannot hold this because `session_id` varies per request.
 
-### Solution: extra_tool_handlers
+### Solution
 
-`_run_agent_loop` and `_run_agent_loop_stream` accept two optional parameters:
-
-```python
-extra_tool_handlers: dict[str, async callable] | None
-extra_tool_defs:     list[ToolDefinition] | None
-```
-
-`extra_tool_handlers` are dispatched **before** the global registry in the tool execution
-loop. `extra_tool_defs` are appended to the tools list sent to the AI.
-
-The registry stores the `search_document` ToolDefinition (so `get_definitions()` can
-return its schema for the `/agent/tools` debug endpoint), but its `handler` key is `None`
-— it is never called from `execute_tool()`.
-
-### Handler factory
+`TutorAgent._run_tool` injects `session_id` into the tool arguments immediately before
+dispatch:
 
 ```python
-# agent/tools/document.py
-def make_search_document_handler(session_id: str) -> Callable:
-    async def handler(query: str, top_k: int = 5) -> dict:
-        embedding = await _embed_query(query)
-        results = await search_document_chunks(session_id, embedding, top_k)
-        return {"chunks": [{"text": r["text"], "score": r["score"]} for r in results]}
-    return handler
+if name == "search_document" and self.session_id:
+    tool_args["session_id"] = self.session_id
 ```
 
-### Injection in the router
+This keeps the tool signature explicit while avoiding shared mutable state.
 
-```python
-# agent/router.py  (POST /agent/chat)
-extra_handlers = None
-extra_defs = None
-if request.has_document and request.session_id:
-    from agent.tools.document import make_search_document_handler
-    extra_handlers = {"search_document": make_search_document_handler(request.session_id)}
-    extra_defs = [TOOL_REGISTRY["search_document"]["definition"]]
-```
+### Upload flow
 
-### Django side
+`TutorDocumentUploadView`:
 
-`chatbot_file_api_async` (`backend/apps/chatbot/async_views.py`):
+1. Extracts file text in-process (PDF/DOCX/PPTX/TXT, max 10 MB).
+2. Runs `TutorAgent` immediately with `file_text=...` for the first analysis turn.
+3. `_maybe_index_upload(...)` (best-effort, fire-and-forget) chunks and embeds the file
+   into pgvector.
+4. Sets `TutorSession.has_document = True`.
 
-1. Extracts file text in-process (sync, wrapped in `sync_to_async`).
-2. Chunks text with `chunk_text(text, size=500, overlap=100)` (word-based sliding window).
-3. Fires `asyncio.create_task(_index_document())` — the POST to `/agent/document/index`
-   runs concurrently while Django continues processing the initial message.
-4. Sets `session.has_document = True` (saved with `update_fields=["has_document"]`).
-5. Forwards the full `file_text` to `/agent/chat` for the first analysis turn.
-
-All subsequent messages in the session include `has_document=True` and `session_id` in
-the payload so FastAPI injects `search_document` automatically.
-
-### Upstash Vector details
+### pgvector details
 
 | Setting | Value |
 |---|---|
-| SDK | `upstash-vector` (`AsyncIndex`) |
+| Store | PostgreSQL + `pgvector` |
 | Embedding model | `text-embedding-3-small` (OpenAI, 1536 dims) |
 | Distance metric | Cosine |
-| Namespace | `session_id` (one per chat session) |
-| Metadata | `text`, `chunk_index`, `filename`, `session_id` |
-| Cleanup | Manual via `delete_session_namespace(session_id)` in `core/upstash.py` |
+| Index | HNSW (`vector_cosine_ops`) |
+| Chunking | 800 characters, 120-character overlap |
+| Retrieval | Hybrid vector + BM25, reciprocal-rank fusion |
+| Scope | Shared corpus; no per-user document permissions yet |
 
 ---
 
 ## 17. Agentic Quiz Creation — Inline UI Flow
-
-### Problem solved
-
-The previous approach required the chatbot to fill a text box on the Create Quiz page, which
-triggered a second unrelated LLM call. This design makes the chatbot the single entry point for
-quiz creation — no navigation away, no second agent call.
 
 ### Two-phase architecture
 
 **Phase 1 — Intent detection and form signal**
 
 1. User expresses quiz intent (e.g., *"Quiz me on Thermodynamics with 10 questions"*).
-2. The agent calls `request_quiz_form(topic="Thermodynamics")` — a no-op tool that returns immediately.
-3. `_run_agent_loop` detects this call and sets `side_data["action"] = "show_quiz_form"`.
-4. `/agent/chat` returns `{ "response": "...", "action": "show_quiz_form", "prefill": {"topic": "Thermodynamics"} }`.
-5. Django passes `action` and `prefill` through to React.
-6. React appends an inline quiz-param card to the chat history (topic, num_questions, time_limit inputs, pre-filled from `prefill`).
+2. The agent calls `request_quiz_form(topic="Thermodynamics")`.
+3. `TutorAgent` sets `action="show_quiz_form"` and `prefill={"topic": "Thermodynamics"}`.
+4. The stream's `done` event carries `side_data` with `action` and `prefill`.
+5. React renders an inline quiz-parameter card (`QuizFormCard`).
 
 **Phase 2 — Generation and navigation**
 
-7. User confirms or adjusts params and clicks **Generate**.
-8. A full-screen loading overlay (spinner + "Generating your quiz with AI…") appears, matching the quiz/flashcard creation page style.
-9. React POSTs to `POST /api/chat/create-quiz-from-agent/` (Django proxy — requires auth) with `{ topic, num_questions, time_limit, session_id }`.
-10. Django fetches `user_stats`, proxies to `POST /agent/quiz/generate/` (FastAPI), then saves `__QUIZ__:<json>` as an AI message in the current `ChatSession`.
-11. FastAPI auto-determines difficulty from `user_stats` and calls `_generate_quiz_handler`.
-12. Returns `{ "quiz_data": { mcq_questions, short_questions, subject, difficulty, id, time_limit } }`.
-13. Overlay disappears. React replaces the quiz-param card with a **Start Quiz** card.
-14. User clicks → `navigate('/quiz/play', { state: { quizData } })`. No second AI call.
-
-```
-React
-  │  user: "quiz me on Thermodynamics"
-  ▼
-Django POST /api/chat/
-  └── POST /agent/chat (FastAPI)
-        agent loop → request_quiz_form("Thermodynamics")
-        side_data = { action: "show_quiz_form", prefill: { topic: "Thermodynamics" } }
-        return { response: "...", action: "show_quiz_form", prefill: {...} }
-  └── passes action + prefill through to React
-
-React renders inline quiz-param card
-  │  user fills form, clicks Generate
-  ▼
-Django POST /api/chat/create-quiz-from-agent/
-  └── fetches user_stats
-  └── POST /agent/quiz/generate/ (FastAPI)
-        _determine_difficulty(user_stats, topic)
-        _generate_quiz_handler(study_text=..., subject=topic, ...)
-        return { quiz_data: { mcq_questions, ..., id, time_limit } }
-  └── returns quiz_data to React
-
-React renders Start Quiz card → navigate('/quiz/play')
-```
+6. User confirms or adjusts params and clicks **Generate**.
+7. A full-screen loading overlay appears.
+8. React POSTs to `POST /api/tutor/quiz/from-agent/` (auth required) with
+   `{ topic, num_questions, time_limit, session_id }`.
+9. Django fetches `user_stats`, generates the quiz, and saves `__QUIZ__:<json>` as an AI
+   message in the current `TutorSession`.
+10. React replaces the quiz-parameter card with a **Start Quiz** card.
+11. User clicks → `navigate('/quiz/play', { state: { quizData } })`.
 
 ### request_quiz_form tool
 
@@ -548,85 +457,23 @@ React renders Start Quiz card → navigate('/quiz/play')
 |---|---|
 | Name | `request_quiz_form` |
 | Type | No-op signal tool |
-| Input | `topic: str` (optional, extracted from conversation) |
+| Input | `topic: str` |
 | Output | `{ "status": "quiz_form_shown", "topic": "<topic>" }` |
-| Timeout | 2s |
+| Timeout | 5s |
 
 The handler returns immediately without any LLM call. Its sole purpose is to give the AI a
-typed way to signal intent. The router captures the output and sets `side_data`, which flows
-out-of-band through the response.
-
-### Difficulty auto-determination
-
-`POST /agent/quiz/generate/` computes difficulty from `user_stats` without asking the user.
-It looks up the specific topic in `all_topics` first, then falls back to overall average:
-
-| Condition (evaluated in order) | Difficulty |
-|---|---|
-| `user_stats` absent or empty | medium |
-| Topic found in `all_topics`, accuracy < 60% | hard (struggling — extra practice) |
-| Topic found in `all_topics`, accuracy 60–79% | medium |
-| Topic found in `all_topics`, accuracy ≥ 80% | hard (already strong — challenge further) |
-| Topic not found, `avg_score` ≥ 80% | hard |
-| Topic not found, `avg_score` 60–79% | medium |
-| Topic not found, `avg_score` < 60% | easy |
-
-### _run_agent_loop signature change
-
-`_run_agent_loop` now returns a **3-tuple** `(text, error, side_data)`.
-`side_data` carries out-of-band signals from tool execution.
-The chatbot route unpacks this and merges it into the HTTP response.
-Callers that only needed the 2-tuple were internal — there is one call site in the router.
-
-### New FastAPI endpoint
-
-`POST /agent/quiz/generate/` — standalone, not part of the conversational loop.
-
-```json
-Request:
-{
-  "topic": "string",
-  "num_questions": 10,
-  "time_limit": 15,
-  "user_stats": { ... } | null
-}
-
-Response:
-{
-  "quiz_data": {
-    "mcq_questions": [...],
-    "short_questions": [...],
-    "subject": "string",
-    "difficulty": "easy|medium|hard",
-    "id": "agent-<hex8>",
-    "time_limit": 15
-  }
-}
-```
-
-### Django proxy
-
-`POST /api/chat/create-quiz-from-agent/` — authenticated view that:
-1. Reads `topic`, `num_questions`, `time_limit`, and `session_id` from the request body.
-2. Authenticates the user via `_resolve_authenticated_user` (does **not** create a session).
-3. Fetches `user_stats` for the logged-in user.
-4. Proxies to FastAPI `/agent/quiz/generate/`.
-5. On success, looks up the existing `ChatSession` by `session_id` and saves `__QUIZ__:<json>` as an AI message — this is what makes the Start Quiz card persist across sessions and devices.
-6. Returns `{ "quiz_data": ... }` to the frontend.
-
-No `QuizSession` is created here — Django creates one only when the user submits answers
-via `POST /api/quiz/submit/`, exactly as with manually created quizzes.
+typed way to signal intent. `TutorAgent` captures the output and sets `action`/`prefill`.
 
 ### Quiz card persistence
 
-The Start Quiz card is stored server-side, not in localStorage. The sentinel prefix `__QUIZ__:`
-in the `ChatMessage.content` field marks it as quiz data.
+The Start Quiz card is stored server-side. The sentinel prefix `__QUIZ__:` in
+`TutorMessage.content` marks it as quiz data.
 
-- **`_get_conversation_history`** strips the JSON and replaces it with
-  `[Quiz generated: Topic, N questions, difficulty]` before forwarding history to the AI.
-- **`dashboard_views._preview`** renders `"Quiz generated: Topic"` in the sidebar session list.
-- **`Chatbot.toUiMessage`** detects the prefix and returns `{ type: 'start_quiz', quizData }`,
-  which renders `StartQuizCard` — this runs automatically on every session load, across any browser or device.
+- `TutorConversationStore.history_for_session` strips the JSON and replaces it with
+  `[Quiz generated: ...]` before forwarding history to the AI.
+- `TutorConversationStore.preview_message` renders `"Quiz generated: <subject>"` in the
+  sidebar session list.
+- `Chatbot.toUiMessage` detects the prefix and returns `{ type: 'start_quiz', quizData }`.
 
 ### Frontend message types
 
@@ -635,16 +482,5 @@ in the `ChatMessage.content` field marks it as quiz data.
 | `"quiz_form"` | `QuizFormCard` | Topic input + num_questions select + time_limit select + Generate button |
 | `"start_quiz"` | `StartQuizCard` | Quiz summary line + **Start Quiz** button |
 
-Both are rendered inside the standard AI bubble area to stay visually consistent.
-`QuizFormCard` maintains its own local state (topic, numQ, timeLimit) and is pre-filled
-from `message.prefillTopic` when the agent extracted the topic from the conversation.
-
-`quiz_form` messages are frontend-only (never persisted to DB).
-`start_quiz` messages are reconstructed from `__QUIZ__:` DB messages on every session load via `toUiMessage`.
-
-### Component structure
-
-`MessageBubble` is defined **outside** the `Chatbot` component and receives all callbacks as
-explicit props (`onCopy`, `onQuizGenerate`, `quizFormGenerating`, `onStartQuiz`, `copiedId`).
-Defining it inside `Chatbot` caused React to remount it on every re-render (new function
-reference = new component type), which reset `QuizFormCard`'s local topic input.
+`quiz_form` messages are frontend-only (never persisted).
+`start_quiz` messages are reconstructed from `__QUIZ__:` DB messages on every session load.

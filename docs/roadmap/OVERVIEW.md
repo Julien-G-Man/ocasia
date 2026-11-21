@@ -11,8 +11,8 @@
 | Feature | Status | Gap |
 |---|---|---|
 | Quiz generation (MCQ + short answer) | ✅ Live | Static difficulty |
-| AI chatbot tutor with file context | ✅ Live | — |
-| Chatbot tool calling (kb_search, web search) | ✅ Live | — |
+| AI tutor with file context | ✅ Live | — |
+| Tutor tool calling (kb_search, web search) | ✅ Live | — |
 | SSE token streaming + tool-call UX | ✅ Live | — |
 | Agentic inline quiz creation (from AI Tutor) | ✅ Live | — |
 | Quiz card persistence across sessions (`__QUIZ__:`) | ✅ Live | — |
@@ -23,7 +23,7 @@
 | Admin dashboard + analytics | ✅ Live | — |
 | Weak Area Detection Engine | ✅ Live | — |
 | Spaced Quiz Scheduling (SM-2 on topics) | ✅ Live | — |
-| Chatbot user performance awareness | ✅ Live | — |
+| Tutor user performance awareness | ✅ Live | — |
 | Exam Simulation Mode (flag) | ✅ Live (backend) | Frontend UX not built yet |
 | Clash — live multiplayer quiz battles | ✅ Live | — |
 | Redis view-level caching (dashboard, quiz, flashcards) | ✅ Live | — |
@@ -128,7 +128,7 @@ This loop — fully closed — is what turns a quiz tool into a tutor.
 ```
 ✅ SHIPPED   Weak area detection + spaced quiz scheduling (Tier 1)
 ✅ SHIPPED   Socratic tutor mode (Tier 2)
-✅ SHIPPED   Chatbot tool calling + SSE streaming (chatbot enhancements)
+✅ SHIPPED   Tutor tool calling + SSE streaming
 ✅ SHIPPED   Agentic inline quiz creation + quiz card persistence
 ✅ SHIPPED   Clash — live multiplayer quiz battles (Tier 5)
 ✅ SHIPPED   Redis view-level caching — dashboard, quiz, flashcard endpoints

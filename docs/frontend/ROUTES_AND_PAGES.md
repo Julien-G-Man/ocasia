@@ -95,7 +95,7 @@ Alias: `/flashcard` → redirect `/flashcards`
 
 | Route | Component |
 |---|---|
-| `/ai-tutor` | Chatbot |
+| `/ai-tutor` | Chatbot (AI Tutor) |
 
 Aliases: `/ai`, `/chat`, `/chatbot` → all redirect to `/ai-tutor`
 
@@ -136,7 +136,7 @@ All Clash routes require authentication.
 
 ## Global Warmup Behaviour
 
-`App.jsx` pings the Django warmup endpoint and FastAPI health check on mount and every 10 minutes to prevent cold starts on Render's free tier.
+`App.jsx` pings the Django warmup endpoint on mount and every 10 minutes to prevent cold starts on Render's free tier.
 
 ---
 

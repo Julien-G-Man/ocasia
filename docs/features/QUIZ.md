@@ -38,7 +38,7 @@ From `backend/apps/quiz/urls.py`:
 
 - `POST /api/quiz/ajax-extract-text/` — extract text from uploaded file
 - `POST /api/quiz/extract-youtube/` — extract transcript from YouTube URL
-- `POST /api/quiz/generate/` — generate quiz via FastAPI (Create Quiz page)
+- `POST /api/quiz/generate/` — generate quiz (Django async view; legacy FastAPI upstream)
 - `POST /api/quiz/submit/` — evaluate and store quiz results
 - `POST /api/quiz/download/` — download quiz as PDF/DOCX
 - `GET /api/quiz/history/` — authenticated user's past sessions
@@ -46,13 +46,13 @@ From `backend/apps/quiz/urls.py`:
 - `GET /api/quiz/weak-areas/` — bottom 5 topics by accuracy (min 3 questions attempted)
 - `GET /api/quiz/due-topics/` — topics where `next_review <= now`, ordered most overdue first
 
-From `backend/apps/chatbot/urls.py`:
+From `backend/apps/tutor/urls.py`:
 
-- `POST /api/chat/create-quiz-from-agent/` — chatbot-triggered quiz generation (see [Chatbot feature](CHATBOT.md))
+- `POST /api/tutor/quiz/from-agent/` — tutor-triggered quiz generation (see [AI Tutor feature](TUTOR.md))
 
-## FastAPI Endpoint
+## Legacy FastAPI Endpoint
 
-- `POST /quiz/` (internal, called by Django async view)
+- `POST /quiz/` (internal, called by Django async view; being retired)
 
 ## Data Model
 
@@ -90,13 +90,13 @@ All three paths converge at the same `generate/` endpoint once `extractedText` i
 ## Generation Flow
 
 1. User picks an input tab and loads content (file, YouTube URL, or direct text).
-2. Django's async view forwards a normalized payload to FastAPI `POST /quiz/`:
+2. Django's async view forwards a normalized payload to the legacy FastAPI `POST /quiz/`:
    - `subject`, `study_text`, `num_mcq`, `num_short`, `difficulty`
    - `source_type` — `"file"` | `"youtube"` | `"text"`
    - `source_title` — filename or video title (used in prompt context)
-3. FastAPI normalizes text (Unicode cleanup, truncation to 16,000 chars), scales `max_tokens` dynamically based on question count (2,048–8,192), and calls the AI provider.
+3. The legacy FastAPI quiz service normalizes text (Unicode cleanup, truncation to 16,000 chars), scales `max_tokens` dynamically based on question count (2,048–8,192), and calls the AI provider.
 4. The prompt tells the LLM the source type so it can adjust tone (e.g., spoken-language transcript vs. academic document).
-5. FastAPI validates the JSON response, normalizes questions, and returns `QuizResponse`.
+5. The legacy FastAPI quiz service validates the JSON response, normalizes questions, and returns `QuizResponse`.
 6. Django adds metadata (`id`, `time_limit`, `source_filename`) and returns to the frontend.
 7. Frontend navigates to `/quiz/play`.
 
@@ -104,7 +104,7 @@ All three paths converge at the same `generate/` endpoint once `extractedText` i
 
 1. Frontend submits `quiz_data` + `user_answers` to `/api/quiz/submit/`.
 2. Django evaluates MCQ by letter comparison.
-3. Short answers are LLM-evaluated via the FastAPI chatbot route (with fallback string matching).
+3. Short answers are LLM-evaluated via the agent `evaluate_answer` tool (legacy FastAPI `/agent/call`) with fallback string matching.
 4. Result payload returned and saved as `QuizSession` for authenticated users.
 
 ## Quiz Settings
@@ -116,16 +116,16 @@ All three paths converge at the same `generate/` endpoint once `extractedText` i
 | Quiz time | 1–120 min | 10 |
 | Difficulty | easy / medium / hard / random | random |
 
-## Agentic Quiz Creation (via Chatbot)
+## Agentic Quiz Creation (via AI Tutor)
 
 Quizzes can also be generated directly from the AI Tutor chat without navigating to `/quiz/create`.
 
 1. User expresses quiz intent in chat → agent calls `request_quiz_form(topic)`.
 2. An inline quiz-param card appears in the chat (topic, num_questions, time_limit).
-3. User submits → `POST /api/chat/create-quiz-from-agent/` → FastAPI auto-determines difficulty from user stats → questions generated.
+3. User submits → `POST /api/tutor/quiz/from-agent/` → difficulty is auto-determined from user stats → questions generated.
 4. A **Start Quiz** card replaces the form; clicking it navigates to `/quiz/play`.
 
-The generated quiz card is persisted as a `__QUIZ__:` chat message so it reappears when the user returns to that conversation. Difficulty is picked automatically:
+The generated quiz card is persisted as a `__QUIZ__:` tutor message so it reappears when the user returns to that conversation. Difficulty is picked automatically:
 - Topic accuracy < 60% → hard; 60–79% → medium; ≥ 80% → hard (challenge mode)
 - No topic history: overall avg ≥ 80% → hard; ≥ 60% → medium; else → easy
 
@@ -137,7 +137,7 @@ After every quiz submission, `submit_quiz_api_async` updates `TopicPerformance` 
 
 `GET /api/quiz/weak-areas/` returns the 5 lowest-accuracy topics for the user, filtered to topics with at least 3 questions attempted (noise filter). Used by the dashboard weak areas card.
 
-The chatbot receives **all** `TopicPerformance` rows (no minimum threshold) plus the last 5 `QuizSession` records so the AI can discuss results the user just took.
+The tutor receives **all** `TopicPerformance` rows (no minimum threshold) plus the last 5 `QuizSession` records so the AI can discuss results the user just took.
 
 ### Historical Backfill
 
@@ -158,7 +158,7 @@ python manage.py backfill_topic_performance --dry-run
 ## Reliability Notes
 
 - Token budget scales with question count so large quizzes don't produce truncated JSON.
-- If the AI returns malformed JSON, FastAPI makes one repair attempt before returning 502.
-- If FastAPI returns a non-200 response, Django returns 503 to the frontend.
+- If the AI returns malformed JSON, the legacy FastAPI quiz service makes one repair attempt before returning 502.
+- If that service returns a non-200 response, Django returns 503 to the frontend.
 - YouTube extraction fails gracefully with a user-facing message if captions are disabled or the URL is invalid.
 - Frontend should keep the user on the page and allow retry on any generation error.

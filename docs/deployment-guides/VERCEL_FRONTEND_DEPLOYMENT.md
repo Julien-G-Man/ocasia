@@ -11,15 +11,13 @@ npm run build
 
 ## Required Environment Variables
 
-- `REACT_APP_DJANGO_API_URL=https://<django-host>/api`
-- `REACT_APP_FASTAPI_URL=https://<fastapi-host>`
+- `VITE_DJANGO_API_URL=https://<django-host>/api`
 
 Use full URLs including protocol.
 
 ## Runtime Expectations
 
-- App pings Django `/warmup/` and FastAPI `/health` on load and every 10 minutes.
-- Only `/health` on FastAPI should be publicly callable from browser for wakeup checks.
+- App pings Django `/warmup/` on load and every 10 minutes.
 
 ## Common Failures
 
@@ -34,7 +32,7 @@ Fix: update env vars with absolute URLs.
 Fix:
 
 - Add frontend URL to Django `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`
-- Add frontend + Django URLs to FastAPI `FASTAPI_ALLOWED_ORIGINS`
+- Add the Django URL to the legacy FastAPI `FASTAPI_ALLOWED_ORIGINS` (quiz calls only)
 
 ### Build failure for missing CSS import
 

@@ -12,9 +12,11 @@ This folder is the maintained source of truth for architecture, setup, features,
 ## Core Docs
 
 - `architecture-design/ARCHITECTURE.md` - system components and request flow
+- `architecture-design/AGENT_IMPLEMENTATION.md` - tutor agent loop, tool catalog, prompts, and safety rules
 - `architecture-design/GRAPHIFY.md` - generated repo graph snapshot and Mermaid system map
 - `architecture-design/AI_PROVIDERS.md` - multi-provider AI orchestrator, Claude integration, and all env vars
-- `architecture-design/FRONTEND_INTEGRATION.md` - React to Django/FastAPI contracts
+- `architecture-design/FRONTEND_INTEGRATION.md` - React to Django tutor contracts
+- `architecture-design/TUTOR_RAG_PGVECTOR.md` - tutor document indexing and pgvector retrieval
 - `setup-configuration/GETTING_STARTED.md` - local environment setup
 - `setup-configuration/QUICK_REFERENCE.md` - high-signal env vars and common endpoints
 - `setup-configuration/AUTHENTICATION_SETUP.md` - auth integration setup (password + Google OAuth)
@@ -24,7 +26,7 @@ This folder is the maintained source of truth for architecture, setup, features,
 - `authentication/GOOGLE_OAUTH.md` - **Google OAuth 2.0 integration guide (setup, testing, security)**
 - `features/QUIZ.md` - quiz generation and quiz lifecycle
 - `features/FLASHCARDS.md` - flashcards feature and API behavior
-- `features/CHATBOT.md` - AI tutor/chat feature
+- `features/TUTOR.md` - AI tutor feature (chat, tools, streaming, RAG)
 - `frontend/ROUTES_AND_PAGES.md` - current route ownership and aliases
 - `deployment-guides/DEPLOYMENT_CHECKLIST.md` - deploy preflight checklist
 - `deployment-guides/RENDER_DEPLOYMENT_GUIDE.md` - backend deployment specifics

@@ -32,9 +32,9 @@ def _calculate_streak(user):
         pass
 
     try:
-        from apps.chatbot.models import ChatSession
+        from apps.tutor.models import TutorSession
         chat_dates = (
-            ChatSession.objects
+            TutorSession.objects
             .filter(user=user)
             .annotate(day=TruncDate('created_at'))
             .values_list('day', flat=True)
@@ -102,7 +102,7 @@ def _collect_admin_activity(start_at=None, limit=50, offset=0):
     """Build merged activity timeline from quiz, flashcards, chat sessions, materials, and clashes."""
     from apps.flashcards.models import Deck
     from apps.materials.models import Material
-    from apps.chatbot.models import ChatSession
+    from apps.tutor.models import TutorSession
     from apps.clash.models import ClashRoom
 
     limit = max(1, min(int(limit or 50), 200))
@@ -113,7 +113,7 @@ def _collect_admin_activity(start_at=None, limit=50, offset=0):
 
     quizzes_qs = QuizSession.objects.select_related("user")
     decks_qs = Deck.objects.select_related("user")
-    chats_qs = ChatSession.objects.select_related("user").annotate(message_count=dm.Count("messages"))
+    chats_qs = TutorSession.objects.select_related("user").annotate(message_count=dm.Count("messages"))
     materials_qs = Material.objects.select_related("uploaded_by")
     clashes_qs = ClashRoom.objects.select_related("host").annotate(
         participant_count=dm.Count("participants")

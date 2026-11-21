@@ -4,9 +4,9 @@ Use this before every production deploy.
 
 ## Environment
 
-- Django and FastAPI have matching `FASTAPI_SECRET`.
-- Django `FASTAPI_BASE_URL` points to live FastAPI service.
-- Frontend `VITE_DJANGO_API_URL` and `VITE_FASTAPI_URL` are valid absolute URLs.
+- Django and legacy FastAPI have matching `FASTAPI_SECRET`.
+- Django `FASTAPI_BASE_URL` points to the live legacy FastAPI service.
+- Frontend `VITE_DJANGO_API_URL` is a valid absolute URL.
 - All URLs include `http://` or `https://`.
 - **Google OAuth (if enabled):**
   - Django `GOOGLE_OAUTH_CLIENT_ID` matches frontend `VITE_GOOGLE_CLIENT_ID`
@@ -24,14 +24,14 @@ Use this before every production deploy.
 
 - Django `CORS_ALLOWED_ORIGINS` includes production frontend URL(s).
 - Django `CSRF_TRUSTED_ORIGINS` includes same trusted web origins.
-- FastAPI `FASTAPI_ALLOWED_ORIGINS` includes:
+- Legacy FastAPI `FASTAPI_ALLOWED_ORIGINS` includes:
   - frontend origin(s)
   - Django origin(s) (`localhost:8000` and deployed Django host)
 
 ## Health and Wake
 
 - `GET /health/` works on Django service.
-- `GET /health` works on FastAPI service.
+- `GET /health` works on the legacy FastAPI service.
 - Frontend warmup runs at load and every 10 minutes.
 
 ## Payments (Paystack)

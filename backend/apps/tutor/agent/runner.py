@@ -13,7 +13,7 @@ from apps.tutor.agent.schemas import TutorAgentResult
 
 logger = logging.getLogger(__name__)
 
-MAX_AGENT_ITERATIONS = 10
+MAX_AGENT_ITERATIONS = 20
 
 _USER_ROLES = {"user", "human"}
 _AI_ROLES = {"ai", "assistant", "tutor"}

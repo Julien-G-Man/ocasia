@@ -58,5 +58,5 @@ per-user document permissions.
   similarity information to the agent. Exact duplicate passages are removed
   from indexing and retrieval output.
 
-The older FastAPI chatbot path still has its own session-scoped Upstash indexing
-flow until that caller is migrated separately.
+The retired FastAPI chatbot path used its own session-scoped Upstash indexing flow; the
+tutor above is the supported path and uses pgvector.

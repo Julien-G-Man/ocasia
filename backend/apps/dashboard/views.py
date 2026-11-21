@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from apps.quiz.models import QuizSession
-from apps.chatbot.models import ChatSession, ChatMessage
+from apps.tutor.models import TutorSession, TutorMessage
 from apps.accounts.serializers import user_to_dict
 from apps.accounts.services import EmailDeliveryError
 from .models import QuizExperienceRating, AnonymousUsageEvent, AIResponseLatency
@@ -90,7 +90,7 @@ class DashboardStatsView(APIView):
             'total_quizzes': quiz_stats['total'] or 0,
             'average_score': round(float(quiz_stats['avg'] or 0), 1),
             'total_flashcard_sets': total_flashcard_sets,
-            'total_chats': ChatSession.objects.filter(user=user).count(),
+            'total_chats': TutorSession.objects.filter(user=user).count(),
             'study_streak': _calculate_streak(user),
             'total_ratings': int(feedback_stats.get('total') or 0),
             'average_experience_rating': round(float(feedback_stats.get('average') or 0), 2),
@@ -131,8 +131,8 @@ class AdminDashboardStatsView(APIView):
         verified_users = User.objects.filter(is_email_verified=True).count()
         total_flashcard_decks = Deck.objects.count()
         total_flashcards = Flashcard.objects.count()
-        total_chat_sessions = ChatSession.objects.exclude(user__isnull=True).count()
-        total_chat_messages = ChatMessage.objects.count()
+        total_chat_sessions = TutorSession.objects.exclude(user__isnull=True).count()
+        total_chat_messages = TutorMessage.objects.count()
         total_materials = Material.objects.count()
 
         feedback_stats = QuizExperienceRating.objects.aggregate(
@@ -167,7 +167,7 @@ class AdminDashboardStatsView(APIView):
         quizzes_24h = QuizSession.objects.filter(created_at__gte=day_ago).count()
         decks_24h = Deck.objects.filter(created_at__gte=day_ago).count()
         cards_24h = Flashcard.objects.filter(created_at__gte=day_ago).count()
-        chat_messages_24h = ChatMessage.objects.filter(created_at__gte=day_ago).count()
+        chat_messages_24h = TutorMessage.objects.filter(created_at__gte=day_ago).count()
         new_users_24h = User.objects.filter(date_joined__gte=day_ago).count()
         materials_24h = Material.objects.filter(created_at__gte=day_ago).count()
         anonymous_usage_24h = AnonymousUsageEvent.objects.filter(created_at__gte=day_ago).count()
@@ -184,7 +184,7 @@ class AdminDashboardStatsView(APIView):
         anonymous_tokens_24h = _tokens_from_chars(int(anonymous_chars_24h))
 
         # Character volume for token estimates
-        chat_chars = _safe_char_sum(ChatMessage.objects.all(), Length('content'))
+        chat_chars = _safe_char_sum(TutorMessage.objects.all(), Length('content'))
 
         flashcard_q_chars = _safe_char_sum(Flashcard.objects.all(), Length('question'))
         flashcard_a_chars = _safe_char_sum(Flashcard.objects.all(), Length('answer'))
@@ -320,7 +320,7 @@ class AdminUsageTrendsView(APIView):
         users_map = _series(User.objects.all(), "date_joined")
         quizzes_map = _series(QuizSession.objects.all(), "created_at")
         decks_map = _series(Deck.objects.all(), "created_at")
-        chats_map = _series(ChatMessage.objects.all(), "created_at")
+        chats_map = _series(TutorMessage.objects.all(), "created_at")
         materials_map = _series(Material.objects.all(), "created_at")
         clashes_map = _series(
             ClashRoom.objects.filter(status=ClashRoom.FINISHED), "finished_at"
@@ -511,9 +511,9 @@ class AdminUsersListView(APIView):
             page_size = 50
 
         # Use a safe Subquery for chat count so we don't depend on
-        # the ChatSession.user related_name being 'chatsession'.
+        # the TutorSession.user related_name being 'tutorsession'.
         chat_count_sq = (
-            ChatSession.objects
+            TutorSession.objects
             .filter(user=dm.OuterRef('pk'))
             .values('user')
             .annotate(c=dm.Count('id'))
@@ -569,8 +569,8 @@ class AdminUserDeleteView(APIView):
         quizzes_qs = QuizSession.objects.filter(user=target)
         decks_qs = Deck.objects.filter(user=target)
         flashcards_qs = Flashcard.objects.filter(deck__user=target)
-        chat_sessions_qs = ChatSession.objects.filter(user=target)
-        chat_messages_qs = ChatMessage.objects.filter(session__user=target)
+        chat_sessions_qs = TutorSession.objects.filter(user=target)
+        chat_messages_qs = TutorMessage.objects.filter(session__user=target)
         materials_qs = Material.objects.filter(uploaded_by=target)
         clash_parts_qs = ClashParticipant.objects.filter(
             user=target, room__status=ClashRoom.FINISHED
@@ -637,7 +637,7 @@ class AdminUserDeleteView(APIView):
             })
 
         for s in chat_sessions_qs.order_by('-created_at')[:10]:
-            msg_count = ChatMessage.objects.filter(session=s).count()
+            msg_count = TutorMessage.objects.filter(session=s).count()
             recent_activity.append({
                 "type": "chat",
                 "text": f"chat session ({msg_count} message{'s' if msg_count != 1 else ''})",

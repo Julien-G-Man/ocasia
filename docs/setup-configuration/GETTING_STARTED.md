@@ -49,14 +49,14 @@ Start Django (ASGI):
 python run_django.py --port 8000 --reload
 ```
 
-## 2) FastAPI install/run
+## 2) Legacy FastAPI install/run (quiz generation only)
 
 ```bash
 cd ai_service
 python run.py
 ```
 
-Set shared env values for FastAPI process (or `ai_service/.env`):
+Set shared env values for the legacy FastAPI process (or `ai_service/.env`):
 
 ```bash
 FASTAPI_SECRET=change-me-shared-secret
@@ -74,16 +74,15 @@ npm start
 Frontend env (example `.env` in `frontend/`):
 
 ```bash
-REACT_APP_DJANGO_API_URL=http://localhost:8000/api
-REACT_APP_FASTAPI_URL=http://localhost:8001
+VITE_DJANGO_API_URL=http://localhost:8000/api
 
 # Optional: Google OAuth (must match backend GOOGLE_OAUTH_CLIENT_ID)
-# REACT_APP_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+# VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 ```
 
 ## 4) Smoke test
 
 - `GET http://localhost:8000/health/`
 - `GET http://localhost:8000/warmup/`
-- `GET http://localhost:8001/health`
+- `GET http://localhost:8001/health` (legacy FastAPI, only if quiz generation is exercised)
 - login/signup from frontend

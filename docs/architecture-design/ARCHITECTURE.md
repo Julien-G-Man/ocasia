@@ -3,71 +3,73 @@
 ## Stack
 
 - Frontend: React + Vite (`frontend/src`) — Vercel
-- API gateway + persistence: Django (`backend/apps/*`) — Render
-- Async AI worker: FastAPI (`ai_service/*`) — Render
+- API + AI runtime: Django (`backend/apps/*`) — Render
+- Tutor agent: Django + LangChain (`apps/tutor/agent/`) — in-process
+- Vector database: PostgreSQL + pgvector (tutor document RAG)
 - Database: PostgreSQL (Neon)
-- Vector database: Upstash Vector (document RAG)
 - Cache / channel layer: Redis (Upstash Redis)
 - Embeddings: OpenAI `text-embedding-3-small`
+- Legacy (retiring): FastAPI (`ai_service/*`) — still serves quiz generation and short-answer evaluation
 
 ## Core Pattern
 
 1. React sends requests to Django (`/api/...`).
-2. Django performs auth, validation, and database work.
-3. For AI work, Django proxies to FastAPI with `X-Internal-Secret`.
-4. FastAPI calls AI provider(s) and returns normalized output.
-5. Django persists the result and returns it to React.
+2. Django performs auth, validation, persistence, and — for the tutor — the agent loop.
+3. AI work calls providers directly through `apps.core.ai_engine` (or LangChain for the tutor).
+4. Django persists the result and returns it (or streams SSE) to React.
 
-## Why This Split
+## Why In-Process
 
-- Django owns business logic, auth token checks, and models.
-- FastAPI stays stateless and focused on async AI tasks.
-- Internal shared-secret protection keeps worker endpoints private.
-- Upstash Vector is owned entirely by FastAPI — Django never touches it.
+- One deployable and one process to operate.
+- No internal `X-Internal-Secret` hop between Django and an AI worker.
+- Auth, cache, ORM, settings, and logging are shared by AI features.
+- Simpler local setup.
 
-## Service Communication
+Trade-offs: AI work shares the Django worker's event loop (mitigated with per-tool
+timeouts), fewer independent scaling axes, a larger Django image, and a single
+deploy/rollback blast radius.
+
+## Legacy FastAPI Service (Retiring)
+
+The FastAPI `ai_service` still handles quiz generation and short-answer evaluation.
+It is internal-only and will be removed once those callers move in-process.
 
 - Django → FastAPI base URL: `FASTAPI_BASE_URL`
 - Internal auth header: `X-Internal-Secret`
 - Shared value: `FASTAPI_SECRET` in both services
 
-## Public vs Internal FastAPI Endpoints
+## Public vs Internal FastAPI Endpoints (Legacy)
 
 - Public: `GET /health`
-- Internal-only: `/agent/*`, `/quiz/*`, `/flashcards/*`
+- Internal-only: `/agent/*`, `/quiz/*`
   - require valid `X-Internal-Secret`
   - browser-origin requests must be in `FASTAPI_ALLOWED_ORIGINS`
 
-### FastAPI Agent Endpoints
+### FastAPI Endpoints (Legacy)
 
 | Endpoint | Caller | Purpose |
 |---|---|---|
-| `POST /agent/chat` | Django `chatbot_api_async` | Non-streaming chatbot — agent loop, returns complete JSON |
-| `POST /agent/chat/stream` | Django `chatbot_stream_api_async` | SSE streaming chatbot — yields `tool_start`, `tool_done`, `token`, `done`, `error` events |
-| `POST /agent/document/index` | Django `chatbot_file_api_async` (fire-and-forget) | Embed + store document chunks in Upstash Vector |
-| `POST /agent/quiz/generate/` | Django `create_quiz_from_agent` | Standalone quiz generation from chatbot (no agent loop) |
-| `POST /agent/orchestrate` | Internal / future features | Generic tool-loop endpoint |
-| `GET /agent/tools` | Debug | List registered tools |
-| `POST /agent/call` | Debug | Direct single-tool invocation |
+| `POST /quiz/` | Django quiz async views | Standalone quiz generation |
+| `POST /agent/call` | Django quiz async views | Single-tool call (`evaluate_answer`) |
 
 ## Warmup Model
 
-React wakes both services on page load and every 10 minutes (`App.jsx`):
-
-- Django: `GET {DJANGO_ROOT}/warmup/`
-- FastAPI: `GET {FASTAPI_URL}/health`
+React wakes Django on page load and every 10 minutes (`App.jsx`):
+`GET {DJANGO_ROOT}/warmup/`
 
 ## Main Django Route Mounts
 
 From `backend/config/urls.py`:
 
 - `/api/` + `apps.accounts.urls`
-- `/api/` + `apps.chatbot.urls`
+- `/api/` + `apps.tutor.urls`
 - `/api/` + `apps.quiz.urls`
 - `/api/` + `apps.flashcards.urls`
 - `/api/` + `apps.dashboard.urls`
+- `/api/` + `apps.materials.urls`
 - `/api/` + `apps.subscriptions.urls`
 - `/api/` + `apps.clash.urls`
+- `/api/` + `apps.chatbot.urls` (legacy; retiring)
 - `/clash/share/<room_code>/` → `clash_share_preview` (OG preview page)
 - `/health/`, `/warmup/`
 
@@ -79,84 +81,64 @@ WebSocket routes (ASGI, `backend/config/asgi.py`):
 
 - Quiz history: `apps.quiz.models.QuizSession`, `TopicPerformance`, `QuizTopicSchedule`
 - Flashcards: `apps.flashcards.models.Deck`, `Flashcard`
-- Chat: `apps.chatbot.models.ChatSession`, `ChatMessage`
+- Tutor: `apps.tutor.models.TutorSession`, `TutorMessage`
 - Users/auth: `apps.accounts.models.User`
 - Payments: `apps.subscriptions.models.Donation`, `Subscription`, `PaymentHistory`
 - Clash rooms: `apps.clash.models.ClashRoom`, `ClashParticipant`
-- Document vectors: Upstash Vector (namespaced by `session_id`, not in PostgreSQL)
+- Document vectors: PostgreSQL + pgvector (`TutorDocument`, `TutorDocumentChunk`)
+- Legacy chat: `apps.chatbot.models.ChatSession`, `ChatMessage` (retiring; no longer used by the dashboard)
 
-### Special ChatMessage Formats
+### Special TutorMessage Formats
 
-`ChatMessage.content` is plain text for normal messages. The prefix `__QUIZ__:` marks
+`TutorMessage.content` is plain text for normal messages. The prefix `__QUIZ__:` marks
 an inline quiz generated via the AI Tutor — the frontend detects this and renders a
 Start Quiz card. The raw JSON is never forwarded to the LLM (summarised to a single line
-in `_get_conversation_history`). The sidebar preview strips the JSON and shows
-"Quiz generated: \<topic\>" via `dashboard_views._preview`.
+in `history_for_session`). The sidebar preview strips the JSON and shows
+"Quiz generated: \<subject\>" via `conversations.preview_message`.
 
-### ChatSession Flags
+### TutorSession Flags
 
 | Field | Type | Purpose |
 |---|---|---|
-| `has_document` | `BooleanField` | Set to `True` after a file upload is indexed. Tells FastAPI to inject the `search_document` tool for all subsequent messages in this session. |
+| `has_document` | `BooleanField` | Set to `True` after a file upload is indexed. Keeps the session marked so follow-up turns can rely on `search_document`. |
 
 ---
 
 ## Document RAG Architecture
 
-When a user uploads a file in the chatbot:
+The tutor uses a shared `RAGEngine` singleton with PostgreSQL + pgvector. Retrieval
+combines vector cosine similarity and BM25 lexical ranks via reciprocal-rank fusion.
+
+### Upload flow
 
 ```
 React (FormData)
-  │  POST /api/chat/file/
+  │  POST /api/tutor/upload/
   ▼
-Django chatbot_file_api_async
-  ├── Extract text from file (PDF/DOCX/PPTX/TXT) — synchronous, in Django
-  ├── chunk_text(text, size=500, overlap=100) → list[str]
-  ├── asyncio.create_task(_index_document())  ← fire-and-forget
-  │     └── POST /agent/document/index (FastAPI)
-  │           └── OpenAI text-embedding-3-small (batch embed all chunks)
-  │                 └── Upstash AsyncIndex.upsert(namespace=session_id)
-  ├── ChatSession.has_document = True  ← mark session
-  └── POST /agent/chat (FastAPI) with file_text=... for the initial analysis turn
+Django TutorDocumentUploadView
+  ├── Extract text from file (PDF/DOCX/PPTX/TXT) — in Django
+  ├── TutorAgent runs immediately with file_text=... (first response, no wait)
+  ├── _maybe_index_upload(...) — best-effort, fire-and-forget
+  │     ├── chunk text (800 chars, 120 overlap)
+  │     ├── embed with text-embedding-3-small (1536 dims)
+  │     └── upsert TutorDocument + TutorDocumentChunk (pgvector HNSW)
+  └── TutorSession.has_document = True
 ```
 
-On all subsequent messages in the same session:
+### Follow-up turns
 
-```
-Django chatbot_api_async
-  ├── Reads session_obj.has_document == True
-  └── POST /agent/chat { session_id, has_document: true, ... }
-        ▼
-     FastAPI /agent/chat
-       ├── make_search_document_handler(session_id)  ← per-request handler factory
-       ├── extra_tool_defs = [search_document ToolDefinition]
-       └── _run_agent_loop(..., extra_tool_handlers={"search_document": handler})
-             AI calls search_document(query="...")
-               └── OpenAI embed(query) → Upstash AsyncIndex.query(namespace=session_id)
-                     → top-5 relevant chunks returned to AI
-```
+`TutorAgent` injects `session_id` into `search_document`. When the model decides the
+document is relevant it calls `search_document(query="...")`; the tool embeds the query
+and retrieves the top passages from pgvector.
 
-### Upstash Vector namespacing
+### Storage
 
-Each session gets its own namespace (`namespace=session_id`). Vectors from different
-users never mix. The index uses:
-
-- **Model:** `text-embedding-3-small` (1536 dimensions)
-- **Distance metric:** Cosine
-- **Metadata stored per vector:** `text`, `chunk_index`, `filename`, `session_id`
-
-### RAG tool injection pattern
-
-`search_document` is **not** in the global `TOOL_REGISTRY` handler — its handler is
-built per-request with `make_search_document_handler(session_id)` which pre-binds the
-session ID into the closure. This avoids any shared mutable state between sessions.
-
-`_run_agent_loop` and `_run_agent_loop_stream` accept:
-- `extra_tool_handlers: dict[str, async callable]` — dispatched before the global registry
-- `extra_tool_defs: list[ToolDefinition]` — appended to the tools list sent to the AI
-
-The definition exists in `TOOL_REGISTRY["search_document"]` for `get_definitions()` to
-return its schema, but its `handler` key is `None` — it is never called from there.
+- `TutorDocument` tracks each indexed source, content checksum, and indexing version.
+- `TutorDocumentChunk` stores text, page/slide number, metadata, and a 1536-dimensional
+  embedding.
+- An HNSW cosine index supports nearest-neighbor search.
+- The current tool searches a shared corpus and does not apply per-user document
+  permissions.
 
 ---
 
@@ -370,29 +352,23 @@ User: meta-refresh → /clash/lobby/<code> → ClashLobby component
 
 ## Logging
 
-### Django
+Configured via the `LOGGING` dict in `settings.py`. All `apps.*` loggers show `INFO+`;
+Django internals stay at `WARNING`. Format: `[LEVEL] logger.name — message`.
 
-Configured via `LOGGING` dict in `settings.py`. All `apps.*` loggers show `INFO+`; Django
-internals stay at `WARNING`. Format: `[LEVEL] logger.name — message`.
-
-### FastAPI
-
-Configured via `logging.config.dictConfig` in `main.py`. The `agent`, `services`, and
-`core` logger namespaces show `INFO+`. Third-party SDKs (`httpx`, `anthropic`, `openai`)
-are suppressed to `WARNING`. Uvicorn is separately configured with `log_level="info"`.
+The legacy FastAPI service keeps its own `logging.config.dictConfig` in `main.py`.
 
 ---
 
 ## Observability (Sentry)
 
-Both services initialise Sentry at startup when `SENTRY_DSN` is set.
+Django initialises Sentry at startup when `SENTRY_DSN` is set.
 
 | Service | Integration | Config location |
 |---|---|---|
 | Django | `DjangoIntegration()` | top of `settings.py` |
-| FastAPI | `StarletteIntegration()` + `FastApiIntegration()` | top of `main.py` |
+| FastAPI (legacy) | `StarletteIntegration()` + `FastApiIntegration()` | top of `main.py` |
 
-**Environment variables (both services):**
+**Environment variables (Django and legacy FastAPI):**
 
 | Variable | Default | Purpose |
 |---|---|---|

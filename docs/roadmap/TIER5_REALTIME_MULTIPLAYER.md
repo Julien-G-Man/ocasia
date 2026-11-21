@@ -23,7 +23,7 @@ Full technical specification: `../multiplayer/QUIZ_BATTLE.md`
 | Channel pub/sub | Redis channel layer (Upstash Redis) | ✅ Live |
 | Live game state | Django cache (Redis, TTL 2h per room) | ✅ Live |
 | Persistence | PostgreSQL (`ClashRoom`, `ClashParticipant`) | ✅ Live |
-| AI question generation | FastAPI → Claude (same pipeline as solo quiz) | ✅ Live |
+| AI question generation | Quiz service → Claude (same pipeline as solo quiz) | ✅ Live |
 
 ---
 

@@ -84,7 +84,7 @@ Retrieve the authenticated user's personal statistics.
 }
 ```
 
-`weak_areas` — up to 3 lowest-accuracy topics for the user (min 3 questions attempted). Empty array if the user has no qualifying topic history. Drives the weak areas card on the dashboard overview and the chatbot performance injection.
+`weak_areas` — up to 3 lowest-accuracy topics for the user (min 3 questions attempted). Empty array if the user has no qualifying topic history. Drives the weak areas card on the dashboard overview and the tutor performance injection.
 
 **Security:**
 - Requires authentication.
@@ -288,7 +288,7 @@ Retrieve anonymous API activity from the rolling last 24 hours.
   "total_last_24h": 64,
   "unique_sessions_last_24h": 27,
   "top_paths": [
-    { "path": "/api/chat/", "count": 31 },
+    { "path": "/api/tutor/chat/", "count": 31 },
     { "path": "/api/quiz/generate/", "count": 18 }
   ],
   "by_status": [
@@ -300,7 +300,7 @@ Retrieve anonymous API activity from the rolling last 24 hours.
       "id": 2048,
       "created_at": "2026-04-15T10:18:02.123456+00:00",
       "method": "POST",
-      "path": "/api/chat/",
+      "path": "/api/tutor/chat/",
       "query_string": "",
       "status_code": 200,
       "request_chars": 314,
