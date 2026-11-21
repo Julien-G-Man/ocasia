@@ -1,15 +1,16 @@
 from django.urls import path
-from . import async_views, download_helpers, extract_text
+
+from . import views
 
 urlpatterns = [
-    # High-performance async proxy endpoints
-    path("quiz/generate/",                  async_views.generate_quiz_api_async, name="generate_quiz_api"),
-    path("quiz/ajax-extract-text/",         extract_text.ajax_extract_text, name="ajax_extract_text"),
-    path("quiz/extract-youtube/",           async_views.extract_youtube_transcript, name="extract_youtube"),
-    path("quiz/submit/",                    async_views.submit_quiz_api_async, name="submit_quiz_api"),
-    path("quiz/download/",                  download_helpers.download_quiz_results, name="download_quiz_results"),
-    path('quiz/history/',                   async_views.QuizHistoryView.as_view()),
-    path('quiz/sessions/<int:session_id>/', async_views.QuizReplayView.as_view()),
-    path('quiz/weak-areas/',                async_views.WeakAreasView.as_view()),
-    path('quiz/due-topics/',                async_views.DueTopicsView.as_view()),
+    path("quiz/generate/",                  views.QuizGenerateView.as_view(),       name="generate_quiz_api"),
+    path("quiz/extract-text/",              views.QuizExtractTextView.as_view(),    name="extract_text"),
+    path("quiz/ajax-extract-text/",         views.QuizExtractTextView.as_view(),    name="ajax_extract_text"),
+    path("quiz/extract-youtube/",           views.QuizYouTubeExtractView.as_view(), name="extract_youtube"),
+    path("quiz/submit/",                    views.QuizSubmitView.as_view(),         name="submit_quiz_api"),
+    path("quiz/download/",                  views.QuizDownloadView.as_view(),       name="download_quiz_results"),
+    path("quiz/history/",                   views.QuizHistoryView.as_view(),        name="quiz_history"),
+    path("quiz/sessions/<int:session_id>/", views.QuizReplayView.as_view(),         name="quiz_replay"),
+    path("quiz/weak-areas/",                views.WeakAreasView.as_view(),          name="weak_areas"),
+    path("quiz/due-topics/",                views.DueTopicsView.as_view(),          name="due_topics"),
 ]

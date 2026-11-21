@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from apps.quiz.models import QuizSession, TopicPerformance, QuizTopicSchedule
-        from apps.quiz.async_views import _score_to_sm2_quality
+        from apps.quiz.utils.scoring import score_to_sm2_quality
         from apps.flashcards.scheduling import update_sm2
 
         dry = options["dry_run"]
@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 defaults={"subject": topic},
             )
             if sched_was_created:
-                update_sm2(schedule, _score_to_sm2_quality(latest_score))
+                update_sm2(schedule, score_to_sm2_quality(latest_score))
                 sched_created += 1
 
         if not dry:

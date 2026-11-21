@@ -21,7 +21,7 @@ performance tracking. Built by students at KNUST, Ghana.
 | Payments | Paystack | Donation payment processing — initiate, verify, webhook |
 | File storage | Cloudinary | Material images and uploaded files — served via Cloudinary CDN |
 | Hosting | Render (Django), Vercel (React) | Production deployment |
-| Legacy (retiring) | FastAPI `ai_service` + `chatbot` app | `ai_service` still used by quiz; chatbot endpoints are unused legacy |
+| Legacy (retiring) | `chatbot` app | Still mounted at `/api/chat/*` and `/api/chatbot/history/`, but no active frontend feature calls it |
 
 ## Start Here
 
@@ -51,8 +51,8 @@ Browser
                                                   └── Upstash Redis (channel layer)
 ```
 
-Legacy path (being retired): `ai_service` (FastAPI :8001) still serves quiz generation
-and short-answer evaluation; the `chatbot` app remains only as unused legacy code.
+Legacy code only: the `chatbot` app remains as unused legacy code. All quiz AI work now
+runs in-process inside Django.
 
 ## Local Development
 
@@ -71,17 +71,9 @@ npm install
 npm run dev
 ```
 
-**Legacy FastAPI (only needed for quiz generation and short-answer evaluation)**
-```bash
-cd ai_service
-pip install -r requirements.txt
-python run.py
-```
-
 ## Health Checks
 
 - Django: `GET /health/`
-- Legacy FastAPI: `GET /health`
 
 ## Retiring the Split Architecture
 

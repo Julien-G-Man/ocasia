@@ -5,9 +5,11 @@
 | File | Route | Access |
 |---|---|---|
 | `src/pages/Quiz/QuizHistory.jsx` | `/quiz` | Authenticated only |
-| `src/pages/Quiz/CreateQuiz.jsx` | `/quiz/create` | Public (guest one-quiz limit) |
-| `src/pages/Quiz/Quiz.jsx` | `/quiz/play` | Public |
-| `src/pages/Quiz/QuizResults.jsx` | `/quiz/results` | Public |
+| `src/pages/Quiz/CreateQuiz.jsx` | `/quiz/create` | Authenticated only |
+| `src/pages/Quiz/Quiz.jsx` | `/quiz/play` | Authenticated only |
+| `src/pages/Quiz/QuizResults.jsx` | `/quiz/results` | Authenticated only |
+
+All quiz routes are wrapped in `ProtectedRoute` and every quiz endpoint requires `IsAuthenticated`. The former guest one-quiz flow is no longer active: `lamla_guest_quiz_used` is only cleared on successful auth, and nothing sets it any more.
 
 ### `/quiz` — Quiz History Page
 
@@ -18,27 +20,13 @@ The dedicated quiz history page. Replaces the former inline "Past Quizzes" tab t
 - Header row: "Past Quizzes" heading left-aligned, "Take a New Quiz" button right-aligned at the same level.
 - Sidebar nav behaviour: clicking "Past Quizzes" stays on page; other items navigate to `/dashboard?tab=<id>` or `/profile`.
 
-### Guest Access & One-Quiz Limit
-
-Unauthenticated users may create and take exactly one quiz.
-
-- The Navbar "Quiz" link routes guests to `/quiz/create` and authenticated users to `/quiz`.
-- When a guest successfully generates a quiz (navigates to `/quiz/play`), the flag `lamla_guest_quiz_used = "true"` is stored in `localStorage`.
-- On subsequent visits to `/quiz/create`, the component detects the flag and shows a **blocking modal** (not a silent redirect):
-  - Heading: "You've used your free quiz"
-  - Body: invitation to sign up for unlimited access
-  - Primary CTA: "Sign Up — it's free" → `/auth/signup` (with `state.fromGuest = true`)
-  - Secondary link: "Already have an account? Sign in" → `/auth/login`
-- The Signup page reads `location.state?.fromGuest` and surfaces a contextual banner above the form.
-- On any successful auth (login, signup, Google OAuth), `lamla_guest_quiz_used` is removed from `localStorage` so the user is no longer treated as a repeat guest.
-
 ## Django Endpoints
 
 From `backend/apps/quiz/urls.py`:
 
 - `POST /api/quiz/ajax-extract-text/` — extract text from uploaded file
 - `POST /api/quiz/extract-youtube/` — extract transcript from YouTube URL
-- `POST /api/quiz/generate/` — generate quiz (Django async view; legacy FastAPI upstream)
+- `POST /api/quiz/generate/` — generate quiz (Django-native; no upstream service)
 - `POST /api/quiz/submit/` — evaluate and store quiz results
 - `POST /api/quiz/download/` — download quiz as PDF/DOCX
 - `GET /api/quiz/history/` — authenticated user's past sessions
@@ -50,9 +38,17 @@ From `backend/apps/tutor/urls.py`:
 
 - `POST /api/tutor/quiz/from-agent/` — tutor-triggered quiz generation (see [AI Tutor feature](TUTOR.md))
 
-## Legacy FastAPI Endpoint
+## Module Layout
 
-- `POST /quiz/` (internal, called by Django async view; being retired)
+| Path | Responsibility |
+|---|---|
+| `apps/quiz/views.py` | DRF `APIView`s — authentication, request parsing, HTTP status codes only |
+| `apps/quiz/serializers.py` | Request payload validation |
+| `apps/quiz/services.py` | Async business logic: generation, scoring, persistence, history |
+| `apps/quiz/prompts.py` | Quiz generation and repair prompts |
+| `apps/quiz/utils/` | Pure helpers: text extraction, scoring, SM-2 scheduling, latency, downloads, YouTube |
+
+Quiz AI calls go through `apps.core.ai_engine.ai_client` (Django in-process), not HTTP.
 
 ## Data Model
 
@@ -90,22 +86,21 @@ All three paths converge at the same `generate/` endpoint once `extractedText` i
 ## Generation Flow
 
 1. User picks an input tab and loads content (file, YouTube URL, or direct text).
-2. Django's async view forwards a normalized payload to the legacy FastAPI `POST /quiz/`:
-   - `subject`, `study_text`, `num_mcq`, `num_short`, `difficulty`
-   - `source_type` — `"file"` | `"youtube"` | `"text"`
-   - `source_title` — filename or video title (used in prompt context)
-3. The legacy FastAPI quiz service normalizes text (Unicode cleanup, truncation to 16,000 chars), scales `max_tokens` dynamically based on question count (2,048–8,192), and calls the AI provider.
+2. `POST /api/quiz/generate/` validates the request with `QuizGenerateRequestSerializer`.
+3. `services.generate_quiz()` normalizes the study text (Unicode cleanup, truncation to 16,000 chars), resolves `difficulty="random"` to a concrete level, and builds the prompt.
 4. The prompt tells the LLM the source type so it can adjust tone (e.g., spoken-language transcript vs. academic document).
-5. The legacy FastAPI quiz service validates the JSON response, normalizes questions, and returns `QuizResponse`.
-6. Django adds metadata (`id`, `time_limit`, `source_filename`) and returns to the frontend.
-7. Frontend navigates to `/quiz/play`.
+5. `ai_client.generate_text()` calls the configured provider with a token budget scaled to the question count (4,096–8,192).
+6. The response is parsed and validated; malformed JSON triggers one repair attempt.
+7. `QuizGenerateView` adds metadata (`id`, `time_limit`, `created_at`, `source_filename`) and returns to the frontend.
+8. Frontend navigates to `/quiz/play`.
 
 ## Submission Flow
 
 1. Frontend submits `quiz_data` + `user_answers` to `/api/quiz/submit/`.
-2. Django evaluates MCQ by letter comparison.
-3. Short answers are LLM-evaluated via the agent `evaluate_answer` tool (legacy FastAPI `/agent/call`) with fallback string matching.
-4. Result payload returned and saved as `QuizSession` for authenticated users.
+2. `services.submit_quiz()` evaluates MCQ by letter comparison.
+3. Short answers are LLM-evaluated by `services.evaluate_short_answer()` with exact-match fallback.
+4. The session is persisted as `QuizSession`, caches are busted, and `TopicPerformance`/`QuizTopicSchedule` are updated.
+5. Result payload is returned to the frontend.
 
 ## Quiz Settings
 
@@ -133,7 +128,7 @@ See [AGENT_IMPLEMENTATION.md § 17](../architecture-design/AGENT_IMPLEMENTATION.
 
 ## Weak Area Detection
 
-After every quiz submission, `submit_quiz_api_async` updates `TopicPerformance` for the quiz subject using atomic `F()` expressions (race-condition safe). Accuracy is recomputed after each update.
+After every quiz submission, `services.submit_quiz()` updates `TopicPerformance` for the quiz subject using atomic `F()` expressions (race-condition safe). Accuracy is recomputed after each update.
 
 `GET /api/quiz/weak-areas/` returns the 5 lowest-accuracy topics for the user, filtered to topics with at least 3 questions attempted (noise filter). Used by the dashboard weak areas card.
 
@@ -158,7 +153,7 @@ python manage.py backfill_topic_performance --dry-run
 ## Reliability Notes
 
 - Token budget scales with question count so large quizzes don't produce truncated JSON.
-- If the AI returns malformed JSON, the legacy FastAPI quiz service makes one repair attempt before returning 502.
-- If that service returns a non-200 response, Django returns 503 to the frontend.
+- If the AI returns malformed JSON, `services.generate_quiz()` makes one repair attempt before raising `QuizGenerationError` (HTTP 400).
+- Provider failures raise `APIIntegrationError`; the view returns 503 to the frontend.
 - YouTube extraction fails gracefully with a user-facing message if captions are disabled or the URL is invalid.
 - Frontend should keep the user on the page and allow retry on any generation error.

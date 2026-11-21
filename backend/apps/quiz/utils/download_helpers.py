@@ -1,4 +1,5 @@
 import re
+import logging
 from io import BytesIO
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -9,14 +10,6 @@ from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
-
-import json
-import logging
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 
 try:
     from reportlab.lib.pagesizes import letter
@@ -37,60 +30,33 @@ logger = logging.getLogger(__name__)
 
 # ── Main flow (entry point first) ────────────────────────────────────────────
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def download_quiz_results(request):
-    """Download quiz results as PDF, DOCX, or TXT."""
-    try:
-        auth_result = TokenAuthentication().authenticate(request)
-    except AuthenticationFailed as exc:
-        return JsonResponse({"detail": str(exc)}, status=401)
-    if not auth_result:
-        return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
+def build_download(results: dict, file_format: str = "pdf") -> tuple[bytes, str, str]:
+    """Build a quiz-results download.
 
-    try:
-        data        = json.loads(request.body) if request.body else {}
-        results     = data.get('results', {})
-        file_format = data.get('format', 'pdf').lower()
+    Returns ``(content, content_type, filename)``.
+    """
+    file_format = (file_format or "pdf").lower()
+    if not results:
+        raise ValueError("No results data provided")
 
-        if not results:
-            return JsonResponse({"error": "No results data provided"}, status=400)
+    subject = results.get("subject", "Quiz")
+    safe_name = _safe_filename(subject)
+    ts = datetime.now(ZoneInfo("Africa/Accra")).strftime("%Y%m%d_%H%M%S")
+    base = f"{safe_name}_Quiz_{ts}"
 
-        subject   = results.get('subject', 'Quiz')
-        safe_name = _safe_filename(subject)
-        tz        = ZoneInfo('Africa/Accra')
-        ts        = datetime.now(tz).strftime('%Y%m%d_%H%M%S')
-        base      = f"{safe_name}_Quiz_{ts}"
+    if file_format == "pdf":
+        if not HAS_REPORTLAB:
+            raise ValueError("PDF generation unavailable. Please use TXT or DOCX.")
+        return _build_pdf(results).getvalue(), "application/pdf", f"{base}.pdf"
 
-        if file_format == 'pdf':
-            if not HAS_REPORTLAB:
-                return JsonResponse(
-                    {"error": "PDF generation unavailable. Please use TXT or DOCX."},
-                    status=400,
-                )
-            buf = _build_pdf(results)
-            response = HttpResponse(buf.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{base}.pdf"'
-            return response
+    if file_format == "docx":
+        return (
+            _build_docx(results).getvalue(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            f"{base}.docx",
+        )
 
-        elif file_format == 'docx':
-            buf = _build_docx(results)
-            response = HttpResponse(
-                buf.getvalue(),
-                content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            )
-            response['Content-Disposition'] = f'attachment; filename="{base}.docx"'
-            return response
-
-        else:  # txt
-            content  = _build_txt(results)
-            response = HttpResponse(content, content_type='text/plain; charset=utf-8')
-            response['Content-Disposition'] = f'attachment; filename="{base}.txt"'
-            return response
-
-    except Exception as e:
-        logger.error(f"Error generating download: {e}", exc_info=True)
-        return JsonResponse({"error": "Failed to generate file"}, status=500)
+    return _build_txt(results).encode("utf-8"), "text/plain; charset=utf-8", f"{base}.txt"
 
 
 # ── Text helpers ──────────────────────────────────────────────────────────────

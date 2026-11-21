@@ -60,10 +60,10 @@ At runtime, Ocasia has two active layers, with a legacy AI service being retired
 1. Frontend clients (React SPA + Next.js app)
 2. Django backend — API, persistence, and the in-process tutor agent (LangChain + pgvector)
 
-Legacy: a FastAPI `ai_service` still serves quiz generation and short-answer evaluation.
+Legacy: a FastAPI `ai_service` still serves flashcard generation/explanation and Clash quiz generation.
 
 - Django owns authentication, persistence, user-facing API composition, and the tutor agent.
-- The legacy FastAPI service owns only the remaining quiz AI work.
+- The legacy FastAPI service owns only the remaining flashcard and Clash AI work.
 - Django → FastAPI calls are internal and gated by shared-secret middleware.
 
 ```mermaid
@@ -225,7 +225,7 @@ Practical rule:
 Contract boundary:
 
 - Django performs user auth, persistence, and the tutor agent loop.
-- The legacy FastAPI service executes the remaining quiz AI operations.
+- The legacy FastAPI service executes the remaining flashcard and Clash AI operations.
 - Internal headers/secret are required for Django to call FastAPI protected routes.
 
 ## Output Files And How To Use Them

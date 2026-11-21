@@ -1,12 +1,12 @@
 ﻿# Render Deployment Guide (Django + legacy FastAPI)
 
-Django is the primary service. The legacy FastAPI `ai_service` is still deployed for quiz
-generation and short-answer evaluation.
+Django is the primary service. The legacy FastAPI `ai_service` is still deployed for
+flashcard generation/explanation and Clash quiz generation.
 
 ## Service Layout
 
 - Service 1: Django API + tutor agent (`backend`)
-- Service 2: FastAPI worker (`ai_service`) — legacy, quiz only
+- Service 2: FastAPI worker (`ai_service`) — legacy, flashcards and Clash only
 - Frontend runs separately (Vercel)
 
 ## Django Service
@@ -53,5 +53,5 @@ python run.py
 
 - Django `GET /health/` returns 200
 - FastAPI `GET /health` returns 200
-- Django can call legacy FastAPI internal endpoints (quiz generation, short-answer evaluation)
+- Django can call legacy FastAPI internal endpoints (flashcards, Clash quiz generation)
 - Frontend login + quiz + flashcards + chat work end-to-end

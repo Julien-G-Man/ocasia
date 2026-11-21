@@ -12,15 +12,15 @@ Eight vulnerabilities fixed. All are now resolved in the codebase.
 
 ### 1. Missing auth on quiz generation endpoints
 
-`generate_quiz_api_async` and `extract_youtube_transcript` in `backend/apps/quiz/async_views.py` were publicly accessible — any unauthenticated caller could trigger AI inference. Fixed: `_get_authenticated_user_async()` call added at the top of both handlers before any processing.
+`generate_quiz_api_async` and `extract_youtube_transcript` in the former `backend/apps/quiz/async_views.py` were publicly accessible — any unauthenticated caller could trigger AI inference. Fixed: auth was added, and the async proxy views have since been replaced by DRF `APIView`s in `apps/quiz/views.py` with `permission_classes = [IsAuthenticated]`; `async_views.py` has been deleted.
 
 ### 2. Missing auth on file text extraction
 
-`ajax_extract_text` in `backend/apps/quiz/extract_text.py` accepted file uploads with no auth check. Fixed: `_require_auth()` async helper added using `sync_to_async(TokenAuthentication().authenticate)`.
+`ajax_extract_text` in the former `backend/apps/quiz/extract_text.py` accepted file uploads with no auth check. Fixed: auth was added, and the endpoint is now `QuizExtractTextView` in `apps/quiz/views.py` (auth required); the extraction logic moved to `apps/quiz/utils/extract_text.py`.
 
 ### 3. Missing auth on quiz download
 
-`download_quiz_results` in `backend/apps/quiz/download_helpers.py` returned PDF/DOCX/CSV exports with no auth guard. Fixed: synchronous `TokenAuthentication().authenticate(request)` check added at entry.
+`download_quiz_results` in the former `backend/apps/quiz/download_helpers.py` returned PDF/DOCX exports with no auth guard. Fixed: the endpoint is now `QuizDownloadView` in `apps/quiz/views.py` (auth required); export builders moved to `apps/quiz/utils/download_helpers.py`.
 
 ### 4. Missing auth on tutor messages
 
@@ -84,7 +84,7 @@ This section records vulnerabilities and security gaps found by static review of
 
 ### Medium: Upload Extractors Trust File Extensions
 
-**Evidence:** `backend/apps/quiz/extract_text.py` and the tutor upload extractor choose parsers from `file.name` extension. `backend/apps/flashcards/extract_text_helper.py` adds MIME checks, but still relies on client-supplied metadata rather than file signatures.
+**Evidence:** `backend/apps/quiz/utils/extract_text.py` and the tutor upload extractor choose parsers from `file.name` extension. `backend/apps/flashcards/extract_text_helper.py` adds MIME checks, but still relies on client-supplied metadata rather than file signatures.
 
 **Risk:** An attacker can upload malformed or mislabeled files to parser libraries (`PyPDF2`, `python-docx`, `python-pptx`). The 10 MB size limit helps, but extension-only validation still leaves parser abuse and resource exhaustion risk. This is higher risk because these endpoints process untrusted documents synchronously in request flow.
 

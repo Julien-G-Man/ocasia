@@ -49,7 +49,7 @@ Start Django (ASGI):
 python run_django.py --port 8000 --reload
 ```
 
-## 2) Legacy FastAPI install/run (quiz generation only)
+## 2) Legacy FastAPI install/run (flashcards and Clash quiz generation only)
 
 ```bash
 cd ai_service
@@ -84,5 +84,5 @@ VITE_DJANGO_API_URL=http://localhost:8000/api
 
 - `GET http://localhost:8000/health/`
 - `GET http://localhost:8000/warmup/`
-- `GET http://localhost:8001/health` (legacy FastAPI, only if quiz generation is exercised)
+- `GET http://localhost:8001/health` (legacy FastAPI, only if flashcards or Clash are exercised)
 - login/signup from frontend

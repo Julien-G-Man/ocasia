@@ -9,7 +9,7 @@
 - Database: PostgreSQL (Neon)
 - Cache / channel layer: Redis (Upstash Redis)
 - Embeddings: OpenAI `text-embedding-3-small`
-- Legacy (retiring): FastAPI (`ai_service/*`) — still serves quiz generation and short-answer evaluation
+- Legacy (retiring): FastAPI (`ai_service/*`) — still used by flashcards and Clash quiz generation
 
 ## Core Pattern
 
@@ -31,8 +31,8 @@ deploy/rollback blast radius.
 
 ## Legacy FastAPI Service (Retiring)
 
-The FastAPI `ai_service` still handles quiz generation and short-answer evaluation.
-It is internal-only and will be removed once those callers move in-process.
+The FastAPI `ai_service` still handles flashcard generation/explanation and Clash quiz
+generation. It is internal-only and will be removed once those callers move in-process.
 
 - Django → FastAPI base URL: `FASTAPI_BASE_URL`
 - Internal auth header: `X-Internal-Secret`
@@ -41,7 +41,7 @@ It is internal-only and will be removed once those callers move in-process.
 ## Public vs Internal FastAPI Endpoints (Legacy)
 
 - Public: `GET /health`
-- Internal-only: `/agent/*`, `/quiz/*`
+- Internal-only: `/agent/*`, `/quiz/*`, `/flashcards/*`
   - require valid `X-Internal-Secret`
   - browser-origin requests must be in `FASTAPI_ALLOWED_ORIGINS`
 
@@ -49,8 +49,10 @@ It is internal-only and will be removed once those callers move in-process.
 
 | Endpoint | Caller | Purpose |
 |---|---|---|
-| `POST /quiz/` | Django quiz async views | Standalone quiz generation |
-| `POST /agent/call` | Django quiz async views | Single-tool call (`evaluate_answer`) |
+| `POST /quiz/` | Django Clash views | Clash question generation |
+| `POST /flashcards/generate` | Django flashcards views | Flashcard generation |
+| `POST /flashcards/explain` | Django flashcards views | Answer explanation |
+| `POST /agent/call` | Legacy chatbot views | Single-tool calls |
 
 ## Warmup Model
 

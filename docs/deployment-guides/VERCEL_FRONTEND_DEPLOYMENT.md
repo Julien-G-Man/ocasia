@@ -32,7 +32,7 @@ Fix: update env vars with absolute URLs.
 Fix:
 
 - Add frontend URL to Django `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`
-- Add the Django URL to the legacy FastAPI `FASTAPI_ALLOWED_ORIGINS` (quiz calls only)
+- Add the Django URL to the legacy FastAPI `FASTAPI_ALLOWED_ORIGINS` (flashcards and Clash calls)
 
 ### Build failure for missing CSS import
 

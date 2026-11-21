@@ -20,7 +20,7 @@ celebrates the top 3 and every participant is ranked.
 Host                                   Players
 ─────────────────────────────────────────────────────────
 Create room (topic + settings)
-Questions generated via the quiz service (legacy FastAPI)
+Questions generated via the quiz service (legacy FastAPI `/quiz/`)
 Room code displayed + share link
 Share code ───────────────────────→ Enter code → Join lobby
 See players joining live             See other players

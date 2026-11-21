@@ -55,3 +55,12 @@ Return an object with exactly two arrays: mcq_questions and short_questions. MCQ
 {_FORMATTING}
 Malformed response:
 {bad_response}"""
+
+
+def build_short_answer_prompt(question: str, correct_answer: str, user_answer: str):
+    return (
+        "You are a fair expert short-answer evaluator. Return valid JSON only.\n\n"
+        "Evaluate the student's answer for factual accuracy, completeness, and relevance. "
+        "Return JSON with is_correct (boolean), score (0 to 1), and reasoning (1-2 sentences).\n\n"
+        f"Question: {question}\nCorrect answer: {correct_answer}\nStudent answer: {user_answer}"
+    )

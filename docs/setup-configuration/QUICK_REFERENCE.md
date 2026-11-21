@@ -18,7 +18,7 @@ Django (`backend/.env`):
 - `PAYSTACK_PUBLIC_KEY` — Paystack public key (`pk_test_...` / `pk_live_...`)
 - `PAYSTACK_SECRET_KEY` — Paystack secret key, backend only, never expose to frontend
 
-Legacy FastAPI (`ai_service/.env` or process env; quiz generation only):
+Legacy FastAPI (`ai_service/.env` or process env; flashcards and Clash quiz generation only):
 
 - `FASTAPI_SECRET`
 - `FASTAPI_ALLOWED_ORIGINS`
