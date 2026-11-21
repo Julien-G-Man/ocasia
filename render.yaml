@@ -6,7 +6,7 @@ services:
     plan: starter
     buildCommand: pip install -r requirements.txt
     preDeployCommand: python manage.py migrate --noinput
-    autoDeployTrigger: commit
+    autoDeployTrigger: checksPass
     startCommand: uvicorn config.asgi:application --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
@@ -32,6 +32,7 @@ services:
     region: oregon
     plan: starter
     buildCommand: cd ai_service && pip install -r requirements.txt
+    autoDeployTrigger: checksPass
     startCommand: cd ai_service && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION

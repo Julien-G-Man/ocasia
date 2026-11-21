@@ -71,6 +71,47 @@ npm install
 npm run dev
 ```
 
+## Testing
+
+Tests live next to each app in `backend/apps/<app>/tests/` and use Django's test runner
+(no pytest). The shared runner is `backend/tests/run.py`.
+
+```bash
+cd backend
+python tests/run.py --list          # discover app suites
+python tests/run.py quiz            # run one app
+python tests/run.py tutor quiz      # run several
+python tests/run.py quiz --keep     # reuse the test database between runs
+```
+
+### Patterns
+
+- **Pure logic** → `SimpleTestCase` (no DB). Async functions get `async def test_*` methods.
+- **Database-backed logic** → `TestCase` (each test runs in a transaction that is rolled back).
+- **Views** → build a request with DRF `APIRequestFactory`, call `MyView.as_view()(request)`,
+  and use `force_authenticate(request, user=user)` for auth cases. No live server or URL
+  resolution required.
+- **Mock at the import site.** Views import service functions directly, so patch
+  `apps.<app>.views.<function>`, e.g. `@patch("apps.quiz.views.generate_quiz", new_callable=AsyncMock)`.
+- **Never call real AI providers.** Patch `apps.<app>.services.ai_client.generate_text`
+  with `AsyncMock`; return JSON strings (or dicts) that the service parses.
+- **Async services from sync tests** → wrap calls with `async_to_sync(...)`.
+- **File uploads** → `SimpleUploadedFile(name, content, content_type=...)` with
+  `format="multipart"` on the request factory.
+- **Caches** → `cache.clear()` in `setUp`; `TestCase` does not roll back the cache.
+- **Error contracts** → use `assertRaisesMessage` for service errors and assert the DRF
+  response `error` payload for view errors.
+
+### CI and deploy gate
+
+`.github/workflows/backend-tests.yml` runs the `tutor` and `quiz` suites on pushes and PRs
+that touch `backend/**`, `ai_service/**`, `render.yaml`, or the workflow itself. It uses a
+`pgvector/pgvector:pg17` Postgres service, applies migrations, then runs `tests/run.py tutor quiz`.
+
+Both Render services use `autoDeployTrigger: checksPass` in `render.yaml`, so a commit with
+a failing test check does not deploy. Render must be synced from `render.yaml` (or the
+setting changed in the dashboard) for this to take effect.
+
 ## Health Checks
 
 - Django: `GET /health/`
